@@ -63,18 +63,42 @@ void RenderCore::SetGeometry( const int meshIdx, const float4* vertexData, const
 //  +-----------------------------------------------------------------------------+
 void RenderCore::Render( const ViewPyramid& view, const Convergence converge, const float brightness, const float contrast )
 {
-	// render
 	screen->Clear();
-	for( Mesh& mesh : meshes ) for( int i = 0; i < mesh.vcount; i++ )
-	{
-		// convert a vertex position to a screen coordinate
-		int screenx = mesh.vertices[i].x / 80 * (float)screen->width + screen->width / 2;
-		int screeny = mesh.vertices[i].z / 80 * (float)screen->height + screen->height / 2;
-		screen->Plot( screenx, screeny, 0xffffff /* white */ );
+
+	int nx = screen->width;
+	int ny = screen->height;
+
+	float dx = 1.0f / (nx - 1);
+	float dy = 1.0f / (ny - 1);
+
+	for (int y = 0; y < ny; y++) {
+		for (int x = 0; x < nx; x++) {
+			float3 sx = x * dx * (view.p2 - view.p1);		// Screen x
+			float3 sy = y * dy * (view.p3 - view.p1);		// Screen y
+			float3 P = view.p1 + sx + sy;					// Point on screen
+			float3 D = P - view.pos;						// Ray direction
+			Ray ray = Ray(view.pos, D);
+
+			for (Mesh& mesh : meshes) for (int i = 0; i < mesh.vcount / 3; i++)
+			{
+				float t;
+				if (ray.IntersectsTriangle(mesh.triangles[i], t)) {
+					screen->Plot(x, y, 0xff0000);
+				}
+			}
+		}
 	}
+
+	//for( Mesh& mesh : meshes ) for( int i = 0; i < mesh.vcount; i++ )
+	//{
+	//	// convert a vertex position to a screen coordinate
+	//	int screenx = mesh.vertices[i].x / 80 * (float)screen->width + screen->width / 2;
+	//	int screeny = mesh.vertices[i].z / 80 * (float)screen->height + screen->height / 2;
+	//	screen->Plot( screenx, screeny, 0xffffff /* white */ );
+	//}
 	// copy pixel buffer to OpenGL render target texture
-	glBindTexture( GL_TEXTURE_2D, targetTextureID );
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, screen->width, screen->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, screen->pixels );
+	glBindTexture(GL_TEXTURE_2D, targetTextureID);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, screen->width, screen->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, screen->pixels);
 }
 
 //  +-----------------------------------------------------------------------------+

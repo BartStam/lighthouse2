@@ -42,6 +42,7 @@ void PrepareScene()
 {
 	// initialize scene
 	renderer->AddScene("Box0.gltf", "data/simple/", mat4::Scale(1.0f) * mat4::Translate(0, 0, 0));
+	animPaused = true;
 
 //#if 1
 //	// Radio
