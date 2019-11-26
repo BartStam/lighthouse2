@@ -14,6 +14,7 @@
 */
 
 #include "core_settings.h"
+#include <iostream>
 
 using namespace lh2core;
 
