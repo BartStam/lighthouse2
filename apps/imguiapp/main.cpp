@@ -41,38 +41,45 @@ static CoreStats coreStats;
 void PrepareScene()
 {
 	// initialize scene
-#if 1
-	// radio
-	materialFile = string( "data/receiver/red_materials.xml" );
-	renderer->AddScene( "scene.gltf", "data/receiver/", mat4::Scale( 0.2f ) * mat4::Translate( 0, 0, 0 ) );
-	int rootNode = renderer->FindNode( "RootNode (gltf orientation matrix)" );
-	renderer->SetNodeTransform( rootNode, mat4::RotateX( -PI / 2 ) );
-	int floorMat = renderer->AddMaterial( make_float3( 0.5f, 0.5f, 0.6f ) );
-	int floorQuad = renderer->AddQuad( make_float3( 0, 1, 0 ), make_float3( 0, -1.5f, 0 ), 40, 40, floorMat );
-	renderer->AddInstance( floorQuad );
-	animPaused = true;
-#else
-	// classic scene
-	materialFile = string( "data/pica/pica_materials.xml" );
-	renderer->AddScene( "scene.gltf", "data/pica/", mat4::Translate( 0, -10.2f, 0 ) );
-	int rootNode = renderer->FindNode( "RootNode (gltf orientation matrix)" );
-	renderer->SetNodeTransform( rootNode, mat4::RotateX( -PI / 2 ) );
-#endif
-#if 1
-	// overhead light, use regular PT
-	int lightMat = renderer->AddMaterial( make_float3( 100, 100, 80 ) );
-	int lightQuad = renderer->AddQuad( make_float3( 0, -1, 0 ), make_float3( 0, 26.0f, 0 ), 6.9f, 6.9f, lightMat );
-#else
-	// difficult light; use BDPT
-	int lightMat = renderer->AddMaterial( make_float3( 500, 500, 400 ) );
-	int lightQuad = renderer->AddQuad( make_float3( 0.15188693, -0.32204545, 0.93446094 ), make_float3( -12.938412, -5.0068984, -25.725601 ), 1.9f, 1.9f, lightMat );
-#endif
-	int lightInst = renderer->AddInstance( lightQuad );
-	// optional animated models
-	// renderer->AddScene( "CesiumMan.glb", "data/", mat4::Translate( 0, -2, -9 ) );
-	// renderer->AddScene( "project_polly.glb", "data/", mat4::Translate( 4.5f, -5.45f, -5.2f ) * mat4::Scale( 2 ) );
-	// load changed materials
-	renderer->DeserializeMaterials( materialFile.c_str() );
+	renderer->AddScene("Box0.gltf", "data/simple/", mat4::Scale(1.0f) * mat4::Translate(0, 0, 0));
+
+//#if 1
+//	// Radio
+//	materialFile = string( "data/receiver/red_materials.xml" );
+//	renderer->AddScene( "scene.gltf", "data/receiver/", mat4::Scale( 0.2f ) * mat4::Translate( 0, 0, 0 ) );
+//	int rootNode = renderer->FindNode( "RootNode (gltf orientation matrix)" );
+//	renderer->SetNodeTransform( rootNode, mat4::RotateX( -PI / 2 ) );
+//
+//	// Floor
+//	int floorMat = renderer->AddMaterial( make_float3( 0.5f, 0.5f, 0.6f ) );
+//	int floorQuad = renderer->AddQuad( make_float3( 0, 1, 0 ), make_float3( 0, -1.5f, 0 ), 40, 40, floorMat );
+//	renderer->AddInstance( floorQuad );
+//
+//	animPaused = true;
+//#else
+//	// classic scene
+//	materialFile = string( "data/pica/pica_materials.xml" );
+//	renderer->AddScene( "scene.gltf", "data/pica/", mat4::Translate( 0, -10.2f, 0 ) );
+//	int rootNode = renderer->FindNode( "RootNode (gltf orientation matrix)" );
+//	renderer->SetNodeTransform( rootNode, mat4::RotateX( -PI / 2 ) );
+//#endif
+//
+//#if 1
+//	// overhead light, use regular PT
+//	int lightMat = renderer->AddMaterial( make_float3( 100, 100, 80 ) );
+//	int lightQuad = renderer->AddQuad( make_float3( 0, -1, 0 ), make_float3( 0, 26.0f, 0 ), 6.9f, 6.9f, lightMat );
+//#else
+//	// difficult light; use BDPT
+//	int lightMat = renderer->AddMaterial( make_float3( 500, 500, 400 ) );
+//	int lightQuad = renderer->AddQuad( make_float3( 0.15188693, -0.32204545, 0.93446094 ), make_float3( -12.938412, -5.0068984, -25.725601 ), 1.9f, 1.9f, lightMat );
+//#endif
+//
+//	int lightInst = renderer->AddInstance( lightQuad );
+//	// optional animated models
+//	// renderer->AddScene( "CesiumMan.glb", "data/", mat4::Translate( 0, -2, -9 ) );
+//	// renderer->AddScene( "project_polly.glb", "data/", mat4::Translate( 4.5f, -5.45f, -5.2f ) * mat4::Scale( 2 ) );
+//	// load changed materials
+//	renderer->DeserializeMaterials( materialFile.c_str() );
 }
 
 //  +-----------------------------------------------------------------------------+
