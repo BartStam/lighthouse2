@@ -46,7 +46,12 @@ void RenderCore::SetTarget( GLTexture* target )
 //  +-----------------------------------------------------------------------------+
 void RenderCore::SetGeometry( const int meshIdx, const float4* vertexData, const int vertexCount, const int triangleCount, const CoreTri* triangleData, const uint* alphaFlags )
 {
+	cout << "SetGeometry called for meshIdx: " << meshIdx << endl;
+	// cout << materials.size() << endl;
 	Mesh newMesh;
+	for (int i = 0; i < triangleCount; i++) {
+		cout << triangleData[i].material << endl;
+	}
 	// copy the supplied vertices; we cannot assume that the render system does not modify
 	// the original data after we leave this function.
 	newMesh.vertices = new float4[vertexCount];

@@ -44,19 +44,26 @@ void PrepareScene()
 	renderer->AddScene("Box0.gltf", "data/simple/", mat4::Scale(1.0f) * mat4::Translate(0, 0, 0));
 	animPaused = true;
 
+	// Floor
+	//int floorMat = renderer->AddMaterial( make_float3( 0.5f, 0.5f, 0.6f ) );
+	//int floorQuad = renderer->AddQuad( make_float3( 0, 1, 0 ), make_float3( 0, -1.5f, 0 ), 40, 40, floorMat );
+	//renderer->AddInstance( floorQuad );
+
+	animPaused = true;
+
 //#if 1
 //	// Radio
 //	materialFile = string( "data/receiver/red_materials.xml" );
 //	renderer->AddScene( "scene.gltf", "data/receiver/", mat4::Scale( 0.2f ) * mat4::Translate( 0, 0, 0 ) );
-//	int rootNode = renderer->FindNode( "RootNode (gltf orientation matrix)" );
-//	renderer->SetNodeTransform( rootNode, mat4::RotateX( -PI / 2 ) );
-//
-	// Floor
-	int floorMat = renderer->AddMaterial( make_float3( 0.5f, 0.5f, 0.6f ) );
-	int floorQuad = renderer->AddQuad( make_float3( 0, 1, 0 ), make_float3( 0, -1.5f, 0 ), 40, 40, floorMat );
-	renderer->AddInstance( floorQuad );
-//
-//	animPaused = true;
+	//int rootNode = renderer->FindNode( "RootNode (gltf orientation matrix)" );
+	//renderer->SetNodeTransform( rootNode, mat4::RotateX( -PI / 2 ) );
+
+	//// Floor
+	//int floorMat = renderer->AddMaterial( make_float3( 0.5f, 0.5f, 0.6f ) );
+	//int floorQuad = renderer->AddQuad( make_float3( 0, 1, 0 ), make_float3( 0, -1.5f, 0 ), 40, 40, floorMat );
+	//renderer->AddInstance( floorQuad );
+
+	//animPaused = true;
 //#else
 //	// classic scene
 //	materialFile = string( "data/pica/pica_materials.xml" );
