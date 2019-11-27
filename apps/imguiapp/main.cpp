@@ -45,9 +45,9 @@ void PrepareScene()
 	animPaused = true;
 
 	// Floor
-	//int floorMat = renderer->AddMaterial( make_float3( 0.5f, 0.5f, 0.6f ) );
-	//int floorQuad = renderer->AddQuad( make_float3( 0, 1, 0 ), make_float3( 0, -1.5f, 0 ), 40, 40, floorMat );
-	//renderer->AddInstance( floorQuad );
+	int floorMat = renderer->AddMaterial( make_float3( 0.5f, 0.5f, 0.6f ) );
+	int floorQuad = renderer->AddQuad( make_float3( 0, 1, 0 ), make_float3( 0, -1.5f, 0 ), 40, 40, floorMat );
+	renderer->AddInstance( floorQuad );
 
 //#if 1
 //	// Radio

@@ -45,13 +45,8 @@ void RenderCore::SetTarget( GLTexture* target )
 //  |  Set the geometry data for a model.                                   LH2'19|
 //  +-----------------------------------------------------------------------------+
 void RenderCore::SetGeometry( const int meshIdx, const float4* vertexData, const int vertexCount, const int triangleCount, const CoreTri* triangleData, const uint* alphaFlags )
-{
-	cout << "SetGeometry called for meshIdx: " << meshIdx << endl;
-	// cout << materials.size() << endl;
+{	
 	Mesh newMesh;
-	for (int i = 0; i < triangleCount; i++) {
-		cout << triangleData[i].material << endl;
-	}
 	// copy the supplied vertices; we cannot assume that the render system does not modify
 	// the original data after we leave this function.
 	newMesh.vertices = new float4[vertexCount];
@@ -61,6 +56,29 @@ void RenderCore::SetGeometry( const int meshIdx, const float4* vertexData, const
 	newMesh.triangles = new CoreTri[vertexCount / 3];
 	memcpy( newMesh.triangles, triangleData, (vertexCount / 3) * sizeof( CoreTri ) );
 	meshes.push_back( newMesh );
+}
+
+void RenderCore::SetTextures(const CoreTexDesc* tex, const int textureCount) {
+	
+}
+
+void RenderCore::SetMaterials(CoreMaterial* mat, const CoreMaterialEx* matEx, const int materialCount) {
+	for (int i = 0; i < materialCount; i++)
+	{
+		Material* m;
+		if (i < raytracer.scene.matList.size()) m = raytracer.scene.matList[i];
+		else raytracer.scene.matList.push_back(m = new Material());
+		int texID = matEx[i].texture[TEXTURE0];
+		if (texID == -1)
+		{
+			float r = mat[i].diffuse_r, g = mat[i].diffuse_g, b = mat[i].diffuse_b;
+			m->diffuse = ((int)(b * 255.0f) << 16) + ((int)(g * 255.0f) << 8) + (int)(r * 255.0f);
+		}
+		else {
+			// TODO: textures, replacement code below
+			m->diffuse = 0xffffffff;
+		}
+	}
 }
 
 //  +-----------------------------------------------------------------------------+
@@ -89,7 +107,8 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge, co
 			{
 				float t;
 				if (ray.IntersectsTriangle(mesh.triangles[i], t)) {
-					screen->Plot(x, y, 0xff0000);
+					uint color = raytracer.scene.matList[mesh.triangles[i].material]->diffuse;
+					screen->Plot(x, y, color);
 				}
 			}
 		}

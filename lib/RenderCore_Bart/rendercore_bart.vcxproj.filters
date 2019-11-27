@@ -5,6 +5,7 @@
     <ClCompile Include="core_api.cpp">
       <Filter>API</Filter>
     </ClCompile>
+    <ClCompile Include="raytracer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="rendercore.h" />
@@ -12,6 +13,7 @@
     <ClInclude Include="core_api.h">
       <Filter>API</Filter>
     </ClInclude>
+    <ClInclude Include="raytracer.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="API">
