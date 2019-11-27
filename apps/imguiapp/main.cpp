@@ -49,8 +49,6 @@ void PrepareScene()
 	//int floorQuad = renderer->AddQuad( make_float3( 0, 1, 0 ), make_float3( 0, -1.5f, 0 ), 40, 40, floorMat );
 	//renderer->AddInstance( floorQuad );
 
-	animPaused = true;
-
 //#if 1
 //	// Radio
 //	materialFile = string( "data/receiver/red_materials.xml" );
