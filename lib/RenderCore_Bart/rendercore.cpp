@@ -103,11 +103,15 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge, co
 			float3 D = P - view.pos;						// Ray direction
 			Ray ray = Ray(view.pos, D);
 
+			float smallest_t = FLT_MAX;
+			uint color;
+
 			for (Mesh& mesh : meshes) for (int i = 0; i < mesh.vcount / 3; i++)
 			{
 				float t;
-				if (ray.IntersectsTriangle(mesh.triangles[i], t)) {
-					uint color = raytracer.scene.matList[mesh.triangles[i].material]->diffuse;
+				if (ray.IntersectsTriangle(mesh.triangles[i], t) && t < smallest_t) {
+					smallest_t = t;
+					color = raytracer.scene.matList[mesh.triangles[i].material]->diffuse;
 					screen->Plot(x, y, color);
 				}
 			}
