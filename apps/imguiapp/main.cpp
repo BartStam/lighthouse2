@@ -122,7 +122,8 @@ bool HandleInput( float frameTime )
 			currentMaterialID = selectedMaterialID;
 			currentMaterial.Changed(); // update checksum so we can track changes
 		}
-		// camera->focalDistance = coreStats.probedDist;
+		camera->focalDistance = coreStats.probedDist;
+		camera->aperture = 0.02f;
 		changed = true;
 	}
 	// let the main loop know if the camera should update
