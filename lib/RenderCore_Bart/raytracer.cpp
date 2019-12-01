@@ -1,5 +1,4 @@
 #include "core_settings.h"
-#include <iostream>
 
 uint ScaleColor(uint c, int scale)
 {
