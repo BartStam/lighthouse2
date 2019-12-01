@@ -4,7 +4,9 @@
     <FOV>40</FOV>
     <brightness>0</brightness>
     <contrast>0</contrast>
-    <aperture>9.9999997e-05</aperture>
-    <focalDistance>5</focalDistance>
+    <gamma>2.0450001</gamma>
+    <aperture>0.0060000001</aperture>
+    <focalDistance>29.766941</focalDistance>
     <clampValue>10</clampValue>
+    <tonemapper>0</tonemapper>
 </camera>

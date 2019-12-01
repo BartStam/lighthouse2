@@ -49,43 +49,35 @@ void PrepareScene()
 	int floorQuad = renderer->AddQuad( make_float3( 0, 1, 0 ), make_float3( 0, -1.5f, 0 ), 40, 40, floorMat );
 	renderer->AddInstance( floorQuad );
 
-//#if 1
-//	// Radio
-//	materialFile = string( "data/receiver/red_materials.xml" );
-//	renderer->AddScene( "scene.gltf", "data/receiver/", mat4::Scale( 0.2f ) * mat4::Translate( 0, 0, 0 ) );
-	//int rootNode = renderer->FindNode( "RootNode (gltf orientation matrix)" );
-	//renderer->SetNodeTransform( rootNode, mat4::RotateX( -PI / 2 ) );
-
-	//// Floor
-	//int floorMat = renderer->AddMaterial( make_float3( 0.5f, 0.5f, 0.6f ) );
-	//int floorQuad = renderer->AddQuad( make_float3( 0, 1, 0 ), make_float3( 0, -1.5f, 0 ), 40, 40, floorMat );
-	//renderer->AddInstance( floorQuad );
-
-	//animPaused = true;
-//#else
-//	// classic scene
-//	materialFile = string( "data/pica/pica_materials.xml" );
-//	renderer->AddScene( "scene.gltf", "data/pica/", mat4::Translate( 0, -10.2f, 0 ) );
-//	int rootNode = renderer->FindNode( "RootNode (gltf orientation matrix)" );
-//	renderer->SetNodeTransform( rootNode, mat4::RotateX( -PI / 2 ) );
-//#endif
-//
-//#if 1
-//	// overhead light, use regular PT
-//	int lightMat = renderer->AddMaterial( make_float3( 100, 100, 80 ) );
-//	int lightQuad = renderer->AddQuad( make_float3( 0, -1, 0 ), make_float3( 0, 26.0f, 0 ), 6.9f, 6.9f, lightMat );
-//#else
-//	// difficult light; use BDPT
-//	int lightMat = renderer->AddMaterial( make_float3( 500, 500, 400 ) );
-//	int lightQuad = renderer->AddQuad( make_float3( 0.15188693, -0.32204545, 0.93446094 ), make_float3( -12.938412, -5.0068984, -25.725601 ), 1.9f, 1.9f, lightMat );
-//#endif
-//
-//	int lightInst = renderer->AddInstance( lightQuad );
-//	// optional animated models
-//	// renderer->AddScene( "CesiumMan.glb", "data/", mat4::Translate( 0, -2, -9 ) );
-//	// renderer->AddScene( "project_polly.glb", "data/", mat4::Translate( 4.5f, -5.45f, -5.2f ) * mat4::Scale( 2 ) );
-//	// load changed materials
-//	renderer->DeserializeMaterials( materialFile.c_str() );
+#if 0
+	// mushrooms
+	materialFile = string( "data/woodville/wood_materials.xml" );
+	renderer->AddScene( "PUP_Woodville.gltf", "data/woodville/", mat4::Scale( 2 ) * mat4::Translate( 0, 0, 0 ) );
+	int rootNode = renderer->FindNode( "RootNode (gltf orientation matrix)" );
+	renderer->SetNodeTransform( rootNode, mat4::RotateX( -PI / 2 ) );
+	animPaused = true;
+#else
+	// classic scene
+	materialFile = string( "data/pica/pica_materials.xml" );
+	renderer->AddScene( "scene.gltf", "data/pica/", mat4::Translate( 0, -10.2f, 0 ) );
+	int rootNode = renderer->FindNode( "RootNode (gltf orientation matrix)" );
+	renderer->SetNodeTransform( rootNode, mat4::RotateX( -PI / 2 ) );
+#endif
+#if 1
+	// overhead light, use regular PT
+	int lightMat = renderer->AddMaterial( make_float3( 50, 50, 45 ) );
+	int lightQuad = renderer->AddQuad( make_float3( 0, -1, 0 ), make_float3( 0, 26.0f, 0 ), 6.9f, 6.9f, lightMat );
+#else
+	// difficult light; use BDPT
+	int lightMat = renderer->AddMaterial( make_float3( 500, 500, 400 ) );
+	int lightQuad = renderer->AddQuad( make_float3( 0.15188693, -0.32204545, 0.93446094 ), make_float3( -12.938412, -5.0068984, -25.725601 ), 1.9f, 1.9f, lightMat );
+#endif
+	int lightInst = renderer->AddInstance( lightQuad );
+	// optional animated models
+	// renderer->AddScene( "CesiumMan.glb", "data/", mat4::Translate( 0, -2, -9 ) );
+	// renderer->AddScene( "project_polly.glb", "data/", mat4::Translate( 4.5f, -5.45f, -5.2f ) * mat4::Scale( 2 ) );
+	// load changed materials
+	renderer->DeserializeMaterials( materialFile.c_str() );
 }
 
 //  +-----------------------------------------------------------------------------+
@@ -121,7 +113,6 @@ bool HandleInput( float frameTime )
 			currentMaterial.Changed(); // update checksum so we can track changes
 		}
 		camera->focalDistance = coreStats.probedDist;
-		camera->aperture = 0.02f;
 		changed = true;
 	}
 	// let the main loop know if the camera should update
@@ -157,8 +148,13 @@ int main()
 	// initialize renderer: pick one
 	renderer = RenderAPI::CreateRenderAPI("RenderCore_Bart");			// MINIMAL example, to get you started on your own core
 	// renderer = RenderAPI::CreateRenderAPI( "RenderCore_Optix7filter" );		// OPTIX7 core, with filtering (static scenes only for now)
+<<<<<<< HEAD
 	// renderer = RenderAPI::CreateRenderAPI( "RenderCore_Optix7" );				// OPTIX7 core, best for RTX devices
 	// renderer = RenderAPI::CreateRenderAPI( "RenderCore_OptixPrime_B" );		// OPTIX PRIME, best for pre-RTX CUDA devices
+=======
+	// renderer = RenderAPI::CreateRenderAPI( "RenderCore_Optix7" );			// OPTIX7 core, best for RTX devices
+	renderer = RenderAPI::CreateRenderAPI( "RenderCore_OptixPrime_B" );		// OPTIX PRIME, best for pre-RTX CUDA devices
+>>>>>>> f7c99b7b9c9cfead41218e72066419136684c56a
 	// renderer = RenderAPI::CreateRenderAPI( "RenderCore_PrimeRef" );			// REFERENCE, for image validation
 	// renderer = RenderAPI::CreateRenderAPI( "RenderCore_SoftRasterizer" );	// RASTERIZER, your only option if not on NVidia
 	// renderer = RenderAPI::CreateRenderAPI( "RenderCore_Minimal" );			// MINIMAL example, to get you started on your own core
@@ -177,7 +173,7 @@ int main()
 	while (!glfwWindowShouldClose( window ))
 	{
 		// detect camera changes
-		camMoved = false;
+		camMoved = renderer->GetCamera()->Changed();
 		deltaTime = timer.elapsed();
 		if (HandleInput( deltaTime )) camMoved = true;
 		// handle material changes
@@ -198,6 +194,10 @@ int main()
 		shader->Bind();
 		shader->SetInputTexture( 0, "color", renderTarget );
 		shader->SetInputMatrix( "view", mat4::Identity() );
+		shader->SetFloat( "contrast", renderer->GetCamera()->contrast );
+		shader->SetFloat( "brightness", renderer->GetCamera()->brightness );
+		shader->SetFloat( "gamma", renderer->GetCamera()->gamma );
+		shader->SetInt( "method", renderer->GetCamera()->tonemapper );
 		DrawQuad();
 		shader->Unbind();
 		// gui
@@ -219,6 +219,18 @@ int main()
 		ImGui::Text( "# secondary:  %6ik (%6.1fM/s)", coreStats.bounce1RayCount / 1000, coreStats.bounce1RayCount / (max( 1.0f, coreStats.traceTime1 * 1000000 )) );
 		ImGui::Text( "# deep rays:  %6ik (%6.1fM/s)", coreStats.deepRayCount / 1000, coreStats.deepRayCount / (max( 1.0f, coreStats.traceTimeX * 1000000 )) );
 		ImGui::Text( "# shadw rays: %6ik (%6.1fM/s)", coreStats.totalShadowRays / 1000, coreStats.totalShadowRays / (max( 1.0f, coreStats.shadowTraceTime * 1000000 )) );
+		ImGui::End();
+		ImGui::Begin( "Camera parameters", 0 );
+		float3 camPos = renderer->GetCamera()->position;
+		float3 camDir = renderer->GetCamera()->direction;
+		ImGui::Text( "position: %5.2f, %5.2f, %5.2f", camPos.x, camPos.y, camPos.z );
+		ImGui::Text( "viewdir:  %5.2f, %5.2f, %5.2f", camDir.x, camDir.y, camDir.z );
+		ImGui::SliderFloat( "FOV", &renderer->GetCamera()->FOV, 10, 90 );
+		ImGui::SliderFloat( "aperture", &renderer->GetCamera()->aperture, 0, 0.025f );
+		ImGui::Combo( "tonemap", &renderer->GetCamera()->tonemapper, "clamp\0reinhard\0reinhard ext\0reinhard lum\0reinhard jodie\0uncharted2\0\0" );
+		ImGui::SliderFloat( "brightness", &renderer->GetCamera()->brightness, 0, 0.5f );
+		ImGui::SliderFloat( "contrast", &renderer->GetCamera()->contrast, 0, 0.5f );
+		ImGui::SliderFloat( "gamma", &renderer->GetCamera()->gamma, 1, 2.5f );
 		ImGui::End();
 		ImGui::Begin( "Material parameters", 0 );
 		ImGui::Text( "name:    %s", currentMaterial.name.c_str() );
