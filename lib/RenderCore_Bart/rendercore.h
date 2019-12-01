@@ -27,14 +27,18 @@ public:
 	void SetGeometry( const int meshIdx, const float4* vertexData, const int vertexCount, const int triangleCount, const CoreTri* triangles, const uint* alphaFlags = 0 );
 	void SetTextures(const CoreTexDesc* tex, const int textureCount);
 	void SetMaterials(CoreMaterial* mat, const CoreMaterialEx* matEx, const int materialCount);
-	void Render( const ViewPyramid& view, const Convergence converge, const float brightness, const float contrast );
+	void SetLights(const CoreLightTri* areaLights, const int areaLightCount,
+		const CorePointLight* pointLights, const int pointLightCount,
+		const CoreSpotLight* spotLights, const int spotLightCount,
+		const CoreDirectionalLight* directionalLights, const int directionalLightCount);
+	void SetSkyData(const float3* pixels, const uint width, const uint height);
+	void Render( const ViewPyramid& view, const Convergence converge);
 	void Shutdown();
 	// internal methods
 private:
 	// data members
 	Bitmap* screen = 0;								// temporary storage of RenderCore output; will be copied to render target
 	int targetTextureID = 0;						// ID of the target OpenGL texture
-	vector<Mesh> meshes;							// mesh data storage
 	RayTracer raytracer;
 public:
 	CoreStats coreStats;							// rendering statistics

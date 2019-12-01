@@ -142,7 +142,7 @@ void Camera::Serialize( const char* xmlFileName )
 	((XMLElement*)root->InsertEndChild( doc.NewElement( "focalDistance" ) ))->SetText( focalDistance );
 	((XMLElement*)root->InsertEndChild( doc.NewElement( "clampValue" ) ))->SetText( clampValue );
 	((XMLElement*)root->InsertEndChild( doc.NewElement( "tonemapper" ) ))->SetText( tonemapper );
-	// doc.SaveFile( xmlFileName ? xmlFileName : xmlFile.c_str() );
+	doc.SaveFile( xmlFileName ? xmlFileName : xmlFile.c_str() );
 }
 
 //  +-----------------------------------------------------------------------------+

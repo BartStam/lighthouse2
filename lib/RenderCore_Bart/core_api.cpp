@@ -57,10 +57,10 @@ void CoreAPI::SetTarget( GLTexture* target, const uint spp )
 	core->SetTarget( target /* ignore spp parameter */ );
 }
 
-void CoreAPI::Render( const ViewPyramid& view, const Convergence converge, const float brightness, const float contrast )
+void CoreAPI::Render( const ViewPyramid& view, const Convergence converge )
 {
 	// forward the render request to the Render method in rendercore.cpp
-	core->Render( view, converge, brightness, contrast );
+	core->Render( view, converge );
 }
 
 void CoreAPI::Shutdown()
@@ -88,6 +88,17 @@ void CoreAPI::SetGeometry( const int meshIdx, const float4* vertexData, const in
 void CoreAPI::SetInstance( const int instanceIdx, const int modelIdx, const mat4& transform )
 {
 	// core->SetInstance( instanceIdx, modelIdx, transform ); // TODO; we will just render the meshes for now.
+}
+
+void CoreAPI::SetSkyData(const float3* pixels, const uint width, const uint height) {
+	core->SetSkyData(pixels, width, height);
+}
+
+void CoreAPI::SetLights(const CoreLightTri* areaLights, const int areaLightCount,
+	const CorePointLight* pointLights, const int pointLightCount,
+	const CoreSpotLight* spotLights, const int spotLightCount,
+	const CoreDirectionalLight* directionalLights, const int directionalLightCount) {
+	core->SetLights( areaLights, areaLightCount, pointLights, pointLightCount, spotLights, spotLightCount, directionalLights, directionalLightCount );
 }
 
 // EOF

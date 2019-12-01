@@ -25,6 +25,7 @@ bool Ray::IntersectsTriangle(const CoreTri& triangle, float& t) {
 	if (u < 0.0 || u > 1.0)
 		return false;
 	q = cross(s, edge1);
+
 	v = f * dot(D, q);
 	if (v < 0.0 || u + v > 1.0)
 		return false;
@@ -37,6 +38,42 @@ bool Ray::IntersectsTriangle(const CoreTri& triangle, float& t) {
 	}
 	else // This means that there is a line intersection but not a ray intersection.
 		return false;
+}
+
+uint RayTracer::Color(float3 O, float3 D, uint depth) {
+	uint d = depth - 1;
+	Ray ray = Ray(O, D);
+
+	float smallest_t = FLT_MAX;
+	uint color = 0;
+
+	for (Mesh& mesh : scene.meshes) for (int i = 0; i < mesh.vcount / 3; i++)
+	{
+		float t;
+		if (ray.IntersectsTriangle(mesh.triangles[i], t) && t < smallest_t) {
+			smallest_t = t;
+			color = scene.matList[mesh.triangles[i].material]->diffuse;
+		}
+	}
+
+	if (d <= 0) {
+		// Point lights
+		for (int i = 0; i < scene.pointLights.size(); i++) {
+			float3 position = ray.point(smallest_t);
+			float3 direction = scene.pointLights[i]->position - position;
+			Ray shadow_ray = Ray(ray.point(smallest_t), direction);
+
+			float t_light = length(fabs(direction));
+			float t;
+			for (Mesh& mesh : scene.meshes) for (int i = 0; i < mesh.vcount / 3; i++) {
+				if (shadow_ray.IntersectsTriangle(mesh.triangles[i], t) && t < t_light) {
+					return 0;
+				}
+			}
+		}
+	}
+
+	return color;
 }
 
 Scene::~Scene()

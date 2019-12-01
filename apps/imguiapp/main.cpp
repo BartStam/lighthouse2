@@ -46,38 +46,39 @@ void PrepareScene()
 
 	// Floor
 	int floorMat = renderer->AddMaterial( make_float3( 0.5f, 0.5f, 0.6f ) );
-	int floorQuad = renderer->AddQuad( make_float3( 0, 1, 0 ), make_float3( 0, -1.5f, 0 ), 40, 40, floorMat );
+	int floorQuad = renderer->AddQuad( make_float3( 0, 1, 0 ), make_float3( 0, -1.0f, 0 ), 40, 40, floorMat );
 	renderer->AddInstance( floorQuad );
+	renderer->AddPointLight(make_float3(2, 2, 2), make_float3(1, 1, 1));
 
-#if 0
-	// mushrooms
-	materialFile = string( "data/woodville/wood_materials.xml" );
-	renderer->AddScene( "PUP_Woodville.gltf", "data/woodville/", mat4::Scale( 2 ) * mat4::Translate( 0, 0, 0 ) );
-	int rootNode = renderer->FindNode( "RootNode (gltf orientation matrix)" );
-	renderer->SetNodeTransform( rootNode, mat4::RotateX( -PI / 2 ) );
-	animPaused = true;
-#else
-	// classic scene
-	materialFile = string( "data/pica/pica_materials.xml" );
-	renderer->AddScene( "scene.gltf", "data/pica/", mat4::Translate( 0, -10.2f, 0 ) );
-	int rootNode = renderer->FindNode( "RootNode (gltf orientation matrix)" );
-	renderer->SetNodeTransform( rootNode, mat4::RotateX( -PI / 2 ) );
-#endif
-#if 1
-	// overhead light, use regular PT
-	int lightMat = renderer->AddMaterial( make_float3( 50, 50, 45 ) );
-	int lightQuad = renderer->AddQuad( make_float3( 0, -1, 0 ), make_float3( 0, 26.0f, 0 ), 6.9f, 6.9f, lightMat );
-#else
-	// difficult light; use BDPT
-	int lightMat = renderer->AddMaterial( make_float3( 500, 500, 400 ) );
-	int lightQuad = renderer->AddQuad( make_float3( 0.15188693, -0.32204545, 0.93446094 ), make_float3( -12.938412, -5.0068984, -25.725601 ), 1.9f, 1.9f, lightMat );
-#endif
-	int lightInst = renderer->AddInstance( lightQuad );
-	// optional animated models
-	// renderer->AddScene( "CesiumMan.glb", "data/", mat4::Translate( 0, -2, -9 ) );
-	// renderer->AddScene( "project_polly.glb", "data/", mat4::Translate( 4.5f, -5.45f, -5.2f ) * mat4::Scale( 2 ) );
-	// load changed materials
-	renderer->DeserializeMaterials( materialFile.c_str() );
+//#if 0
+//	// mushrooms
+//	materialFile = string( "data/woodville/wood_materials.xml" );
+//	renderer->AddScene( "PUP_Woodville.gltf", "data/woodville/", mat4::Scale( 2 ) * mat4::Translate( 0, 0, 0 ) );
+//	int rootNode = renderer->FindNode( "RootNode (gltf orientation matrix)" );
+//	renderer->SetNodeTransform( rootNode, mat4::RotateX( -PI / 2 ) );
+//	animPaused = true;
+//#else
+//	// classic scene
+//	materialFile = string( "data/pica/pica_materials.xml" );
+//	renderer->AddScene( "scene.gltf", "data/pica/", mat4::Translate( 0, -10.2f, 0 ) );
+//	int rootNode = renderer->FindNode( "RootNode (gltf orientation matrix)" );
+//	renderer->SetNodeTransform( rootNode, mat4::RotateX( -PI / 2 ) );
+//#endif
+//#if 1
+//	// overhead light, use regular PT
+//	int lightMat = renderer->AddMaterial( make_float3( 50, 50, 45 ) );
+//	int lightQuad = renderer->AddQuad( make_float3( 0, -1, 0 ), make_float3( 0, 26.0f, 0 ), 6.9f, 6.9f, lightMat );
+//#else
+//	// difficult light; use BDPT
+//	int lightMat = renderer->AddMaterial( make_float3( 500, 500, 400 ) );
+//	int lightQuad = renderer->AddQuad( make_float3( 0.15188693, -0.32204545, 0.93446094 ), make_float3( -12.938412, -5.0068984, -25.725601 ), 1.9f, 1.9f, lightMat );
+//#endif
+//	int lightInst = renderer->AddInstance( lightQuad );
+//	// optional animated models
+//	// renderer->AddScene( "CesiumMan.glb", "data/", mat4::Translate( 0, -2, -9 ) );
+//	// renderer->AddScene( "project_polly.glb", "data/", mat4::Translate( 4.5f, -5.45f, -5.2f ) * mat4::Scale( 2 ) );
+//	// load changed materials
+//	renderer->DeserializeMaterials( materialFile.c_str() );
 }
 
 //  +-----------------------------------------------------------------------------+

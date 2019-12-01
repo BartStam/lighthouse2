@@ -55,7 +55,7 @@ void RenderCore::SetGeometry( const int meshIdx, const float4* vertexData, const
 	// copy the supplied 'fat triangles'
 	newMesh.triangles = new CoreTri[vertexCount / 3];
 	memcpy( newMesh.triangles, triangleData, (vertexCount / 3) * sizeof( CoreTri ) );
-	meshes.push_back( newMesh );
+	raytracer.scene.meshes.push_back( newMesh );
 }
 
 void RenderCore::SetTextures(const CoreTexDesc* tex, const int textureCount) {
@@ -81,11 +81,40 @@ void RenderCore::SetMaterials(CoreMaterial* mat, const CoreMaterialEx* matEx, co
 	}
 }
 
+void RenderCore::SetLights(const CoreLightTri* areaLights, const int areaLightCount,
+	const CorePointLight* pointLights, const int pointLightCount,
+	const CoreSpotLight* spotLights, const int spotLightCount,
+	const CoreDirectionalLight* directionalLights, const int directionalLightCount) {
+	// Add point lights to scene
+	for (int i = 0; i < pointLightCount; i++) {
+		PointLight* l;
+		float3 pos = pointLights[i].position;
+		float3 rad = pointLights[i].radiance;
+		raytracer.scene.pointLights.push_back(l = new PointLight(pos, rad));
+	}
+	
+	cout << "\nSetLights called." << endl;
+	for (int i = 0; i < raytracer.scene.pointLights.size(); i++) {
+		cout << "  Point light " << i << endl;
+		cout << "    Position: " << raytracer.scene.pointLights[i]->position.x << ", " << raytracer.scene.pointLights[i]->position.y << ", " << raytracer.scene.pointLights[i]->position.z << endl;
+		cout << "    Radiance: " << raytracer.scene.pointLights[i]->radiance.x << ", " << raytracer.scene.pointLights[i]->radiance.y << ", " << raytracer.scene.pointLights[i]->radiance.z << endl;
+	}
+}
+
+void RenderCore::SetSkyData(const float3* pixels, const uint width, const uint height) {
+	raytracer.scene.skyDome.clear();
+	raytracer.scene.skyDome.resize(width * height);
+	memcpy(&raytracer.scene.skyDome[0], pixels, sizeof(float3) * width * height);
+
+	raytracer.scene.skyWidth = width;
+	raytracer.scene.skyHeight = height;
+}
+
 //  +-----------------------------------------------------------------------------+
 //  |  RenderCore::Render                                                         |
 //  |  Produce one image.                                                   LH2'19|
 //  +-----------------------------------------------------------------------------+
-void RenderCore::Render( const ViewPyramid& view, const Convergence converge, const float brightness, const float contrast )
+void RenderCore::Render( const ViewPyramid& view, const Convergence converge )
 {
 	screen->Clear();
 
@@ -101,30 +130,11 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge, co
 			float3 sy = y * dy * (view.p3 - view.p1);		// Screen y
 			float3 P = view.p1 + sx + sy;					// Point on screen
 			float3 D = P - view.pos;						// Ray direction
-			Ray ray = Ray(view.pos, D);
-
-			float smallest_t = FLT_MAX;
-			uint color;
-
-			for (Mesh& mesh : meshes) for (int i = 0; i < mesh.vcount / 3; i++)
-			{
-				float t;
-				if (ray.IntersectsTriangle(mesh.triangles[i], t) && t < smallest_t) {
-					smallest_t = t;
-					color = raytracer.scene.matList[mesh.triangles[i].material]->diffuse;
-					screen->Plot(x, y, color);
-				}
-			}
+			uint color = raytracer.Color(view.pos, D, 1);
+			screen->Plot(x, y, color);
 		}
 	}
 
-	//for( Mesh& mesh : meshes ) for( int i = 0; i < mesh.vcount; i++ )
-	//{
-	//	// convert a vertex position to a screen coordinate
-	//	int screenx = mesh.vertices[i].x / 80 * (float)screen->width + screen->width / 2;
-	//	int screeny = mesh.vertices[i].z / 80 * (float)screen->height + screen->height / 2;
-	//	screen->Plot( screenx, screeny, 0xffffff /* white */ );
-	//}
 	// copy pixel buffer to OpenGL render target texture
 	glBindTexture(GL_TEXTURE_2D, targetTextureID);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, screen->width, screen->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, screen->pixels);

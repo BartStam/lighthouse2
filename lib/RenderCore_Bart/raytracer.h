@@ -19,13 +19,30 @@ public:
 	uint diffuse = 0xffffffff;
 };
 
+class PointLight
+{
+public:
+	PointLight(const float3 pos, const float3 rad) {
+		radiance = rad;
+		position = pos;
+	}
+	float3 radiance;
+	float3 position;
+};
+
 class Scene
 {
 public:
 	Scene() = default;
 	~Scene();
 
+	vector<float3> skyDome;
+	uint skyWidth;
+	uint skyHeight;
+
 	vector<Material*> matList;
+	vector<PointLight*> pointLights;
+	vector<Mesh> meshes;
 };
 
 class Ray
@@ -47,6 +64,7 @@ class RayTracer
 {
 public:
 	RayTracer() = default;
+	uint Color(float3 O, float3 D, uint depth);
 	static Scene scene;
 };
 
