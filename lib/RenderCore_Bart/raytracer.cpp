@@ -1,4 +1,5 @@
 #include "core_settings.h"
+#include <iostream>
 
 uint ScaleColor(uint c, int scale)
 {
@@ -56,6 +57,7 @@ uint RayTracer::Color(float3 O, float3 D, uint depth) {
 		}
 	}
 
+	// Reached maximum depth, do lighting
 	if (d <= 0) {
 		// Point lights
 		for (int i = 0; i < scene.pointLights.size(); i++) {
@@ -71,6 +73,19 @@ uint RayTracer::Color(float3 O, float3 D, uint depth) {
 				}
 			}
 		}
+	}
+
+	// The ray hit the skydome
+	if (smallest_t == FLT_MAX) {
+		float3 Dn = normalize(D);
+		float u = 1 + atan2(Dn.x, -Dn.z) / PI;
+		float v = acos(Dn.y) / PI;
+
+		unsigned long long width = round(u * scene.skyHeight);
+		unsigned long long height = round(v * scene.skyHeight);
+
+		float3 color = scene.skyDome[min(height * scene.skyHeight * 2 + width, scene.skyDome.size() - 1)];
+		return ((int)(color.z * 255.0f) << 16) + ((int)(color.y * 255.0f) << 8) + (int)(color.x * 255.0f);
 	}
 
 	return color;

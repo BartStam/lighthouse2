@@ -81,10 +81,8 @@ void RenderCore::SetMaterials(CoreMaterial* mat, const CoreMaterialEx* matEx, co
 	}
 }
 
-void RenderCore::SetLights(const CoreLightTri* areaLights, const int areaLightCount,
-	const CorePointLight* pointLights, const int pointLightCount,
-	const CoreSpotLight* spotLights, const int spotLightCount,
-	const CoreDirectionalLight* directionalLights, const int directionalLightCount) {
+void RenderCore::SetLights(const CoreLightTri* areaLights, const int areaLightCount, const CorePointLight* pointLights, const int pointLightCount,
+	const CoreSpotLight* spotLights, const int spotLightCount, const CoreDirectionalLight* directionalLights, const int directionalLightCount) {
 	// Add point lights to scene
 	for (int i = 0; i < pointLightCount; i++) {
 		PointLight* l;
@@ -102,6 +100,8 @@ void RenderCore::SetLights(const CoreLightTri* areaLights, const int areaLightCo
 }
 
 void RenderCore::SetSkyData(const float3* pixels, const uint width, const uint height) {
+	assert(width == 2 * height);
+
 	raytracer.scene.skyDome.clear();
 	raytracer.scene.skyDome.resize(width * height);
 	memcpy(&raytracer.scene.skyDome[0], pixels, sizeof(float3) * width * height);
