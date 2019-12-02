@@ -40,12 +40,12 @@ bool Ray::IntersectsTriangle(const CoreTri& triangle, float& t) {
 		return false;
 }
 
-uint RayTracer::Color(float3 O, float3 D, uint depth) {
+float3 RayTracer::Color(float3 O, float3 D, uint depth) {
 	uint d = depth - 1;
 	Ray ray = Ray(O, D);
 
 	float smallest_t = FLT_MAX;
-	uint color = 0;
+	float3 color = make_float3(0, 0, 0);
 
 	for (Mesh& mesh : scene.meshes) for (int i = 0; i < mesh.vcount / 3; i++)
 	{
@@ -57,22 +57,7 @@ uint RayTracer::Color(float3 O, float3 D, uint depth) {
 	}
 
 	// Reached maximum depth, do lighting
-	if (d <= 0) {
-		// Point lights
-		for (int i = 0; i < scene.pointLights.size(); i++) {
-			float3 position = ray.point(smallest_t);
-			float3 direction = scene.pointLights[i]->position - position;
-			Ray shadow_ray = Ray(ray.point(smallest_t), direction);
-
-			float t_light = length(fabs(direction));
-			float t;
-			for (Mesh& mesh : scene.meshes) for (int i = 0; i < mesh.vcount / 3; i++) {
-				if (shadow_ray.IntersectsTriangle(mesh.triangles[i], t) && t < t_light) {
-					return 0;
-				}
-			}
-		}
-	}
+	if (d <= 0) { color = Illumination(color, ray.point(smallest_t)); }
 
 	// The ray hit the skydome
 	if (smallest_t == FLT_MAX) {
@@ -83,8 +68,25 @@ uint RayTracer::Color(float3 O, float3 D, uint depth) {
 		unsigned long long width = round(u * scene.skyHeight);
 		unsigned long long height = round(v * scene.skyHeight);
 
-		float3 color = scene.skyDome[min(height * scene.skyHeight * 2 + width, scene.skyDome.size() - 1)];
-		return ((int)(color.z * 255.0f) << 16) + ((int)(color.y * 255.0f) << 8) + (int)(color.x * 255.0f);
+		return scene.skyDome[min(height * scene.skyHeight * 2 + width, scene.skyDome.size() - 1)];
+	}
+
+	return color;
+}
+
+float3 RayTracer::Illumination(float3 color, float3 O) {
+	// Point lights
+	for (int i = 0; i < scene.pointLights.size(); i++) {
+		float3 direction = scene.pointLights[i]->position - O;
+		Ray shadow_ray = Ray(O, direction);
+
+		float t_light = length(fabs(direction));
+		float t;
+		for (Mesh& mesh : scene.meshes) for (int i = 0; i < mesh.vcount / 3; i++) {
+			if (shadow_ray.IntersectsTriangle(mesh.triangles[i], t) && t < t_light) {
+				return make_float3(0, 0, 0);
+			}
+		}
 	}
 
 	return color;

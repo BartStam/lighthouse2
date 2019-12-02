@@ -72,11 +72,12 @@ void RenderCore::SetMaterials(CoreMaterial* mat, const CoreMaterialEx* matEx, co
 		if (texID == -1)
 		{
 			float r = mat[i].diffuse_r, g = mat[i].diffuse_g, b = mat[i].diffuse_b;
-			m->diffuse = ((int)(b * 255.0f) << 16) + ((int)(g * 255.0f) << 8) + (int)(r * 255.0f);
+			m->diffuse = make_float3(r, g, b);
+			// m->diffuse = ((int)(b * 255.0f) << 16) + ((int)(g * 255.0f) << 8) + (int)(r * 255.0f);
 		}
 		else {
 			// TODO: textures, replacement code below
-			m->diffuse = 0xffffffff;
+			m->diffuse = make_float3(1, 1, 1);
 		}
 	}
 }
@@ -130,7 +131,9 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge )
 			float3 sy = y * dy * (view.p3 - view.p1);		// Screen y
 			float3 P = view.p1 + sx + sy;					// Point on screen
 			float3 D = P - view.pos;						// Ray direction
-			uint color = raytracer.Color(view.pos, D, 1);
+			float3 c = raytracer.Color(view.pos, D, 1);		// Color vector
+
+			uint color = ((int)(c.z * 255.0f) << 16) + ((int)(c.y * 255.0f) << 8) + (int)(c.x * 255.0f);
 			screen->Plot(x, y, color);
 		}
 	}

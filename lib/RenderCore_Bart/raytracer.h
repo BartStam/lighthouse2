@@ -15,8 +15,7 @@ class Material
 {
 public:
 	Material() = default;
-
-	uint diffuse = 0xffffffff;
+	float3 diffuse = make_float3(1, 1, 1);
 };
 
 class PointLight
@@ -64,7 +63,8 @@ class RayTracer
 {
 public:
 	RayTracer() = default;
-	uint Color(float3 O, float3 D, uint depth);
+	float3 Color(float3 O, float3 D, uint depth);
+	float3 Illumination(float3 color, float3 O);
 	static Scene scene;
 };
 
