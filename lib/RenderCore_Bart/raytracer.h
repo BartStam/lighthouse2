@@ -16,6 +16,9 @@ class Material
 public:
 	Material() = default;
 	float3 diffuse = make_float3(1, 1, 1);
+	float specularity = 0;
+	float transmission = 0;
+	float IOR = 1.52; // TODO: actually set the IOR correctly per material
 };
 
 class PointLight

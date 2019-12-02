@@ -58,12 +58,15 @@ void RenderCore::SetGeometry( const int meshIdx, const float4* vertexData, const
 	raytracer.scene.meshes.push_back( newMesh );
 }
 
+void RenderCore::SetInstance(const int instanceIdx, const int meshIdx, const mat4& matrix) {
+}
+
 void RenderCore::SetTextures(const CoreTexDesc* tex, const int textureCount) {
 	
 }
 
 void RenderCore::SetMaterials(CoreMaterial* mat, const CoreMaterialEx* matEx, const int materialCount) {
-	cout << "\nSetMaterials called." << endl;
+	cout << "\nSetMaterials" << endl;
 	for (int i = 0; i < materialCount; i++)
 	{
 		Material* m;
@@ -74,28 +77,17 @@ void RenderCore::SetMaterials(CoreMaterial* mat, const CoreMaterialEx* matEx, co
 		{
 			float r = mat[i].diffuse_r, g = mat[i].diffuse_g, b = mat[i].diffuse_b;
 			m->diffuse = make_float3(r, g, b);
-			// m->diffuse = ((int)(b * 255.0f) << 16) + ((int)(g * 255.0f) << 8) + (int)(r * 255.0f);
+			m->specularity = mat[i].metallic();		// Use metallic for now since specularity not supported in .gltf?
+			m->transmission = mat[i].roughness();	// Same for transmission
+
+			cout << "  Material " << i << endl;
+			cout << "    Specularity: " << m->specularity << endl;
+			cout << "    Transmission: " << m->transmission << endl;
+			
 		}
 		else {
 			// TODO: textures, replacement code below
-			m->diffuse = make_float3(1, 1, 1);
 		}
-
-		cout << "  Material " << i << endl;
-		cout << "    diffuse: " << mat[i].diffuse_r << ", " << mat[i].diffuse_g << ", " << mat[i].diffuse_b << endl;
-		cout << "    transmittance: " << mat[i].transmittance_r << ", " << mat[i].transmittance_g << ", " << mat[i].transmittance_b << endl;
-		cout << "    metallic: " << mat[i].metallic() << endl;
-		cout << "    subsurface: " << mat[i].subsurface() << endl;
-		cout << "    specular: " << mat[i].specular() << endl;
-		cout << "    roughness: " << mat[i].roughness() << endl;
-		cout << "    spectint: " << mat[i].spectint() << endl;
-		cout << "    anisotropic: " << mat[i].anisotropic() << endl;
-		cout << "    sheen: " << mat[i].sheen() << endl;
-		cout << "    sheentint: " << mat[i].sheentint() << endl;
-		cout << "    clearcoat: " << mat[i].clearcoat() << endl;
-		cout << "    clearcoatgloss: " << mat[i].clearcoatgloss() << endl;
-		cout << "    transmission: " << mat[i].transmission() << endl;
-		cout << "    eta: " << mat[i].eta() << endl;
 	}
 }
 
@@ -107,13 +99,6 @@ void RenderCore::SetLights(const CoreLightTri* areaLights, const int areaLightCo
 		float3 pos = pointLights[i].position;
 		float3 rad = pointLights[i].radiance;
 		raytracer.scene.pointLights.push_back(l = new PointLight(pos, rad));
-	}
-	
-	cout << "\nSetLights called." << endl;
-	for (int i = 0; i < raytracer.scene.pointLights.size(); i++) {
-		cout << "  Point light " << i << endl;
-		cout << "    Position: " << raytracer.scene.pointLights[i]->position.x << ", " << raytracer.scene.pointLights[i]->position.y << ", " << raytracer.scene.pointLights[i]->position.z << endl;
-		cout << "    Radiance: " << raytracer.scene.pointLights[i]->radiance.x << ", " << raytracer.scene.pointLights[i]->radiance.y << ", " << raytracer.scene.pointLights[i]->radiance.z << endl;
 	}
 }
 

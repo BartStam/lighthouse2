@@ -27,6 +27,7 @@ public:
 	void SetGeometry( const int meshIdx, const float4* vertexData, const int vertexCount, const int triangleCount, const CoreTri* triangles, const uint* alphaFlags = 0 );
 	void SetTextures(const CoreTexDesc* tex, const int textureCount);
 	void SetMaterials(CoreMaterial* mat, const CoreMaterialEx* matEx, const int materialCount);
+	void SetInstance(const int instanceIdx, const int meshIdx, const mat4& matrix);
 	void SetLights(const CoreLightTri* areaLights, const int areaLightCount,
 		const CorePointLight* pointLights, const int pointLightCount,
 		const CoreSpotLight* spotLights, const int spotLightCount,

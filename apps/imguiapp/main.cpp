@@ -40,17 +40,21 @@ static CoreStats coreStats;
 //  +-----------------------------------------------------------------------------+
 void PrepareScene()
 {
-	// initialize scene
-	renderer->AddScene("Box0.gltf", "data/simple/", mat4::Scale(1.0f) * mat4::Translate(0, 0, 0));
-	animPaused = true;
-
+	// Scene
+	// renderer->AddScene("Box0.gltf", "data/simple/", mat4::Scale(1.0f) * mat4::Translate(0, 0, 0));
+	renderer->AddScene("two_cubes.gltf", "data/cubes/", mat4::Scale(1.0f) * mat4::Translate(0, 0, 0));
+	
 	// Floor
 	int floorMat = renderer->AddMaterial( make_float3( 0.5f, 0.5f, 0.6f ) );
 	int floorQuad = renderer->AddQuad( make_float3( 0, 1, 0 ), make_float3( 0, -1.0f, 0 ), 40, 40, floorMat );
 	renderer->AddInstance( floorQuad );
-	renderer->AddPointLight(make_float3(2, 2, 2), make_float3(1, 4, 8));
-	renderer->AddPointLight(make_float3(-1, 3, -2), make_float3(2, 8, 1));
-	renderer->AddPointLight(make_float3(-1, 4, 4), make_float3(50, 50, 50));
+
+	// Lights
+	renderer->AddPointLight(make_float3(4, 6, 4), make_float3(4, 8, 12));
+	renderer->AddPointLight(make_float3(-1, 6, -2), make_float3(2, 8, 1));
+	renderer->AddPointLight(make_float3(-5, 6, 4), make_float3(4, 4, 4));
+
+	animPaused = true;
 
 //#if 0
 //	// mushrooms
