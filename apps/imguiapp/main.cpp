@@ -48,7 +48,9 @@ void PrepareScene()
 	int floorMat = renderer->AddMaterial( make_float3( 0.5f, 0.5f, 0.6f ) );
 	int floorQuad = renderer->AddQuad( make_float3( 0, 1, 0 ), make_float3( 0, -1.0f, 0 ), 40, 40, floorMat );
 	renderer->AddInstance( floorQuad );
-	renderer->AddPointLight(make_float3(2, 2, 2), make_float3(1, 1, 1));
+	renderer->AddPointLight(make_float3(2, 2, 2), make_float3(1, 4, 8));
+	renderer->AddPointLight(make_float3(-1, 3, -2), make_float3(2, 8, 1));
+	renderer->AddPointLight(make_float3(-1, 4, 4), make_float3(6, 1, 3));
 
 //#if 0
 //	// mushrooms

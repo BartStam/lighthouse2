@@ -75,21 +75,29 @@ float3 RayTracer::Color(float3 O, float3 D, uint depth) {
 }
 
 float3 RayTracer::Illumination(float3 color, float3 O) {
+	float3 light_color = make_float3(0, 0, 0);
+
 	// Point lights
 	for (int i = 0; i < scene.pointLights.size(); i++) {
 		float3 direction = scene.pointLights[i]->position - O;
 		Ray shadow_ray = Ray(O, direction);
 
 		float t_light = length(fabs(direction));
-		float t;
+		float t = FLT_MAX;
 		for (Mesh& mesh : scene.meshes) for (int i = 0; i < mesh.vcount / 3; i++) {
 			if (shadow_ray.IntersectsTriangle(mesh.triangles[i], t) && t < t_light) {
-				return make_float3(0, 0, 0);
+				break;
 			}
 		}
+
+		// If the triangle is illuminated by this light
+		if (t_light <= t) {
+			light_color += scene.pointLights[i]->radiance / (t_light * t_light);
+		}
+		
 	}
 
-	return color;
+	return clamp(color * light_color, 0, 1);
 }
 
 Scene::~Scene()
