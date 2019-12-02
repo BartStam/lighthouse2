@@ -45,14 +45,14 @@ void PrepareScene()
 	renderer->AddScene("two_cubes.gltf", "data/cubes/", mat4::Scale(1.0f) * mat4::Translate(0, 0, 0));
 	
 	// Floor
-	int floorMat = renderer->AddMaterial( make_float3( 0.5f, 0.5f, 0.6f ) );
-	int floorQuad = renderer->AddQuad( make_float3( 0, 1, 0 ), make_float3( 0, -1.0f, 0 ), 40, 40, floorMat );
-	renderer->AddInstance( floorQuad );
+	//int floorMat = renderer->AddMaterial( make_float3( 0.5f, 0.5f, 0.6f ) );
+	//int floorQuad = renderer->AddQuad( make_float3( 0, 1, 0 ), make_float3( 0, -1.0f, 0 ), 40, 40, floorMat );
+	//renderer->AddInstance( floorQuad );
 
 	// Lights
-	renderer->AddPointLight(make_float3(4, 6, 4), make_float3(4, 8, 12));
-	renderer->AddPointLight(make_float3(-1, 6, -2), make_float3(2, 8, 1));
-	renderer->AddPointLight(make_float3(-5, 6, 4), make_float3(4, 4, 4));
+	renderer->AddPointLight(make_float3(-2, 3, -8), make_float3(12, 4, 12));
+	renderer->AddPointLight(make_float3(-6, 8, -2), make_float3(8, 16, 8));
+	renderer->AddPointLight(make_float3(6, 4, 6), make_float3(4, 4, 4));
 
 	animPaused = true;
 

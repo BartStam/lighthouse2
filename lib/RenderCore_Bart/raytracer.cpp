@@ -41,25 +41,24 @@ bool Ray::IntersectsTriangle(const CoreTri& triangle, float& t) {
 }
 
 float3 RayTracer::Color(float3 O, float3 D, uint depth) {
-	uint d = depth - 1;
-	Ray ray = Ray(O, D);
-
-	float smallest_t = FLT_MAX;
 	float3 color = make_float3(0, 0, 0);
+	if (depth <= 0) { return color; }
+	D = normalize(D);
+
+	Ray ray = Ray(O, D);
+	CoreTri* triangle;
+	float smallest_t = FLT_MAX;
 
 	for (Mesh& mesh : scene.meshes) for (int i = 0; i < mesh.vcount / 3; i++)
 	{
 		float t;
 		if (ray.IntersectsTriangle(mesh.triangles[i], t) && t < smallest_t) {
 			smallest_t = t;
-			color = scene.matList[mesh.triangles[i].material]->diffuse;
+			triangle = &mesh.triangles[i];
 		}
 	}
 
-	// Reached maximum depth, do lighting
-	if (d <= 0) { color = Illumination(color, ray.point(smallest_t)); }
-
-	// The ray hit the skydome
+	// The ray hit the skydome, we don't do lighting
 	if (smallest_t == FLT_MAX) {
 		float3 Dn = normalize(D);
 		float u = 1 + atan2(Dn.x, -Dn.z) / PI;
@@ -70,6 +69,16 @@ float3 RayTracer::Color(float3 O, float3 D, uint depth) {
 
 		return scene.skyDome[min(height * scene.skyHeight * 2 + width, scene.skyDome.size() - 1)];
 	}
+
+	float specularity = scene.matList[triangle->material]->specularity;
+	float transmission = scene.matList[triangle->material]->transmission;
+	if (specularity + transmission > 1) { specularity /= specularity + transmission; transmission /= specularity + transmission; }
+	float diffusion = 1.0f - specularity - transmission;
+	
+	float3 N = normalize(make_float3(triangle->Nx, triangle->Ny, triangle->Nz));
+
+	if (specularity > 0.01f) { color += specularity * Color(ray.point(smallest_t), D - 2 * (D * N) * N, depth - 1); }
+	if (diffusion > 0.01f) { color += diffusion * Illumination(scene.matList[triangle->material]->diffuse, ray.point(smallest_t)); }
 
 	return color;
 }
@@ -94,7 +103,6 @@ float3 RayTracer::Illumination(float3 color, float3 O) {
 		if (t_light <= t) {
 			light_color += scene.pointLights[i]->radiance / (t_light * t_light);
 		}
-		
 	}
 
 	return clamp(color * light_color, 0, 1);

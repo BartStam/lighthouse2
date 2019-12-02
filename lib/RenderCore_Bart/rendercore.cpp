@@ -132,8 +132,8 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge )
 			float3 sx = x * dx * (view.p2 - view.p1);		// Screen x
 			float3 sy = y * dy * (view.p3 - view.p1);		// Screen y
 			float3 P = view.p1 + sx + sy;					// Point on screen
-			float3 D = P - view.pos;						// Ray direction
-			float3 c = raytracer.Color(view.pos, D, 1);		// Color vector
+			float3 D = normalize(P - view.pos);				// Ray direction
+			float3 c = raytracer.Color(view.pos, D, 2);		// Color vector
 
 			uint color = ((int)(c.z * 255.0f) << 16) + ((int)(c.y * 255.0f) << 8) + (int)(c.x * 255.0f);
 			screen->Plot(x, y, color);

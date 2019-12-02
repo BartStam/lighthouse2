@@ -9,7 +9,8 @@
             "name" : "Scene",
             "nodes" : [
                 0,
-                1
+                1,
+                2
             ]
         }
     ],
@@ -21,6 +22,10 @@
         {
             "mesh" : 1,
             "name" : "Cube.001"
+        },
+        {
+            "mesh" : 2,
+            "name" : "Plane"
         }
     ],
     "materials" : [
@@ -49,7 +54,21 @@
                     1
                 ],
                 "metallicFactor" : 1,
-                "roughnessFactor" : 1
+                "roughnessFactor" : 0
+            }
+        },
+        {
+            "doubleSided" : true,
+            "name" : "Material.005",
+            "pbrMetallicRoughness" : {
+                "baseColorFactor" : [
+                    0.48689714074134827,
+                    0.48689714074134827,
+                    0.48689714074134827,
+                    1
+                ],
+                "metallicFactor" : 0,
+                "roughnessFactor" : 0
             }
         }
     ],
@@ -79,6 +98,20 @@
                     },
                     "indices" : 3,
                     "material" : 1
+                }
+            ]
+        },
+        {
+            "name" : "Plane",
+            "primitives" : [
+                {
+                    "attributes" : {
+                        "POSITION" : 7,
+                        "NORMAL" : 8,
+                        "TEXCOORD_0" : 9
+                    },
+                    "indices" : 10,
+                    "material" : 2
                 }
             ]
         }
@@ -145,6 +178,40 @@
             "componentType" : 5126,
             "count" : 24,
             "type" : "VEC2"
+        },
+        {
+            "bufferView" : 7,
+            "componentType" : 5126,
+            "count" : 4,
+            "max" : [
+                12.606216430664062,
+                0,
+                13.396142959594727
+            ],
+            "min" : [
+                -12.606216430664062,
+                0,
+                -13.396142959594727
+            ],
+            "type" : "VEC3"
+        },
+        {
+            "bufferView" : 8,
+            "componentType" : 5126,
+            "count" : 4,
+            "type" : "VEC3"
+        },
+        {
+            "bufferView" : 9,
+            "componentType" : 5126,
+            "count" : 4,
+            "type" : "VEC2"
+        },
+        {
+            "bufferView" : 10,
+            "componentType" : 5123,
+            "count" : 6,
+            "type" : "SCALAR"
         }
     ],
     "bufferViews" : [
@@ -182,11 +249,31 @@
             "buffer" : 0,
             "byteLength" : 192,
             "byteOffset" : 1416
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 48,
+            "byteOffset" : 1608
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 48,
+            "byteOffset" : 1656
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 32,
+            "byteOffset" : 1704
+        },
+        {
+            "buffer" : 0,
+            "byteLength" : 12,
+            "byteOffset" : 1736
         }
     ],
     "buffers" : [
         {
-            "byteLength" : 1608,
+            "byteLength" : 1748,
             "uri" : "two_cubes.bin"
         }
     ]
