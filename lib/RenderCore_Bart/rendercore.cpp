@@ -63,6 +63,7 @@ void RenderCore::SetTextures(const CoreTexDesc* tex, const int textureCount) {
 }
 
 void RenderCore::SetMaterials(CoreMaterial* mat, const CoreMaterialEx* matEx, const int materialCount) {
+	cout << "\nSetMaterials called." << endl;
 	for (int i = 0; i < materialCount; i++)
 	{
 		Material* m;
@@ -79,6 +80,22 @@ void RenderCore::SetMaterials(CoreMaterial* mat, const CoreMaterialEx* matEx, co
 			// TODO: textures, replacement code below
 			m->diffuse = make_float3(1, 1, 1);
 		}
+
+		cout << "  Material " << i << endl;
+		cout << "    diffuse: " << mat[i].diffuse_r << ", " << mat[i].diffuse_g << ", " << mat[i].diffuse_b << endl;
+		cout << "    transmittance: " << mat[i].transmittance_r << ", " << mat[i].transmittance_g << ", " << mat[i].transmittance_b << endl;
+		cout << "    metallic: " << mat[i].metallic() << endl;
+		cout << "    subsurface: " << mat[i].subsurface() << endl;
+		cout << "    specular: " << mat[i].specular() << endl;
+		cout << "    roughness: " << mat[i].roughness() << endl;
+		cout << "    spectint: " << mat[i].spectint() << endl;
+		cout << "    anisotropic: " << mat[i].anisotropic() << endl;
+		cout << "    sheen: " << mat[i].sheen() << endl;
+		cout << "    sheentint: " << mat[i].sheentint() << endl;
+		cout << "    clearcoat: " << mat[i].clearcoat() << endl;
+		cout << "    clearcoatgloss: " << mat[i].clearcoatgloss() << endl;
+		cout << "    transmission: " << mat[i].transmission() << endl;
+		cout << "    eta: " << mat[i].eta() << endl;
 	}
 }
 

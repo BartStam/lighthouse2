@@ -50,7 +50,7 @@ void PrepareScene()
 	renderer->AddInstance( floorQuad );
 	renderer->AddPointLight(make_float3(2, 2, 2), make_float3(1, 4, 8));
 	renderer->AddPointLight(make_float3(-1, 3, -2), make_float3(2, 8, 1));
-	renderer->AddPointLight(make_float3(-1, 4, 4), make_float3(6, 1, 3));
+	renderer->AddPointLight(make_float3(-1, 4, 4), make_float3(50, 50, 50));
 
 //#if 0
 //	// mushrooms
