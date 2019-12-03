@@ -6,7 +6,8 @@
     <contrast>0</contrast>
     <gamma>2.0450001</gamma>
     <aperture>0.0060000001</aperture>
-    <focalDistance>29.766941</focalDistance>
+    <distortion>0.5</distortion>
+    <focalDistance>34.603298</focalDistance>
     <clampValue>10</clampValue>
     <tonemapper>0</tonemapper>
 </camera>
