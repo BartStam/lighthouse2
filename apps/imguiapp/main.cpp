@@ -203,7 +203,7 @@ int main()
 		DrawQuad();
 		shader->Unbind();
 		// gui
-		ImGui_ImplOpenGL3_NewFrame();
+		/*ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 		ImGui::Begin( "Render statistics", 0 );
@@ -252,7 +252,7 @@ int main()
 		ImGui::SliderFloat( "eta (1/ior)", &currentMaterial.eta, 0.25f, 1.0f );
 		ImGui::End();
 		ImGui::Render();
-		ImGui_ImplOpenGL3_RenderDrawData( ImGui::GetDrawData() );
+		ImGui_ImplOpenGL3_RenderDrawData( ImGui::GetDrawData() );*/
 		// finalize
 		glfwSwapBuffers( window );
 		// terminate
