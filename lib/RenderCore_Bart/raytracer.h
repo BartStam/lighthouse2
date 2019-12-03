@@ -62,6 +62,19 @@ private:
 	float3 D;
 };
 
+class Accumulator {
+public:
+	Accumulator() = default;
+	void Rebuild(int width, int height);
+	float3 Pixel(int x, int y) { return frame[y * w + x] / frame_count; }
+	void addPixel(int x, int y, float3 pixel) { frame[y * w + x] += pixel; }
+	void Increment() { frame_count++; }
+private:
+	int w; // screen width
+	int frame_count;
+	vector<float3> frame;
+};
+
 class RayTracer
 {
 public:
@@ -69,6 +82,7 @@ public:
 	float3 Color(float3 O, float3 D, uint depth);
 	float3 Illumination(float3 color, float3 O);
 	static Scene scene;
+	Accumulator accumulator;
 };
 
 } // namespace lh2core

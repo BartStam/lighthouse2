@@ -24,7 +24,7 @@ using namespace lh2core;
 //  +-----------------------------------------------------------------------------+
 void RenderCore::Init()
 {
-	// initialize core
+	cout << "Init called." << endl;
 }
 
 //  +-----------------------------------------------------------------------------+
@@ -33,11 +33,14 @@ void RenderCore::Init()
 //  +-----------------------------------------------------------------------------+
 void RenderCore::SetTarget( GLTexture* target )
 {
+	cout << "SetTarget" << endl;
 	// synchronize OpenGL viewport
 	targetTextureID = target->ID;
 	if (screen != 0 && target->width == screen->width && target->height == screen->height) return; // nothing changed
 	delete screen;
 	screen = new Bitmap( target->width, target->height );
+
+	raytracer.accumulator.Rebuild(target->width, target->height);
 }
 
 //  +-----------------------------------------------------------------------------+
@@ -120,6 +123,7 @@ void RenderCore::SetSkyData(const float3* pixels, const uint width, const uint h
 void RenderCore::Render( const ViewPyramid& view, const Convergence converge )
 {
 	screen->Clear();
+	if (converge) { raytracer.accumulator.Rebuild(screen->width, screen->height); }
 
 	int nx = screen->width;
 	int ny = screen->height;
@@ -127,15 +131,19 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge )
 	float dx = 1.0f / (nx - 1);
 	float dy = 1.0f / (ny - 1);
 
+	raytracer.accumulator.Increment();
 	for (int y = 0; y < ny; y++) {
 		for (int x = 0; x < nx; x++) {
-			float3 sx = x * dx * (view.p2 - view.p1);		// Screen x
-			float3 sy = y * dy * (view.p3 - view.p1);		// Screen y
-			float3 P = view.p1 + sx + sy;					// Point on screen
-			float3 D = normalize(P - view.pos);				// Ray direction
-			float3 c = raytracer.Color(view.pos, D, 2);		// Color vector
+			float rx = Rand(dx), ry = Rand(dy);
+			float3 sx = (x * dx + rx) * (view.p2 - view.p1);	// Screen x
+			float3 sy = (y * dy + dy) * (view.p3 - view.p1);	// Screen y
+			float3 P = view.p1 + sx + sy;						// Point on screen
+			float3 D = normalize(P - view.pos);					// Ray direction
+			float3 c = raytracer.Color(view.pos, D, 2);			// Color vector
+			raytracer.accumulator.addPixel(x, y, c);
 
-			uint color = ((int)(c.z * 255.0f) << 16) + ((int)(c.y * 255.0f) << 8) + (int)(c.x * 255.0f);
+			float3 cv = raytracer.accumulator.Pixel(x, y);
+			uint color = ((int)(cv.z * 255.0f) << 16) + ((int)(cv.y * 255.0f) << 8) + (int)(cv.x * 255.0f);
 			screen->Plot(x, y, color);
 		}
 	}

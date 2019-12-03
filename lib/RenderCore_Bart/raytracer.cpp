@@ -108,6 +108,13 @@ float3 RayTracer::Illumination(float3 color, float3 O) {
 	return clamp(color * light_color, 0, 1);
 }
 
+void Accumulator::Rebuild(int width, int height) {
+	frame.clear();
+	frame.resize(width * height, make_float3(0, 0, 0));
+	frame_count = 0;
+	w = width;
+}
+
 Scene::~Scene()
 {
 	for (auto mat : matList) delete mat;
