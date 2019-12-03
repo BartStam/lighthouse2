@@ -75,9 +75,9 @@ void RenderCore::SetMaterials(CoreMaterial* mat, const CoreMaterialEx* matEx, co
 		Material* m;
 		if (i < raytracer.scene.matList.size()) m = raytracer.scene.matList[i];
 		else raytracer.scene.matList.push_back(m = new Material());
+		
 		int texID = matEx[i].texture[TEXTURE0];
-		if (texID == -1)
-		{
+		if (texID == -1) {
 			float r = mat[i].diffuse_r, g = mat[i].diffuse_g, b = mat[i].diffuse_b;
 			m->diffuse = make_float3(r, g, b);
 			m->specularity = mat[i].metallic();		// Use metallic for now since specularity not supported in .gltf?
@@ -92,12 +92,34 @@ void RenderCore::SetMaterials(CoreMaterial* mat, const CoreMaterialEx* matEx, co
 			// TODO: textures, replacement code below
 		}
 	}
+	cout << "Total count: " << raytracer.scene.matList.size() << endl;
 }
 
 void RenderCore::SetLights(const CoreLightTri* areaLights, const int areaLightCount, const CorePointLight* pointLights, const int pointLightCount,
 	const CoreSpotLight* spotLights, const int spotLightCount, const CoreDirectionalLight* directionalLights, const int directionalLightCount) {
+	cout << "\nSetLights" << endl;
+	cout << "  areaLights:        " << areaLightCount << endl;
+	cout << "  pointLights:       " << pointLightCount << endl;
+	cout << "  spotLights:        " << spotLightCount << endl;
+	cout << "  directionalLights: " << directionalLightCount << endl;
+
+	// Add area lights to scene
+	for (int i = 0; i < areaLightCount; i++) {
+		if (raytracer.scene.areaLights.size() > i) { continue; }
+		AreaLight* l;
+		float3 v0 = areaLights[i].vertex0;
+		float3 v1 = areaLights[i].vertex1;
+		float3 v2 = areaLights[i].vertex2;
+		float3 N = areaLights[i].N;
+		float3 c = areaLights[i].centre;
+		float A = areaLights[i].area;
+		float3 rad = areaLights[i].radiance;
+		raytracer.scene.areaLights.push_back(l = new AreaLight(v0, v1, v2, N, c, A, rad));
+	}
+
 	// Add point lights to scene
 	for (int i = 0; i < pointLightCount; i++) {
+		if (raytracer.scene.pointLights.size() > i) { continue; }
 		PointLight* l;
 		float3 pos = pointLights[i].position;
 		float3 rad = pointLights[i].radiance;

@@ -54,6 +54,10 @@ void PrepareScene()
 	renderer->AddPointLight(make_float3(-6, 8, -2), make_float3(8, 16, 8));
 	renderer->AddPointLight(make_float3(6, 4, 6), make_float3(4, 4, 4));
 
+	int lightMat = renderer->AddMaterial(make_float3(50, 50, 45));
+	int lightQuad = renderer->AddQuad(make_float3(0, -1, 0), make_float3(0, 26.0f, 0), 6.9f, 6.9f, lightMat);
+	int lightInst = renderer->AddInstance(lightQuad);
+
 	animPaused = true;
 
 //#if 0
@@ -71,9 +75,9 @@ void PrepareScene()
 //	renderer->SetNodeTransform( rootNode, mat4::RotateX( -PI / 2 ) );
 //#endif
 //#if 1
-//	// overhead light, use regular PT
-//	int lightMat = renderer->AddMaterial( make_float3( 50, 50, 45 ) );
-//	int lightQuad = renderer->AddQuad( make_float3( 0, -1, 0 ), make_float3( 0, 26.0f, 0 ), 6.9f, 6.9f, lightMat );
+	//// overhead light, use regular PT
+	//int lightMat = renderer->AddMaterial( make_float3( 50, 50, 45 ) );
+	//int lightQuad = renderer->AddQuad( make_float3( 0, -1, 0 ), make_float3( 0, 26.0f, 0 ), 6.9f, 6.9f, lightMat );
 //#else
 //	// difficult light; use BDPT
 //	int lightMat = renderer->AddMaterial( make_float3( 500, 500, 400 ) );

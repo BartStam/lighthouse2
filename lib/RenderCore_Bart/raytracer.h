@@ -3,16 +3,14 @@
 namespace lh2core
 {
 
-class Mesh
-{
+class Mesh {
 public:
 	float4* vertices = 0;
 	int vcount = 0;
 	CoreTri* triangles = 0;
 };
 
-class Material
-{
+class Material {
 public:
 	Material() = default;
 	float3 diffuse = make_float3(1, 1, 1);
@@ -21,19 +19,37 @@ public:
 	float IOR = 1.52; // TODO: actually set the IOR correctly per material
 };
 
-class PointLight
-{
+class PointLight {
 public:
 	PointLight(const float3 pos, const float3 rad) {
-		radiance = rad;
 		position = pos;
+		radiance = rad;
 	}
-	float3 radiance;
 	float3 position;
+	float3 radiance;
 };
 
-class Scene
-{
+class AreaLight {
+public:
+	AreaLight(const float3 v0, const float3 v1, const float3 v2, float3 N, float3 c, float A, float3 rad) {
+		vertex0 = v0;
+		vertex1 = v1;
+		vertex2 = v2;
+		normal = N;
+		center = c;
+		area = A;
+		radiance = rad;
+	}
+	float3 vertex0;
+	float3 vertex1;
+	float3 vertex2;
+	float3 normal;
+	float3 center;
+	float area;
+	float3 radiance;
+};
+
+class Scene {
 public:
 	Scene() = default;
 	~Scene();
@@ -43,12 +59,12 @@ public:
 	uint skyHeight;
 
 	vector<Material*> matList;
+	vector<AreaLight*> areaLights;
 	vector<PointLight*> pointLights;
 	vector<Mesh> meshes;
 };
 
-class Ray
-{
+class Ray {
 public:
 	Ray(const float3& o, const float3 d) { O = o; D = normalize(d); }
 	const float3 origin() { return O; }
