@@ -91,6 +91,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ai_debugger", "apps\ai_debu
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pathfinding", "lib\PathFinding\PathFinding.vcxproj", "{85133521-444D-4EEF-9FC6-435847A9CC16}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rendercore_bart", "lib\RenderCore_Bart\rendercore_bart.vcxproj", "{22533E4F-5B79-485F-AD9C-153E70942CB4}"
+	ProjectSection(ProjectDependencies) = postProject
+		{7940AFAE-A1F7-440C-823C-239F2C3BB023} = {7940AFAE-A1F7-440C-823C-239F2C3BB023}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -187,6 +192,12 @@ Global
 		{85133521-444D-4EEF-9FC6-435847A9CC16}.Release|x64.Build.0 = Release|x64
 		{85133521-444D-4EEF-9FC6-435847A9CC16}.Release|x86.ActiveCfg = Release|Win32
 		{85133521-444D-4EEF-9FC6-435847A9CC16}.Release|x86.Build.0 = Release|Win32
+		{22533E4F-5B79-485F-AD9C-153E70942CB4}.Debug|x64.ActiveCfg = Debug|x64
+		{22533E4F-5B79-485F-AD9C-153E70942CB4}.Debug|x64.Build.0 = Debug|x64
+		{22533E4F-5B79-485F-AD9C-153E70942CB4}.Debug|x86.ActiveCfg = Debug|x64
+		{22533E4F-5B79-485F-AD9C-153E70942CB4}.Release|x64.ActiveCfg = Release|x64
+		{22533E4F-5B79-485F-AD9C-153E70942CB4}.Release|x64.Build.0 = Release|x64
+		{22533E4F-5B79-485F-AD9C-153E70942CB4}.Release|x86.ActiveCfg = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -203,6 +214,7 @@ Global
 		{012E6953-2C4A-487C-A104-FD967B05A428} = {24024FCF-C61F-4202-B224-31E446620333}
 		{4B7E4407-706F-442F-B5D3-FE8EF429F791} = {24024FCF-C61F-4202-B224-31E446620333}
 		{D754CC3F-4A2E-4942-A8D8-326E476833DF} = {CE339C88-1A68-48FF-B969-D3D1CFED807D}
+		{22533E4F-5B79-485F-AD9C-153E70942CB4} = {24024FCF-C61F-4202-B224-31E446620333}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7799D7AC-6A26-44C6-B345-CA1364BA60F1}
