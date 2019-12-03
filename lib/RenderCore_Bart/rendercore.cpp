@@ -24,7 +24,7 @@ using namespace lh2core;
 //  +-----------------------------------------------------------------------------+
 void RenderCore::Init()
 {
-	cout << "Init called." << endl;
+	cout << "\nInit" << endl;
 }
 
 //  +-----------------------------------------------------------------------------+
@@ -33,7 +33,7 @@ void RenderCore::Init()
 //  +-----------------------------------------------------------------------------+
 void RenderCore::SetTarget( GLTexture* target )
 {
-	cout << "SetTarget" << endl;
+	cout << "\nSetTarget" << endl;
 	// synchronize OpenGL viewport
 	targetTextureID = target->ID;
 	if (screen != 0 && target->width == screen->width && target->height == screen->height) return; // nothing changed
@@ -49,16 +49,20 @@ void RenderCore::SetTarget( GLTexture* target )
 //  +-----------------------------------------------------------------------------+
 void RenderCore::SetGeometry( const int meshIdx, const float4* vertexData, const int vertexCount, const int triangleCount, const CoreTri* triangleData, const uint* alphaFlags )
 {	
-	Mesh newMesh;
-	// copy the supplied vertices; we cannot assume that the render system does not modify
-	// the original data after we leave this function.
-	newMesh.vertices = new float4[vertexCount];
-	newMesh.vcount = vertexCount;
-	memcpy( newMesh.vertices, vertexData, vertexCount * sizeof( float4 ) );
-	// copy the supplied 'fat triangles'
-	newMesh.triangles = new CoreTri[vertexCount / 3];
-	memcpy( newMesh.triangles, triangleData, (vertexCount / 3) * sizeof( CoreTri ) );
-	raytracer.scene.meshes.push_back( newMesh );
+	cout << "\nSetGeometry" << endl;
+	// Only add meshes that are not area lights. We leave area lights invisible for now.
+	if (triangleData->ltriIdx == -1) {
+		Mesh newMesh;
+		// copy the supplied vertices; we cannot assume that the render system does not modify
+		// the original data after we leave this function.
+		newMesh.vertices = new float4[vertexCount];
+		newMesh.vcount = vertexCount;
+		memcpy(newMesh.vertices, vertexData, vertexCount * sizeof(float4));
+		// copy the supplied 'fat triangles'
+		newMesh.triangles = new CoreTri[vertexCount / 3];
+		memcpy(newMesh.triangles, triangleData, (vertexCount / 3) * sizeof(CoreTri));
+		raytracer.scene.meshes.push_back(newMesh);
+	}
 }
 
 void RenderCore::SetInstance(const int instanceIdx, const int meshIdx, const mat4& matrix) {
@@ -92,7 +96,7 @@ void RenderCore::SetMaterials(CoreMaterial* mat, const CoreMaterialEx* matEx, co
 			// TODO: textures, replacement code below
 		}
 	}
-	cout << "Total count: " << raytracer.scene.matList.size() << endl;
+	cout << "  Total count: " << raytracer.scene.matList.size() << endl;
 }
 
 void RenderCore::SetLights(const CoreLightTri* areaLights, const int areaLightCount, const CorePointLight* pointLights, const int pointLightCount,

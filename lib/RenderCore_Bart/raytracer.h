@@ -47,6 +47,8 @@ public:
 	float3 center;
 	float area;
 	float3 radiance;
+
+	float3 RandomPoint(); // Generate a random point uniformly distributed over the triangle's surface
 };
 
 class Scene {

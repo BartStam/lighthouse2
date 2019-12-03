@@ -105,6 +105,25 @@ float3 RayTracer::Illumination(float3 color, float3 O) {
 		}
 	}
 
+	// Area lights
+	for (int i = 0; i < scene.areaLights.size(); i++) {
+		float3 direction = scene.areaLights[i]->RandomPoint() - O;
+		Ray shadow_ray = Ray(O, direction);
+
+		float t_light = length(fabs(direction));
+		float t = FLT_MAX;
+		for (Mesh& mesh : scene.meshes) for (int i = 0; i < mesh.vcount / 3; i++) {
+			if (shadow_ray.IntersectsTriangle(mesh.triangles[i], t) && t < t_light) {
+				break;
+			}
+		}
+
+		// If the triangle is illuminated by this light
+		if (t_light <= t) {
+			light_color += scene.areaLights[i]->radiance / (t_light * t_light);
+		}
+	}
+
 	return clamp(color * light_color, 0, 1);
 }
 
@@ -113,6 +132,12 @@ void Accumulator::Rebuild(int width, int height) {
 	frame.resize(width * height, make_float3(0, 0, 0));
 	frame_count = 0;
 	w = width;
+}
+
+float3 AreaLight::RandomPoint() {
+	float a = Rand(1.0f), b = Rand(1.0f);
+	if (a + b > 1.0f) { a = 1 - a; b = 1 - b; }
+	return vertex0 + a * (vertex1 - vertex0) + b * (vertex2 - vertex0);
 }
 
 Scene::~Scene()
