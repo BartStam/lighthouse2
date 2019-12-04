@@ -15,6 +15,8 @@ lib/platform/x64
 lib/platform/lib
 lib/RenderSystem/lib
 lib/RenderSystem/x64
+lib/PathFinding/x64
+lib/ai_debugger/x64
 
 apps/imguiapp/x64
 apps/imguiapp/imguiapp.exe
@@ -32,3 +34,11 @@ apps/tinyapp/tinyapp.ilk
 apps/tinyapp/tinyapp.iobj
 apps/tinyapp/tinyapp.ipdb
 apps/tinyapp/tinyapp.pdb
+
+apps/ai_debugger/x64
+apps/ai_debugger/ai_debugger.exe
+apps/ai_debugger/ai_debugger.ilk
+apps/ai_debugger/ai_debugger.iobj
+apps/ai_debugger/ai_debugger.ipdb
+apps/ai_debugger/ai_debugger.pdb
+apps/ai_debugger/ai_debugger.lib

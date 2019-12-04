@@ -1,7 +1,0 @@
-﻿  navmesh_agents.cpp
-  navmesh_builder.cpp
-  navmesh_config.cpp
-  navmesh_navigator.cpp
-  navmesh_shader.cpp
-  Replacing x64\Release\tinyxml2.obj
-  PathFinding.vcxproj -> C:\Users\6629407\Desktop\LightHouse\lighthouse2\lib\PathFinding\lib\Release\pathfinding.lib

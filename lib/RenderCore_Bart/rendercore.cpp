@@ -24,7 +24,6 @@ using namespace lh2core;
 //  +-----------------------------------------------------------------------------+
 void RenderCore::Init()
 {
-	cout << "\nInit" << endl;
 }
 
 //  +-----------------------------------------------------------------------------+
@@ -33,7 +32,6 @@ void RenderCore::Init()
 //  +-----------------------------------------------------------------------------+
 void RenderCore::SetTarget( GLTexture* target )
 {
-	cout << "SetTarget" << endl;
 	// synchronize OpenGL viewport
 	targetTextureID = target->ID;
 	if (screen != 0 && target->width == screen->width && target->height == screen->height) return; // nothing changed
@@ -49,7 +47,6 @@ void RenderCore::SetTarget( GLTexture* target )
 //  +-----------------------------------------------------------------------------+
 void RenderCore::SetGeometry( const int meshIdx, const float4* vertexData, const int vertexCount, const int triangleCount, const CoreTri* triangleData, const uint* alphaFlags )
 {	
-	cout << "SetGeometry" << endl;
 	// Only add meshes that are not area lights. We leave area lights invisible for now.
 	if (triangleData->ltriIdx == -1) {
 		Mesh newMesh;
@@ -147,7 +144,7 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge )
 	screen->Clear();
 	if (converge) { raytracer.accumulator.Rebuild(screen->width, screen->height); }
 
-	int depth = 8; // Maximum ray recursion depth
+	int depth = 6; // Maximum ray recursion depth
 
 	int nx = screen->width;
 	int ny = screen->height;

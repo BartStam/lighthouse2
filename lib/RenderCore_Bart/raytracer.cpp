@@ -91,7 +91,7 @@ float3 RayTracer::Color(float3 O, float3 D, uint depth, bool outside) {
 	// Calculate using Schlick's approximation
 	float fresnel;
 	float R0 = ((H1 - H2) / (H1 + H2)) * ((H1 - H2) / (H1 + H2));
-	if (sin2Tt > 1.0f) { // If there is TIR
+	if (H1 > H2 && sin2Tt > 1.0f) { // If there is TIR
 		fresnel = 1.0f;
 
 		// Testing purposes
@@ -111,11 +111,6 @@ float3 RayTracer::Color(float3 O, float3 D, uint depth, bool outside) {
 	if (transmission > 0.01f) { color += transmission * Color(ray.point(smallest_t) - N * 2 * EPSILON, H * D + (H * cosTi - S) * N, depth - 1, !outside); }
 	if (specularity > 0.01f) { color += specularity * Color(ray.point(smallest_t), D - 2 * (D * N) * N, depth - 1, outside); }
 	if (diffusion > 0.01f) { color += diffusion * Illumination(scene.matList[triangle->material]->diffuse, ray.point(smallest_t)); }
-
-	
-
-	
-
 
 	return color;
 }

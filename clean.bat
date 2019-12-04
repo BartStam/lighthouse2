@@ -11,6 +11,10 @@ rd .vs /S /Q
 
 rem | Clean up RenderCore folders
 
+rd lib\PathFinding\lib /S /Q
+rd lib\Pathfinding\x64 /S /Q
+rd lib\ai_debugger\lib /S /Q
+rd lib\ai_debugger\x64 /S /Q
 rd lib\RenderCore_Bart\lib /S /Q
 rd lib\RenderCore_Bart\x64 /S /Q
 rd lib\RenderCore_Minimal\lib /S /Q
