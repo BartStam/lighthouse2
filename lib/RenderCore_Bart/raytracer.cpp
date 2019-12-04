@@ -40,7 +40,7 @@ bool Ray::IntersectsTriangle(const CoreTri& triangle, float& t) {
 		return false;
 }
 
-float3 RayTracer::Color(float3 O, float3 D, uint depth) {
+float3 RayTracer::Color(float3 O, float3 D, uint depth, bool outside) {
 	float3 color = make_float3(0, 0, 0);
 	if (depth <= 0) { return color; }
 	D = normalize(D);
@@ -67,7 +67,7 @@ float3 RayTracer::Color(float3 O, float3 D, uint depth) {
 		unsigned long long width = round(u * scene.skyHeight);
 		unsigned long long height = round(v * scene.skyHeight);
 
-		return scene.skyDome[min(height * scene.skyHeight * 2 + width, scene.skyDome.size() - 1)];
+		return clamp(scene.skyDome[min(height * scene.skyHeight * 2 + width, scene.skyDome.size() - 1)], 0.0f, 1.0f);
 	}
 
 	float specularity = scene.matList[triangle->material]->specularity;
@@ -75,10 +75,47 @@ float3 RayTracer::Color(float3 O, float3 D, uint depth) {
 	if (specularity + transmission > 1) { specularity /= specularity + transmission; transmission /= specularity + transmission; }
 	float diffusion = 1.0f - specularity - transmission;
 	
-	float3 N = normalize(make_float3(triangle->Nx, triangle->Ny, triangle->Nz));
+	float3 N = make_float3(triangle->Nx, triangle->Ny, triangle->Nz); // Normalized
 
-	if (specularity > 0.01f) { color += specularity * Color(ray.point(smallest_t), D - 2 * (D * N) * N, depth - 1); }
+	// Transmission
+	float H1 = 1.0f, H2 = scene.matList[triangle->material]->IOR;
+
+	if (!outside) {		// If the ray is exiting a transmissive material
+		swap(H1, H2);	// Swap the IOR
+		N = -N;			// Invert the normal
+	}
+
+	float cosTi = dot(-D, N);
+	float sin2Tt = (H1 / H2) * (H1 / H2) * (1.0f - (cosTi * cosTi));
+
+	// Calculate using Schlick's approximation
+	float fresnel;
+	float R0 = ((H1 - H2) / (H1 + H2)) * ((H1 - H2) / (H1 + H2));
+	if (sin2Tt > 1.0f) { // If there is TIR
+		fresnel = 1.0f;
+
+		// Testing purposes
+		// return make_float3(0, 1, 0);
+	}
+	else {
+		float x = 1.0f - cosTi;
+		fresnel = R0 + (1.0f - R0) * x * x * x * x * x;
+	}
+
+	specularity = specularity + transmission * fresnel;
+	transmission = transmission * (1.0f - fresnel);
+
+	float H = H1 / H2;
+	float S = sqrt(1 - sin2Tt);
+
+	if (transmission > 0.01f) { color += transmission * Color(ray.point(smallest_t) - N * 2 * EPSILON, H * D + (H * cosTi - S) * N, depth - 1, !outside); }
+	if (specularity > 0.01f) { color += specularity * Color(ray.point(smallest_t), D - 2 * (D * N) * N, depth - 1, outside); }
 	if (diffusion > 0.01f) { color += diffusion * Illumination(scene.matList[triangle->material]->diffuse, ray.point(smallest_t)); }
+
+	
+
+	
+
 
 	return color;
 }

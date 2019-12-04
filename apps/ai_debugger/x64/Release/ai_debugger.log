@@ -2,6 +2,8 @@
   main.cpp
      Creating library .\ai_debugger.lib and object .\ai_debugger.exp
   Generating code
-  All 8107 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  2 of 8107 functions (<0.1%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    0 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
   ai_debugger.vcxproj -> C:\Users\6629407\Desktop\LightHouse\lighthouse2\apps\ai_debugger\.\ai_debugger.exe

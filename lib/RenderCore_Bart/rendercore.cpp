@@ -33,7 +33,7 @@ void RenderCore::Init()
 //  +-----------------------------------------------------------------------------+
 void RenderCore::SetTarget( GLTexture* target )
 {
-	cout << "\nSetTarget" << endl;
+	cout << "SetTarget" << endl;
 	// synchronize OpenGL viewport
 	targetTextureID = target->ID;
 	if (screen != 0 && target->width == screen->width && target->height == screen->height) return; // nothing changed
@@ -49,7 +49,7 @@ void RenderCore::SetTarget( GLTexture* target )
 //  +-----------------------------------------------------------------------------+
 void RenderCore::SetGeometry( const int meshIdx, const float4* vertexData, const int vertexCount, const int triangleCount, const CoreTri* triangleData, const uint* alphaFlags )
 {	
-	cout << "\nSetGeometry" << endl;
+	cout << "SetGeometry" << endl;
 	// Only add meshes that are not area lights. We leave area lights invisible for now.
 	if (triangleData->ltriIdx == -1) {
 		Mesh newMesh;
@@ -73,7 +73,7 @@ void RenderCore::SetTextures(const CoreTexDesc* tex, const int textureCount) {
 }
 
 void RenderCore::SetMaterials(CoreMaterial* mat, const CoreMaterialEx* matEx, const int materialCount) {
-	cout << "\nSetMaterials" << endl;
+	cout << "SetMaterials" << endl;
 	for (int i = 0; i < materialCount; i++)
 	{
 		Material* m;
@@ -84,28 +84,24 @@ void RenderCore::SetMaterials(CoreMaterial* mat, const CoreMaterialEx* matEx, co
 		if (texID == -1) {
 			float r = mat[i].diffuse_r, g = mat[i].diffuse_g, b = mat[i].diffuse_b;
 			m->diffuse = make_float3(r, g, b);
-			m->specularity = mat[i].metallic();		// Use metallic for now since specularity not supported in .gltf?
-			m->transmission = mat[i].roughness();	// Same for transmission
+			m->specularity = mat[i].specular();
+			m->transmission = mat[i].transmission();
+			m->IOR = *(float*)&mat[i].parameters.w;		// TODO: change to eta() after Jacco fixes
 
 			cout << "  Material " << i << endl;
-			cout << "    Specularity: " << m->specularity << endl;
+			cout << "    Color:        " << mat[i].diffuse_r << ", " << mat[i].diffuse_g << ", " << mat[i].diffuse_b << endl;
+			cout << "    Specularity:  " << m->specularity << endl;
 			cout << "    Transmission: " << m->transmission << endl;
-			
+			cout << "    IOR:          " << m->IOR << endl;
 		}
 		else {
 			// TODO: textures, replacement code below
 		}
 	}
-	cout << "  Total count: " << raytracer.scene.matList.size() << endl;
 }
 
 void RenderCore::SetLights(const CoreLightTri* areaLights, const int areaLightCount, const CorePointLight* pointLights, const int pointLightCount,
 	const CoreSpotLight* spotLights, const int spotLightCount, const CoreDirectionalLight* directionalLights, const int directionalLightCount) {
-	cout << "\nSetLights" << endl;
-	cout << "  areaLights:        " << areaLightCount << endl;
-	cout << "  pointLights:       " << pointLightCount << endl;
-	cout << "  spotLights:        " << spotLightCount << endl;
-	cout << "  directionalLights: " << directionalLightCount << endl;
 
 	// Add area lights to scene
 	for (int i = 0; i < areaLightCount; i++) {
@@ -151,6 +147,8 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge )
 	screen->Clear();
 	if (converge) { raytracer.accumulator.Rebuild(screen->width, screen->height); }
 
+	int depth = 8; // Maximum ray recursion depth
+
 	int nx = screen->width;
 	int ny = screen->height;
 
@@ -165,7 +163,7 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge )
 			float3 sy = (y * dy + dy) * (view.p3 - view.p1);	// Screen y
 			float3 P = view.p1 + sx + sy;						// Point on screen
 			float3 D = normalize(P - view.pos);					// Ray direction
-			float3 c = raytracer.Color(view.pos, D, 2);			// Color vector
+			float3 c = raytracer.Color(view.pos, D, depth);			// Color vector
 			raytracer.accumulator.addPixel(x, y, c);
 
 			float3 cv = raytracer.accumulator.Pixel(x, y);

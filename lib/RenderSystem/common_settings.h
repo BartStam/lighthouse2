@@ -25,8 +25,8 @@
 // #define ZIPIMGBINS				// cached images will be zipped (slower but smaller)
 
 // default screen size
-#define SCRWIDTH			600
-#define SCRHEIGHT			400
+#define SCRWIDTH			800
+#define SCRHEIGHT			600
 
 // skydome defines
 // #define IBL						// calculate pdf and cdf for ibl renderer

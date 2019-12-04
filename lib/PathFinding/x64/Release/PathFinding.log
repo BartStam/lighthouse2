@@ -1,39 +1,7 @@
-﻿  tinyxml2.cpp
-  navmesh_agents.cpp
-  navmesh_shader.cpp
-  navmesh_navigator.cpp
+﻿  navmesh_agents.cpp
   navmesh_builder.cpp
-  DebugDraw.cpp
-  DetourDebugDraw.cpp
-  RecastDebugDraw.cpp
-  RecastDump.cpp
-  DetourCrowd.cpp
-  DetourLocalBoundary.cpp
-  DetourObstacleAvoidance.cpp
-  DetourPathCorridor.cpp
-  DetourPathQueue.cpp
-  DetourProximityGrid.cpp
-  DetourTileCache.cpp
-  DetourTileCacheBuilder.cpp
-  DetourAlloc.cpp
-  DetourAssert.cpp
-  DetourCommon.cpp
-  Compiling...
-  DetourNavMesh.cpp
-  DetourNavMeshBuilder.cpp
-  DetourNavMeshQuery.cpp
-  DetourNode.cpp
-  Recast.cpp
-  RecastAlloc.cpp
-  RecastArea.cpp
-  RecastAssert.cpp
-  RecastContour.cpp
-  RecastFilter.cpp
-  RecastLayers.cpp
-  RecastMesh.cpp
-  RecastMeshDetail.cpp
-  RecastRasterization.cpp
-  RecastRegion.cpp
   navmesh_config.cpp
+  navmesh_navigator.cpp
+  navmesh_shader.cpp
   Replacing x64\Release\tinyxml2.obj
   PathFinding.vcxproj -> C:\Users\6629407\Desktop\LightHouse\lighthouse2\lib\PathFinding\lib\Release\pathfinding.lib

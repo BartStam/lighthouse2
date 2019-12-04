@@ -68,7 +68,7 @@ public:
 
 class Ray {
 public:
-	Ray(const float3& o, const float3 d) { O = o; D = normalize(d); }
+	Ray(const float3& o, const float3 d, float ior = 1.0f) { O = o; D = normalize(d); IOR = ior; }
 	const float3 origin() { return O; }
 	const float3 direction() { return D; }
 	const float3 point(float t) { return O + t * D; }
@@ -78,6 +78,7 @@ public:
 private:
 	float3 O;
 	float3 D;
+	float IOR;
 };
 
 class Accumulator {
@@ -97,7 +98,7 @@ class RayTracer
 {
 public:
 	RayTracer() = default;
-	float3 Color(float3 O, float3 D, uint depth);
+	float3 Color(float3 O, float3 D, uint depth, bool outside=true);
 	float3 Illumination(float3 color, float3 O);
 	static Scene scene;
 	Accumulator accumulator;
