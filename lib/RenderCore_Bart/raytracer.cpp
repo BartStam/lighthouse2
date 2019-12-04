@@ -105,22 +105,30 @@ float3 RayTracer::Illumination(float3 color, float3 O) {
 		}
 	}
 
-	// Area lights
+	// Monte Carlo area lighting
+	float total_area = 0;
 	for (int i = 0; i < scene.areaLights.size(); i++) {
+		total_area += scene.areaLights[i]->area;
+	}
+
+	int N = 8;
+	for (int n = 0; n < N; n++) {
+		uint i = RandomUInt() % scene.areaLights.size();
+		float p = scene.areaLights[i]->area / total_area; // Probability of hitting this light
+
 		float3 direction = scene.areaLights[i]->RandomPoint() - O;
 		Ray shadow_ray = Ray(O, direction);
 
-		float t_light = length(fabs(direction));
-		float t = FLT_MAX;
-		for (Mesh& mesh : scene.meshes) for (int i = 0; i < mesh.vcount / 3; i++) {
-			if (shadow_ray.IntersectsTriangle(mesh.triangles[i], t) && t < t_light) {
+		float t_light = length(fabs(direction)), t = FLT_MAX;
+		for (Mesh& mesh : scene.meshes) for (int m = 0; m < mesh.vcount / 3; m++) {
+			if (shadow_ray.IntersectsTriangle(mesh.triangles[m], t) && t < t_light) {
 				break;
 			}
 		}
 
-		// If the triangle is illuminated by this light
+		// If the triangle is illuminated by this light (V is 1 in rendering equation)
 		if (t_light <= t) {
-			light_color += scene.areaLights[i]->radiance / (t_light * t_light);
+			light_color += ((scene.areaLights[i]->radiance / (t_light * t_light)) / p) / N;
 		}
 	}
 

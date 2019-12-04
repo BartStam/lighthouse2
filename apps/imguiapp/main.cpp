@@ -55,11 +55,11 @@ void PrepareScene()
 	//renderer->AddPointLight(make_float3(6, 4, 6), make_float3(4, 4, 4));
 
 	int lightMat1 = renderer->AddMaterial(make_float3(10, 5, 5));
-	int lightQuad1 = renderer->AddQuad(make_float3(0, -1, 0), make_float3(0, 10.0f, 0), 6.9f, 6.9f, lightMat1);
+	int lightQuad1 = renderer->AddQuad(make_float3(0.5, -1, 0.5), make_float3(-5.0f, 10.0f, -5.0f), 6.9f, 6.9f, lightMat1);
 	int lightInst1 = renderer->AddInstance(lightQuad1);
 
 	int lightMat2 = renderer->AddMaterial(make_float3(0, 8, 8));
-	int lightQuad2 = renderer->AddQuad(make_float3(-0.5, -0.5, 0), make_float3(8.0f, 10.0f, 0), 3.0f, 4.0f, lightMat2);
+	int lightQuad2 = renderer->AddQuad(make_float3(-0.5, -1, -0.2), make_float3(6.0f, 14.0f, 2.0f), 3.0f, 4.0f, lightMat2);
 	int lightInst2 = renderer->AddInstance(lightQuad2);
 
 	animPaused = true;
