@@ -14,6 +14,7 @@ lib/rendercore_vulkan_rt/x64
 lib/platform/x64
 lib/platform/lib
 lib/RenderSystem/lib
+lib/PathFinding/lib
 lib/RenderSystem/x64
 lib/PathFinding/x64
 lib/ai_debugger/x64
