@@ -81,9 +81,9 @@ void BindVBO( const uint idx, const uint N, const GLuint id )
 void CheckShader( GLuint shader, const char* vshader, const char* fshader )
 {
 	char buffer[1024];
-	memset( buffer, 0, 1024 );
+	memset( buffer, 0, sizeof( buffer ) );
 	GLsizei length = 0;
-	glGetShaderInfoLog( shader, 1024, &length, buffer );
+	glGetShaderInfoLog( shader, sizeof( buffer ), &length, buffer );
 	CheckGL();
 	FATALERROR_IF( length > 0 && strstr( buffer, "ERROR" ), "Shader compile error:\n%s", buffer );
 }
@@ -91,9 +91,9 @@ void CheckShader( GLuint shader, const char* vshader, const char* fshader )
 void CheckProgram( GLuint id, const char* vshader, const char* fshader )
 {
 	char buffer[1024];
-	memset( buffer, 0, 1024 );
+	memset( buffer, 0, sizeof( buffer ) );
 	GLsizei length = 0;
-	glGetProgramInfoLog( id, 1024, &length, buffer );
+	glGetProgramInfoLog( id, sizeof( buffer ), &length, buffer );
 	CheckGL();
 	FATALERROR_IF( length > 0, "Shader link error:\n%s", buffer );
 }
@@ -133,31 +133,31 @@ void DrawQuad()
 //  |     GL_TRIANGLE_FAN *verts* consists of  consequtive verts around a poly    |
 //  |  *width* is the line/point width in pixels.                           LH2'19|
 //  +-----------------------------------------------------------------------------+
-void DrawShapeOnScreen(std::vector<float2> verts, std::vector<float4> colors, uint GLshape, float width)
+void DrawShapeOnScreen( std::vector<float2> verts, std::vector<float4> colors, uint GLshape, float width )
 {
 	if (verts.size() == 0) return;
 
 	// Create VBOs
 	static GLuint vboID = 0;
-	GLuint vertexBuffer = CreateVBO((const GLfloat*)&verts[0], (uint) verts.size() * sizeof(float2));
-	GLuint colorBuffer = CreateVBO((const GLfloat*)&colors[0], (uint) colors.size() * sizeof(float4));
-	glGenVertexArrays(1, &vboID);
-	glBindVertexArray(vboID);
-	BindVBO(0, 2, vertexBuffer); // 0 = position attribute, 2 = floats in vertex
-	BindVBO(3, 4, colorBuffer);  // 3 = color attribute, 4 = floats in color
-	glBindVertexArray(0);
+	GLuint vertexBuffer = CreateVBO( (const GLfloat*)&verts[0], (uint)verts.size() * sizeof( float2 ) );
+	GLuint colorBuffer = CreateVBO( (const GLfloat*)&colors[0], (uint)colors.size() * sizeof( float4 ) );
+	glGenVertexArrays( 1, &vboID );
+	glBindVertexArray( vboID );
+	BindVBO( 0, 2, vertexBuffer ); // 0 = position attribute, 2 = floats in vertex
+	BindVBO( 3, 4, colorBuffer );  // 3 = color attribute, 4 = floats in color
+	glBindVertexArray( 0 );
 	CheckGL();
 
 	// Draw
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glBindVertexArray(vboID);
-	glPointSize(width);
-	glLineWidth(width);
-	glDrawArrays(GLshape, 0, (GLsizei)verts.size());
-	glBindVertexArray(0);
+	glEnable( GL_BLEND );
+	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+	glBindVertexArray( vboID );
+	glPointSize( width );
+	glLineWidth( width );
+	glDrawArrays( GLshape, 0, (GLsizei)verts.size() );
+	glBindVertexArray( 0 );
 	CheckGL();
-	glDisable(GL_BLEND);
+	glDisable( GL_BLEND );
 }
 
 //  +-----------------------------------------------------------------------------+

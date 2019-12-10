@@ -17,7 +17,8 @@
 #include <optix_function_table_definition.h>
 #include <optix_stack_size.h>
 
-namespace lh2core {
+namespace lh2core
+{
 
 // forward declaration of cuda code
 const surfaceReference* renderTargetRef();
@@ -32,7 +33,7 @@ void InitCountersSubsequent();
 
 // setters / getters
 void SetInstanceDescriptors( CoreInstanceDesc* p );
-void SetMaterialList( CoreMaterial* p );
+void SetMaterialList( CUDAMaterial* p );
 void SetAreaLights( CoreLightTri* p );
 void SetPointLights( CorePointLight* p );
 void SetSpotLights( CoreSpotLight* p );
@@ -58,42 +59,42 @@ struct SBTRecord { __align__( OPTIX_SBT_RECORD_ALIGNMENT ) char header[OPTIX_SBT
 
 const char *ParseOptixError( OptixResult r )
 {
-	switch ( r )
+	switch (r)
 	{
-	case 0: return "NO ERROR";
-	case 7001: return "OPTIX_ERROR_INVALID_VALUE";
-	case 7002: return "OPTIX_ERROR_HOST_OUT_OF_MEMORY";
-	case 7003: return "OPTIX_ERROR_INVALID_OPERATION";
-	case 7004: return "OPTIX_ERROR_FILE_IO_ERROR";
-	case 7005: return "OPTIX_ERROR_INVALID_FILE_FORMAT";
-	case 7010: return "OPTIX_ERROR_DISK_CACHE_INVALID_PATH";
-	case 7011: return "OPTIX_ERROR_DISK_CACHE_PERMISSION_ERROR";
-	case 7012: return "OPTIX_ERROR_DISK_CACHE_DATABASE_ERROR";
-	case 7013: return "OPTIX_ERROR_DISK_CACHE_INVALID_DATA";
-	case 7050: return "OPTIX_ERROR_LAUNCH_FAILURE";
-	case 7051: return "OPTIX_ERROR_INVALID_DEVICE_CONTEXT";
-	case 7052: return "OPTIX_ERROR_CUDA_NOT_INITIALIZED";
-	case 7200: return "OPTIX_ERROR_INVALID_PTX";
-	case 7201: return "OPTIX_ERROR_INVALID_LAUNCH_PARAMETER";
-	case 7202: return "OPTIX_ERROR_INVALID_PAYLOAD_ACCESS";
-	case 7203: return "OPTIX_ERROR_INVALID_ATTRIBUTE_ACCESS";
-	case 7204: return "OPTIX_ERROR_INVALID_FUNCTION_USE";
-	case 7205: return "OPTIX_ERROR_INVALID_FUNCTION_ARGUMENTS";
-	case 7250: return "OPTIX_ERROR_PIPELINE_OUT_OF_CONSTANT_MEMORY";
-	case 7251: return "OPTIX_ERROR_PIPELINE_LINK_ERROR";
-	case 7299: return "OPTIX_ERROR_INTERNAL_COMPILER_ERROR";
-	case 7300: return "OPTIX_ERROR_DENOISER_MODEL_NOT_SET";
-	case 7301: return "OPTIX_ERROR_DENOISER_NOT_INITIALIZED";
-	case 7400: return "OPTIX_ERROR_ACCEL_NOT_COMPATIBLE";
-	case 7800: return "OPTIX_ERROR_NOT_SUPPORTED";
-	case 7801: return "OPTIX_ERROR_UNSUPPORTED_ABI_VERSION";
-	case 7802: return "OPTIX_ERROR_FUNCTION_TABLE_SIZE_MISMATCH";
-	case 7803: return "OPTIX_ERROR_INVALID_ENTRY_FUNCTION_OPTIONS";
-	case 7804: return "OPTIX_ERROR_LIBRARY_NOT_FOUND";
-	case 7805: return "OPTIX_ERROR_ENTRY_SYMBOL_NOT_FOUND";
-	case 7900: return "OPTIX_ERROR_CUDA_ERROR";
-	case 7990: return "OPTIX_ERROR_INTERNAL_ERROR";
-	case 7999: return "OPTIX_ERROR_UNKNOWN";
+	case OPTIX_SUCCESS: return "NO ERROR";
+	case OPTIX_ERROR_INVALID_VALUE: return "OPTIX_ERROR_INVALID_VALUE";
+	case OPTIX_ERROR_HOST_OUT_OF_MEMORY: return "OPTIX_ERROR_HOST_OUT_OF_MEMORY";
+	case OPTIX_ERROR_INVALID_OPERATION: return "OPTIX_ERROR_INVALID_OPERATION";
+	case OPTIX_ERROR_FILE_IO_ERROR: return "OPTIX_ERROR_FILE_IO_ERROR";
+	case OPTIX_ERROR_INVALID_FILE_FORMAT: return "OPTIX_ERROR_INVALID_FILE_FORMAT";
+	case OPTIX_ERROR_DISK_CACHE_INVALID_PATH: return "OPTIX_ERROR_DISK_CACHE_INVALID_PATH";
+	case OPTIX_ERROR_DISK_CACHE_PERMISSION_ERROR: return "OPTIX_ERROR_DISK_CACHE_PERMISSION_ERROR";
+	case OPTIX_ERROR_DISK_CACHE_DATABASE_ERROR: return "OPTIX_ERROR_DISK_CACHE_DATABASE_ERROR";
+	case OPTIX_ERROR_DISK_CACHE_INVALID_DATA: return "OPTIX_ERROR_DISK_CACHE_INVALID_DATA";
+	case OPTIX_ERROR_LAUNCH_FAILURE: return "OPTIX_ERROR_LAUNCH_FAILURE";
+	case OPTIX_ERROR_INVALID_DEVICE_CONTEXT: return "OPTIX_ERROR_INVALID_DEVICE_CONTEXT";
+	case OPTIX_ERROR_CUDA_NOT_INITIALIZED: return "OPTIX_ERROR_CUDA_NOT_INITIALIZED";
+	case OPTIX_ERROR_INVALID_PTX: return "OPTIX_ERROR_INVALID_PTX";
+	case OPTIX_ERROR_INVALID_LAUNCH_PARAMETER: return "OPTIX_ERROR_INVALID_LAUNCH_PARAMETER";
+	case OPTIX_ERROR_INVALID_PAYLOAD_ACCESS: return "OPTIX_ERROR_INVALID_PAYLOAD_ACCESS";
+	case OPTIX_ERROR_INVALID_ATTRIBUTE_ACCESS: return "OPTIX_ERROR_INVALID_ATTRIBUTE_ACCESS";
+	case OPTIX_ERROR_INVALID_FUNCTION_USE: return "OPTIX_ERROR_INVALID_FUNCTION_USE";
+	case OPTIX_ERROR_INVALID_FUNCTION_ARGUMENTS: return "OPTIX_ERROR_INVALID_FUNCTION_ARGUMENTS";
+	case OPTIX_ERROR_PIPELINE_OUT_OF_CONSTANT_MEMORY: return "OPTIX_ERROR_PIPELINE_OUT_OF_CONSTANT_MEMORY";
+	case OPTIX_ERROR_PIPELINE_LINK_ERROR: return "OPTIX_ERROR_PIPELINE_LINK_ERROR";
+	case OPTIX_ERROR_INTERNAL_COMPILER_ERROR: return "OPTIX_ERROR_INTERNAL_COMPILER_ERROR";
+	case OPTIX_ERROR_DENOISER_MODEL_NOT_SET: return "OPTIX_ERROR_DENOISER_MODEL_NOT_SET";
+	case OPTIX_ERROR_DENOISER_NOT_INITIALIZED: return "OPTIX_ERROR_DENOISER_NOT_INITIALIZED";
+	case OPTIX_ERROR_ACCEL_NOT_COMPATIBLE: return "OPTIX_ERROR_ACCEL_NOT_COMPATIBLE";
+	case OPTIX_ERROR_NOT_SUPPORTED: return "OPTIX_ERROR_NOT_SUPPORTED";
+	case OPTIX_ERROR_UNSUPPORTED_ABI_VERSION: return "OPTIX_ERROR_UNSUPPORTED_ABI_VERSION";
+	case OPTIX_ERROR_FUNCTION_TABLE_SIZE_MISMATCH: return "OPTIX_ERROR_FUNCTION_TABLE_SIZE_MISMATCH";
+	case OPTIX_ERROR_INVALID_ENTRY_FUNCTION_OPTIONS: return "OPTIX_ERROR_INVALID_ENTRY_FUNCTION_OPTIONS";
+	case OPTIX_ERROR_LIBRARY_NOT_FOUND: return "OPTIX_ERROR_LIBRARY_NOT_FOUND";
+	case OPTIX_ERROR_ENTRY_SYMBOL_NOT_FOUND: return "OPTIX_ERROR_ENTRY_SYMBOL_NOT_FOUND";
+	case OPTIX_ERROR_CUDA_ERROR: return "OPTIX_ERROR_CUDA_ERROR";
+	case OPTIX_ERROR_INTERNAL_ERROR: return "OPTIX_ERROR_INTERNAL_ERROR";
+	case OPTIX_ERROR_UNKNOWN: return "OPTIX_ERROR_UNKNOWN";
 	default: return "UNKNOWN ERROR";
 	};
 }
@@ -144,11 +145,11 @@ void RenderCore::CreateOptixContext( int cc )
 		else if (cc / 10 == 6) file = "../../lib/RenderCore_Optix7/optix/.optix.pascal.cu.ptx";
 		else if (cc / 10 == 5) file = "../../lib/RenderCore_Optix7/optix/.optix.maxwell.cu.ptx";
 		FILE* f;
-#ifdef _MSC_VER
+	#ifdef _MSC_VER
 		fopen_s( &f, file, "rb" );
-#else
+	#else
 		f = fopen( file, "rb" );
-#endif
+	#endif
 		int len;
 		fread( &len, 1, 4, f );
 		char* t = new char[len];
@@ -220,7 +221,7 @@ void RenderCore::CreateOptixContext( int cc )
 
 	// create the shader binding table
 	SBTRecord rsbt[5] = {}; // , ms_sbt[2], hg_sbt[2];
-	for( int i = 0; i < 5; i++ ) optixSbtRecordPackHeader( progGroup[i], &rsbt[i] );
+	for (int i = 0; i < 5; i++) optixSbtRecordPackHeader( progGroup[i], &rsbt[i] );
 	sbt.raygenRecord = (CUdeviceptr)(new CoreBuffer<SBTRecord>( 1, ON_DEVICE, &rsbt[0] ))->DevPtr();
 	sbt.missRecordBase = (CUdeviceptr)(new CoreBuffer<SBTRecord>( 2, ON_DEVICE, &rsbt[1] ))->DevPtr();
 	sbt.hitgroupRecordBase = (CUdeviceptr)(new CoreBuffer<SBTRecord>( 2, ON_DEVICE, &rsbt[3] ))->DevPtr();
@@ -270,7 +271,7 @@ void RenderCore::Init()
 	// allow CoreMeshes to access the core
 	CoreMesh::renderCore = this;
 	// prepare timing events
-	for( int i = 0; i < MAXPATHLENGTH; i++ )
+	for (int i = 0; i < MAXPATHLENGTH; i++)
 	{
 		cudaEventCreate( &shadeStart[i] );
 		cudaEventCreate( &shadeEnd[i] );
@@ -507,32 +508,51 @@ void RenderCore::SyncStorageType( const TexelStorage storage )
 //  |  RenderCore::SetMaterials                                                   |
 //  |  Set the material data.                                               LH2'19|
 //  +-----------------------------------------------------------------------------+
-void RenderCore::SetMaterials( CoreMaterial* mat, const CoreMaterialEx* matEx, const int materialCount )
+#define TOCHAR(a) ((uint)((a)*255.0f))
+#define TOUINT4(a,b,c,d) (TOCHAR(a)+(TOCHAR(b)<<8)+(TOCHAR(c)<<16)+(TOCHAR(d)<<24))
+void RenderCore::SetMaterials( CoreMaterial* mat, const int materialCount )
 {
 	// Notes:
 	// Call this after the textures have been set; CoreMaterials store the offset of each texture
 	// in the continuous arrays; this data is valid only when textures are in sync.
 	delete materialBuffer;
 	delete hostMaterialBuffer;
-	hostMaterialBuffer = new CoreMaterial[materialCount];
-	memcpy( hostMaterialBuffer, mat, materialCount * sizeof( CoreMaterial ) );
+	hostMaterialBuffer = new CUDAMaterial[materialCount];
 	for (int i = 0; i < materialCount; i++)
 	{
-		CoreMaterial& m = hostMaterialBuffer[i];
-		const CoreMaterialEx& e = matEx[i];
-		if (e.texture[0] != -1) m.texaddr0 = texDescs[e.texture[0]].firstPixel;
-		if (e.texture[1] != -1) m.texaddr1 = texDescs[e.texture[1]].firstPixel;
-		if (e.texture[2] != -1) m.texaddr2 = texDescs[e.texture[2]].firstPixel;
-		if (e.texture[3] != -1) m.nmapaddr0 = texDescs[e.texture[3]].firstPixel;
-		if (e.texture[4] != -1) m.nmapaddr1 = texDescs[e.texture[4]].firstPixel;
-		if (e.texture[5] != -1) m.nmapaddr2 = texDescs[e.texture[5]].firstPixel;
-		if (e.texture[6] != -1) m.smapaddr = texDescs[e.texture[6]].firstPixel;
-		if (e.texture[7] != -1) m.rmapaddr = texDescs[e.texture[7]].firstPixel;
-		// if (e.texture[ 8] != -1) m.texaddr0 = texDescs[e.texture[ 8]].firstPixel; second roughness map is not used
-		if (e.texture[9] != -1) m.cmapaddr = texDescs[e.texture[9]].firstPixel;
-		if (e.texture[10] != -1) m.amapaddr = texDescs[e.texture[10]].firstPixel;
+		// perform conversion to internal material format
+		CoreMaterial& m = mat[i];
+		CUDAMaterial& gpuMat = hostMaterialBuffer[i];
+		memset( &gpuMat, 0, sizeof( CUDAMaterial ) );
+		gpuMat.diffuse_r = m.color.value.x,
+		gpuMat.diffuse_g = m.color.value.y;
+		gpuMat.diffuse_b = m.color.value.z;
+		gpuMat.transmittance_r = 1 - m.absorption.value.x;
+		gpuMat.transmittance_g = 1 - m.absorption.value.y;
+		gpuMat.transmittance_b = 1 - m.absorption.value.z;
+		gpuMat.parameters.x = TOUINT4( m.metallic.value, m.subsurface.value, m.specular.value, m.roughness.value );
+		gpuMat.parameters.y = TOUINT4( m.specularTint.value, m.anisotropic.value, m.sheen.value, m.sheenTint.value );
+		gpuMat.parameters.z = TOUINT4( m.clearcoat.value, m.clearcoatGloss.value, m.transmission.value, 0 );
+		gpuMat.parameters.w = *((uint*)&m.eta);
+		if (m.color.textureID != -1) gpuMat.tex0 = Map<CoreMaterial::Vec3Value>( m.color );
+		if (m.detailColor.textureID != -1) gpuMat.tex1 = Map<CoreMaterial::Vec3Value>( m.detailColor );
+		if (m.normals.textureID != -1) gpuMat.nmap0 = Map<CoreMaterial::Vec3Value>( m.normals );
+		if (m.detailNormals.textureID != -1) gpuMat.nmap1 = Map<CoreMaterial::Vec3Value>( m.detailNormals );
+		if (m.roughness.textureID != -1) gpuMat.rmap = Map<CoreMaterial::ScalarValue>( m.roughness );
+		if (m.specular.textureID != -1) gpuMat.smap = Map<CoreMaterial::ScalarValue>( m.specular );
+		bool hdr = false;
+		if (m.color.textureID != 1) if (texDescs[m.color.textureID].flags & 8 /* HostTexture::HDR */) hdr = true;
+		gpuMat.flags =
+			(m.eta.value < 1 ? ISDIELECTRIC : 0) + (hdr ? DIFFUSEMAPISHDR : 0) +
+			(m.color.textureID != -1 ? HASDIFFUSEMAP : 0) +
+			(m.normals.textureID != -1 ? HASNORMALMAP : 0) +
+			(m.specular.textureID != -1 ? HASSPECULARITYMAP : 0) +
+			(m.roughness.textureID != -1 ? HASROUGHNESSMAP : 0) +
+			(m.detailNormals.textureID != -1 ? HAS2NDNORMALMAP : 0) +
+			(m.detailColor.textureID != -1 ? HAS2NDDIFFUSEMAP : 0) +
+			((m.flags & 1) ? HASSMOOTHNORMALS : 0) + ((m.flags & 2) ? HASALPHA : 0);
 	}
-	materialBuffer = new CoreBuffer<CoreMaterial>( materialCount, ON_DEVICE | ON_HOST /* on_host: for alpha mapped tris */, hostMaterialBuffer );
+	materialBuffer = new CoreBuffer<CUDAMaterial>( materialCount, ON_DEVICE | ON_HOST /* on_host: for alpha mapped tris */, hostMaterialBuffer );
 	SetMaterialList( materialBuffer->DevPtr() );
 }
 
@@ -582,7 +602,6 @@ void RenderCore::Setting( const char* name, const float value )
 		{
 			vars.geometryEpsilon = value;
 			SetGeometryEpsilon( value );
-			// context["geometryEpsilon"]->setFloat( value );
 		}
 	}
 	else if (!strcmp( name, "clampValue" ))
@@ -743,8 +762,8 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge )
 	coreStats.traceTime1 = CUDATools::Elapsed( traceStart[1], traceEnd[1] );
 	coreStats.shadowTraceTime = CUDATools::Elapsed( shadowStart, shadowEnd );
 	coreStats.traceTimeX = coreStats.shadeTime = 0;
-	for( int i = 2; i < actualPathLength; i++ ) coreStats.traceTimeX += CUDATools::Elapsed( traceStart[i], traceEnd[i] );
-	for( int i = 0; i < actualPathLength; i++ ) coreStats.shadeTime += CUDATools::Elapsed( shadeStart[i], shadeEnd[i] );
+	for (int i = 2; i < actualPathLength; i++) coreStats.traceTimeX += CUDATools::Elapsed( traceStart[i], traceEnd[i] );
+	for (int i = 0; i < actualPathLength; i++) coreStats.shadeTime += CUDATools::Elapsed( shadeStart[i], shadeEnd[i] );
 	coreStats.probedInstid = counters.probedInstid;
 	coreStats.probedTriid = counters.probedTriid;
 	coreStats.probedDist = counters.probedDist;

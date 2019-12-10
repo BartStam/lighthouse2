@@ -20,15 +20,15 @@ namespace lh2core
 
 // path tracing buffers and global variables
 __constant__ CoreInstanceDesc* instanceDescriptors;
-__constant__ CoreMaterial* materials;
+__constant__ CUDAMaterial* materials;
 __constant__ CoreLightTri* areaLights;
 __constant__ CorePointLight* pointLights;
 __constant__ CoreSpotLight* spotLights;
 __constant__ CoreDirectionalLight* directionalLights;
 __constant__ int4 lightCounts; // area, point, spot, directional
-__constant__ uint* argb32;
+__constant__ uchar4* argb32;
 __constant__ float4* argb128;
-__constant__ uint* nrm32;
+__constant__ uchar4* nrm32;
 __constant__ float3* skyPixels;
 __constant__ int skywidth;
 __constant__ int skyheight;
@@ -41,7 +41,7 @@ __constant__ __device__ float clampValue;
 
 // access
 __host__ void SetInstanceDescriptors( CoreInstanceDesc* p ) { cudaMemcpyToSymbol( instanceDescriptors, &p, sizeof( void* ) ); }
-__host__ void SetMaterialList( CoreMaterial* p ) { cudaMemcpyToSymbol( materials, &p, sizeof( void* ) ); }
+__host__ void SetMaterialList( CUDAMaterial* p ) { cudaMemcpyToSymbol( materials, &p, sizeof( void* ) ); }
 __host__ void SetAreaLights( CoreLightTri* p ) { cudaMemcpyToSymbol( areaLights, &p, sizeof( void* ) ); }
 __host__ void SetPointLights( CorePointLight* p ) { cudaMemcpyToSymbol( pointLights, &p, sizeof( void* ) ); }
 __host__ void SetSpotLights( CoreSpotLight* p ) { cudaMemcpyToSymbol( spotLights, &p, sizeof( void* ) ); }

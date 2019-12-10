@@ -56,9 +56,9 @@ void RenderAPI::SerializeCamera( const char* xmlFile )
 	renderer->scene->camera->Serialize( xmlFile );
 }
 
-int RenderAPI::AddMesh( const char* file, const char* dir, const float scale )
+int RenderAPI::AddMesh( const char* file, const char* dir, const float scale, bool flatShaded )
 {
-	return renderer->scene->AddMesh( file, dir, scale );
+	return renderer->scene->AddMesh( file, dir, scale, flatShaded );
 }
 
 int RenderAPI::AddMesh( const int triCount )
@@ -131,14 +131,14 @@ RenderSettings* RenderAPI::GetSettings()
 	return &renderer->settings;
 }
 
-int RenderAPI::GetTriangleNode(const int coreInstId, const int coreTriId)
+int RenderAPI::GetTriangleNode( const int coreInstId, const int coreTriId )
 {
-	return renderer->GetTriangleNode(coreInstId, coreTriId);
+	return renderer->GetTriangleNode( coreInstId, coreTriId );
 }
 
-int RenderAPI::GetTriangleMesh(const int coreInstId, const int coreTriId)
+int RenderAPI::GetTriangleMesh( const int coreInstId, const int coreTriId )
 {
-	return renderer->GetTriangleMesh(coreInstId, coreTriId);
+	return renderer->GetTriangleMesh( coreInstId, coreTriId );
 }
 
 int RenderAPI::GetTriangleMaterialID( const int coreInstId, const int coreTriId )

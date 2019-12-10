@@ -219,7 +219,7 @@ LH2_DEVFUNC float3 Tangent2World( const float3& V, const float3& N )
 	return V.x * T + V.y * B + V.z * N;
 }
 
-LH2_DEVFUNC float3 Tangent2World( const float3& V, const float3& N,  const float3& T, const float3& B )
+LH2_DEVFUNC float3 Tangent2World( const float3& V, const float3& N, const float3& T, const float3& B )
 {
 	return V.x * T + V.y * B + V.z * N;
 }
@@ -311,9 +311,9 @@ LH2_DEVFUNC float3 ConsistentNormal( const float3& D, const float3& iN, const fl
 
 LH2_DEVFUNC float4 CombineToFloat4( const float3& A, const float3& B )
 {
-	// convert two float4's to a single uint4, where each int stores two components of the input vectors.
+	// convert two float3's to a single uint4, where each int stores two components of the input vectors.
 	// assumptions:
-	// - the input is possitive
+	// - the input is positive
 	// - the input can be safely clamped to 31.999
 	// with this in mind, the data is stored as 5:11 unsigned fixed point, which should be plenty.
 	const uint Ar = (uint)(min( A.x, 31.999f ) * 2048.0f), Ag = (uint)(min( A.y, 31.999f ) * 2048.0f), Ab = (uint)(min( A.z, 31.999f ) * 2048.0f);

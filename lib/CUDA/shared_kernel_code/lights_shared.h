@@ -172,9 +172,9 @@ LH2_DEVFUNC float3 RandomBarycentrics( const float r0 )
 LH2_DEVFUNC float3 RandomPointOnLight( float r0, float r1, const float3& I, const float3& N, float& pickProb, float& lightPdf, float3& lightColor )
 {
 	const float lightCount = AREALIGHTCOUNT + POINTLIGHTCOUNT + SPOTLIGHTCOUNT + DIRECTIONALLIGHTCOUNT;
-#ifdef ISLIGHTS
 	// predetermine the barycentrics for any area light we sample
 	float3 bary = RandomBarycentrics( r0 );
+#ifdef ISLIGHTS
 	// importance sampling of lights, pickProb is per-light probability
 	float potential[MAXISLIGHTS];
 	float sum = 0, total = 0;
@@ -269,9 +269,9 @@ LH2_DEVFUNC float3 Sample_Le( const float& r0, float r1, const float& r2, const 
 	float& lightPdf, float& pdfPos, float& pdfDir )
 {
 	const float lightCount = AREALIGHTCOUNT + POINTLIGHTCOUNT + SPOTLIGHTCOUNT + DIRECTIONALLIGHTCOUNT;
-#ifdef ISLIGHTS
 	// predetermine the barycentrics for any area light we sample
 	float3 bary = RandomBarycentrics( r0 );
+#ifdef ISLIGHTS
 	// importance sampling of lights, pickProb is per-light probability
 	float potential[MAXISLIGHTS];
 	float sum = 0, total = 0;
@@ -398,12 +398,12 @@ LH2_DEVFUNC float3 Sample_Le( const float& r0, float r1, const float& r2, const 
 		const CoreDirectionalLight4& light = (const CoreDirectionalLight4&)directionalLights[lightIdx - (AREALIGHTCOUNT + POINTLIGHTCOUNT + SPOTLIGHTCOUNT)];
 		const float3 L = make_float3( light.data0 );	// direction
 		lightColor = make_float3( light.data1 );		// radiance
-#ifdef DIRECTIONAL_LIGHT
+	#ifdef DIRECTIONAL_LIGHT
 		const float3 pos = SCENE_CENTER - SCENE_RADIUS * L;
 		normal = lightDir = L;
 		pdfPos = 1.0f / SCENE_AREA;
 		pdfDir = 1.0f;
-#endif
+	#endif
 		return pos;
 	}
 }
