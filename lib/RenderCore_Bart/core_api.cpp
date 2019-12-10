@@ -75,9 +75,9 @@ void CoreAPI::SetTextures( const CoreTexDesc* tex, const int textureCount )
 	core->SetTextures( tex, textureCount );
 }
 
-void CoreAPI::SetMaterials( CoreMaterial* mat, const CoreMaterialEx* matEx, const int materialCount )
+void CoreAPI::SetMaterials( CoreMaterial* mat, const int materialCount )
 {
-	core->SetMaterials( mat, matEx, materialCount );
+	core->SetMaterials( mat, materialCount );
 }
 
 void CoreAPI::SetGeometry( const int meshIdx, const float4* vertexData, const int vertexCount, const int triangleCount, const CoreTri* triangles, const uint* alphaFlags )
@@ -90,7 +90,7 @@ void CoreAPI::SetInstance( const int instanceIdx, const int modelIdx, const mat4
 	core->SetInstance( instanceIdx, modelIdx, transform );
 }
 
-void CoreAPI::SetSkyData(const float3* pixels, const uint width, const uint height) {
+void CoreAPI::SetSkyData(const float3* pixels, const uint width, const uint height, const mat4& worldToLight) {
 	core->SetSkyData(pixels, width, height);
 }
 

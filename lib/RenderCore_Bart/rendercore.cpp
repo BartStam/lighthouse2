@@ -69,7 +69,7 @@ void RenderCore::SetTextures(const CoreTexDesc* tex, const int textureCount) {
 	
 }
 
-void RenderCore::SetMaterials(CoreMaterial* mat, const CoreMaterialEx* matEx, const int materialCount) {
+void RenderCore::SetMaterials(CoreMaterial* mat, const int materialCount) {
 	cout << "SetMaterials" << endl;
 	for (int i = 0; i < materialCount; i++)
 	{
@@ -77,16 +77,18 @@ void RenderCore::SetMaterials(CoreMaterial* mat, const CoreMaterialEx* matEx, co
 		if (i < raytracer.scene.matList.size()) m = raytracer.scene.matList[i];
 		else raytracer.scene.matList.push_back(m = new Material());
 		
-		int texID = matEx[i].texture[TEXTURE0];
+		int texID = mat[i].color.textureID;
 		if (texID == -1) {
-			float r = mat[i].diffuse_r, g = mat[i].diffuse_g, b = mat[i].diffuse_b;
+			float r = mat[i].color.value.x;
+			float g = mat[i].color.value.y;
+			float b = mat[i].color.value.z;
 			m->diffuse = make_float3(r, g, b);
-			m->specularity = mat[i].specular();
-			m->transmission = mat[i].transmission();
-			m->IOR = *(float*)&mat[i].parameters.w;		// TODO: change to eta() after Jacco fixes
+			m->specularity = mat[i].specular.value;
+			m->transmission = mat[i].transmission.value;
+			m->IOR = mat[i].eta.value;
 
 			cout << "  Material " << i << endl;
-			cout << "    Color:        " << mat[i].diffuse_r << ", " << mat[i].diffuse_g << ", " << mat[i].diffuse_b << endl;
+			cout << "    Color:        " << r << ", " << g << ", " << b << endl;
 			cout << "    Specularity:  " << m->specularity << endl;
 			cout << "    Transmission: " << m->transmission << endl;
 			cout << "    IOR:          " << m->IOR << endl;
@@ -124,7 +126,7 @@ void RenderCore::SetLights(const CoreLightTri* areaLights, const int areaLightCo
 	}
 }
 
-void RenderCore::SetSkyData(const float3* pixels, const uint width, const uint height) {
+void RenderCore::SetSkyData(const float3* pixels, const uint width, const uint height, const mat4& worldToLight) {
 	assert(width == 2 * height);
 
 	raytracer.scene.skyDome.clear();
