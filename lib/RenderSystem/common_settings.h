@@ -24,8 +24,8 @@
 #define CACHEIMAGES					// imported images will be saved to bin files (faster)
 
 // default screen size
-#define SCRWIDTH			1200
-#define SCRHEIGHT			800
+#define SCRWIDTH			600
+#define SCRHEIGHT			400
 
 // skydome defines
 // #define IBL						// calculate pdf and cdf for ibl renderer

@@ -24,6 +24,8 @@ using namespace lh2core;
 //  +-----------------------------------------------------------------------------+
 void RenderCore::Init()
 {
+	cout << "BVH size: " << sizeof(BVH) << endl;
+	cout << "Ray size: " << sizeof(Ray) << endl;
 }
 
 //  +-----------------------------------------------------------------------------+
@@ -143,6 +145,11 @@ void RenderCore::SetSkyData(const float3* pixels, const uint width, const uint h
 //  +-----------------------------------------------------------------------------+
 void RenderCore::Render( const ViewPyramid& view, const Convergence converge )
 {
+	if (raytracer.frameCount == 0) {
+		raytracer.ConstructBVH();
+		cout << "Triangles in BVH: " << raytracer.BVH.leaves.size() << endl;
+		raytracer.frameCount++;
+	}
 	screen->Clear();
 	if (converge) { raytracer.accumulator.Rebuild(screen->width, screen->height); }
 
