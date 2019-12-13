@@ -147,7 +147,8 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge )
 {
 	if (raytracer.frameCount == 0) {
 		raytracer.ConstructBVH();
-		cout << "Triangles in BVH: " << raytracer.BVH.leaves.size() << endl;
+		raytracer.BVH.Split();
+		raytracer.BVH.RecursivePrint();
 		raytracer.frameCount++;
 	}
 	screen->Clear();
@@ -169,7 +170,7 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge )
 			float3 sy = (y * dy + dy) * (view.p3 - view.p1);	// Screen y
 			float3 P = view.p1 + sx + sy;						// Point on screen
 			float3 D = normalize(P - view.pos);					// Ray direction
-			float3 c = raytracer.Color(view.pos, D, depth);			// Color vector
+			float3 c = raytracer.Color(view.pos, D, depth);		// Color vector
 			raytracer.accumulator.addPixel(x, y, c);
 
 			float3 cv = raytracer.accumulator.Pixel(x, y);

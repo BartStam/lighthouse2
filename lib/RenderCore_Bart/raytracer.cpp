@@ -42,7 +42,76 @@ bool Ray::IntersectsTriangle(const CoreTri& triangle, float& t) {
 }
 
 bool Ray::IntersectsBVH(const BVH& bvh, float& t) {
+	// Taken from: https://gamedev.stackexchange.com/a/18459
+
+	float3 dir_frac = make_float3(0, 0, 0);
+
+	// D is the unit direction of the ray
+	dir_frac.x = 1.0f / D.x;
+	dir_frac.y = 1.0f / D.y;
+	dir_frac.z = 1.0f / D.z;
+
+	// O is the origin of ray
+	float t1 = (bvh.min_bound.x - O.x) * dir_frac.x;
+	float t2 = (bvh.max_bound.x - O.x) * dir_frac.x;
+	float t3 = (bvh.min_bound.y - O.y) * dir_frac.y;
+	float t4 = (bvh.max_bound.y - O.y) * dir_frac.y;
+	float t5 = (bvh.min_bound.z - O.z) * dir_frac.z;
+	float t6 = (bvh.max_bound.z - O.z) * dir_frac.z;
+
+	float t_min = max(max(min(t1, t2), min(t3, t4)), min(t5, t6));
+	float t_max = min(min(max(t1, t2), max(t3, t4)), max(t5, t6));
+
+	// If tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
+	if (t_max < 0) {
+		t = t_max;
+		return false;
+	}
+
+	// If tmin > tmax, ray doesn't intersect AABB
+	if (t_min > t_max) {
+		t = t_max;
+		return false;
+	}
+
+	t = t_min;
 	return true;
+}
+
+bool Ray::RecursiveIntersection(const BVH& bvh, CoreTri& tri, float& t) {
+	if (!IntersectsBVH(bvh, t)) { return false; }
+
+	float smallest_t = FLT_MAX;
+	CoreTri closest_tri;
+
+	if (bvh.isLeaf) {
+		float found_t = FLT_MAX;
+		for (CoreTri* leaf : bvh.leaves) {
+			if (IntersectsTriangle(*leaf, found_t) && found_t < smallest_t) {
+				smallest_t = found_t;
+				closest_tri = *leaf;
+			}
+		}
+	}
+	else {
+		for (BVH* child : bvh.children) {
+			float found_t = FLT_MAX;
+			CoreTri found_tri;
+			if (RecursiveIntersection(*child, found_tri, found_t) && found_t < smallest_t) {
+				smallest_t = found_t;
+				closest_tri = found_tri;
+			}
+		}
+	}
+
+	// If an intersection was found
+	if (smallest_t < FLT_MAX) {
+		tri = closest_tri;
+		t = smallest_t;
+		return true;
+	}
+
+	return false;
 }
 
 float3 RayTracer::Color(float3 O, float3 D, uint depth, bool outside) {
@@ -51,14 +120,14 @@ float3 RayTracer::Color(float3 O, float3 D, uint depth, bool outside) {
 	D = normalize(D);
 
 	Ray ray = Ray(O, D);
-	float t = FLT_MAX;										// The distance across the ray at which the triangle is intersected
-	CoreTri* triangle = ray.RecursiveIntersection(BVH, t);	// The triangle that is intersected first
+	float t = FLT_MAX;
+	CoreTri triangle;
 
 	// The ray hit the skydome, we don't do lighting
-	if (t == FLT_MAX) {
+	if (!ray.RecursiveIntersection(BVH, triangle, t)) {
 		float3 Dn = normalize(D);
-		float u = 1 + atan2(Dn.x, -Dn.z) / PI;
-		float v = acos(Dn.y) / PI;
+		float u = 1 + atan2(Dn.x, -Dn.z) * INVPI;
+		float v = acos(Dn.y) * INVPI;
 
 		unsigned long long width = round(u * scene.skyHeight);
 		unsigned long long height = round(v * scene.skyHeight);
@@ -66,15 +135,21 @@ float3 RayTracer::Color(float3 O, float3 D, uint depth, bool outside) {
 		return clamp(scene.skyDome[min(height * scene.skyHeight * 2 + width, scene.skyDome.size() - 1)], 0.0f, 1.0f);
 	}
 
-	float specularity = scene.matList[triangle->material]->specularity;
-	float transmission = scene.matList[triangle->material]->transmission;
-	if (specularity + transmission > 1) { specularity /= specularity + transmission; transmission /= specularity + transmission; }
+	float specularity = scene.matList[triangle.material]->specularity;
+	float transmission = scene.matList[triangle.material]->transmission;
+
+
+	if (specularity + transmission > 1) {
+		specularity /= specularity + transmission;
+		transmission /= specularity + transmission;
+	}
+
 	float diffusion = 1.0f - specularity - transmission;
 	
-	float3 N = make_float3(triangle->Nx, triangle->Ny, triangle->Nz); // Normalized
+	float3 N = make_float3(triangle.Nx, triangle.Ny, triangle.Nz); // Normalized
 
 	// Transmission
-	float H1 = 1.0f, H2 = scene.matList[triangle->material]->IOR;
+	float H1 = 1.0f, H2 = scene.matList[triangle.material]->IOR;
 
 	if (!outside) {		// If the ray is exiting a transmissive material
 		swap(H1, H2);	// Swap the IOR
@@ -106,7 +181,7 @@ float3 RayTracer::Color(float3 O, float3 D, uint depth, bool outside) {
 
 	if (transmission > 0.01f) { color += transmission * Color(ray.point(t) - N * 2 * EPSILON, H * D + (H * cosTi - S) * N, depth - 1, !outside); }
 	if (specularity > 0.01f) { color += specularity * Color(ray.point(t), D - 2 * (D * N) * N, depth - 1, outside); }
-	if (diffusion > 0.01f) { color += diffusion * Illumination(scene.matList[triangle->material]->diffuse, ray.point(t)); }
+	if (diffusion > 0.01f) { color += diffusion * Illumination(scene.matList[triangle.material]->diffuse, ray.point(t)); }
 
 	return color;
 }
@@ -183,10 +258,10 @@ void RayTracer::ConstructBVH() {
 	BVH.UpdateBounds();
 }
 
-void BVH::Split(){
+void BVH::Split() {
 	if (leaves.size() < 4) { return; }
 	
-	float3 parent_center = (pos1 + pos2) / 2.0f;
+	float3 parent_center = (min_bound + max_bound) / 2.0f;
 
 	BVH* left; BVH* right;
 	children.push_back(left = new BVH());
@@ -203,62 +278,50 @@ void BVH::Split(){
 		}
 	}
 
+	left->UpdateBounds();
+	right->UpdateBounds();
+
+	isLeaf = false;
 	leaves.clear();
 }
 
 void BVH::UpdateBounds() {
-	float3 min_bound = make_float3(FLT_MAX, FLT_MAX, FLT_MAX);
-	float3 max_bound = make_float3(FLT_MIN, FLT_MIN, FLT_MIN);
+	float3 min_b = make_float3(FLT_MAX, FLT_MAX, FLT_MAX);
+	float3 max_b = make_float3(FLT_MIN, FLT_MIN, FLT_MIN);
 
 	if (isLeaf) {
 		for (CoreTri* tri : leaves) {
 			float3 tri_min_bound = fminf(fminf(tri->vertex0, tri->vertex1), tri->vertex2);
 			float3 tri_max_bound = fmaxf(fmaxf(tri->vertex0, tri->vertex1), tri->vertex2);
 
-			min_bound = fminf(min_bound, tri_min_bound);
-			max_bound = fmaxf(max_bound, tri_max_bound);
+			min_b = fminf(min_b, tri_min_bound);
+			max_b = fmaxf(max_b, tri_max_bound);
 		}
 	}
 	else {
 		for (BVH* child : children) {
-			float3 child_min_bound = fminf(child->pos1, child->pos2);
-			float3 child_max_bound = fmaxf(child->pos1, child->pos2);
+			float3 child_min_bound = fminf(child->min_bound, child->max_bound);
+			float3 child_max_bound = fmaxf(child->min_bound, child->max_bound);
 
-			min_bound = fminf(min_bound, child_min_bound);
-			max_bound = fmaxf(max_bound, child_max_bound);
+			min_b = fminf(min_b, child_min_bound);
+			max_b = fmaxf(max_b, child_max_bound);
 		}
 	}
 
-	pos1 = min_bound; pos2 = max_bound;
+	min_bound = min_b; max_bound = max_b;
 }
 
-CoreTri* Ray::RecursiveIntersection(const BVH& bvh, float& t) {
-	float smallest_t = FLT_MAX;
-	
-	if (bvh.isLeaf) {
-		CoreTri* triangle = nullptr;
-		float tt = FLT_MAX;
-
-		for (CoreTri* leaf : bvh.leaves) {
-			if (IntersectsTriangle(*leaf, tt) && tt < smallest_t) {
-				smallest_t = tt;
-				triangle = leaf;
-			}
-		}
-
-		t = smallest_t;
-		return triangle;
+void BVH::RecursivePrint() {
+	if (isLeaf) {
+		cout << "[" << leaves.size() << "]";
 	}
-
-	BVH* closest_hit;
-	for (BVH* child : bvh.children) {
-		if (IntersectsBVH(*child, t) && t < smallest_t) {
-			smallest_t = t;
-			closest_hit = child;
+	else {
+		cout << "[" << children.size() << " ";
+		for (BVH* child : children) {
+			child->RecursivePrint();
 		}
+		cout << "]";
 	}
-
-	return RecursiveIntersection(*closest_hit, t);
 }
 
 void BVH::RecursiveDelete() {

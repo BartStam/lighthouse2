@@ -61,9 +61,10 @@ public:
 	void Split();
 	void UpdateBounds();
 	void RecursiveDelete();
+	void RecursivePrint();
 
-	float3 pos1 = make_float3(0, 0, 0);
-	float3 pos2 = make_float3(0, 0, 0); // AABB positions
+	float3 min_bound = make_float3(0, 0, 0);
+	float3 max_bound = make_float3(0, 0, 0); // AABB positions
 	vector<BVH*> children;
 	vector<CoreTri*> leaves;
 	bool isLeaf = true;
@@ -81,7 +82,7 @@ public:
 
 	bool IntersectsTriangle(const CoreTri& triangle, float& t); // If the ray intersects a triangle
 	bool IntersectsBVH(const BVH& bvh, float& t);				// If the ray intersects the AABB of a BVH
-	CoreTri* RecursiveIntersection(const BVH& bvh, float& t);	// Finds the closest triangle intersection in a BVH
+	bool RecursiveIntersection(const BVH& bvh, CoreTri& tri, float& t);	// Finds the closest triangle intersection in a BVH
 
 private:
 	float3 O;
