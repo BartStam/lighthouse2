@@ -15,6 +15,7 @@
 
 #include "core_settings.h"
 #include <iostream>
+#include <iomanip>
 
 using namespace lh2core;
 
@@ -147,8 +148,8 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge )
 {
 	if (raytracer.frameCount == 0) {
 		raytracer.ConstructBVH();
-		raytracer.BVH.Split();
-		raytracer.BVH.RecursivePrint();
+		raytracer.BVH.RecursiveSplit();
+		raytracer.BVH.RecursivePrint(); cout << endl;
 		raytracer.frameCount++;
 	}
 	screen->Clear();
@@ -163,6 +164,8 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge )
 	float dy = 1.0f / (ny - 1);
 
 	raytracer.accumulator.Increment();
+
+	DWORD trace_start = GetTickCount();
 	for (int y = 0; y < ny; y++) {
 		for (int x = 0; x < nx; x++) {
 			float rx = Rand(dx), ry = Rand(dy);
@@ -178,6 +181,9 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge )
 			screen->Plot(x, y, color);
 		}
 	}
+
+	DWORD trace_time = GetTickCount() - trace_start;
+	cout << "\r" << setw(4) << std::setfill(' ') << nx * ny / trace_time << "K primary rays per s" << std::flush;
 
 	// copy pixel buffer to OpenGL render target texture
 	glBindTexture(GL_TEXTURE_2D, targetTextureID);

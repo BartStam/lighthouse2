@@ -58,8 +58,9 @@ class BVH {
 public:
 	BVH() = default;
 	~BVH();
-	void Split();
+	bool Split();
 	void UpdateBounds();
+	void RecursiveSplit();
 	void RecursiveDelete();
 	void RecursivePrint();
 
@@ -68,6 +69,9 @@ public:
 	vector<BVH*> children;
 	vector<CoreTri*> leaves;
 	bool isLeaf = true;
+
+private:
+	float SplitCost(vector<CoreTri&> left, vector<CoreTri&> right);
 };
 
 class Ray {

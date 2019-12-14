@@ -138,7 +138,7 @@ float3 RayTracer::Color(float3 O, float3 D, uint depth, bool outside) {
 	float specularity = scene.matList[triangle.material]->specularity;
 	float transmission = scene.matList[triangle.material]->transmission;
 
-
+	// Normalize specularity and transmission if they sum > 1
 	if (specularity + transmission > 1) {
 		specularity /= specularity + transmission;
 		transmission /= specularity + transmission;
@@ -258,10 +258,32 @@ void RayTracer::ConstructBVH() {
 	BVH.UpdateBounds();
 }
 
-void BVH::Split() {
-	if (leaves.size() < 4) { return; }
-	
-	float3 parent_center = (min_bound + max_bound) / 2.0f;
+bool BVH::Split() {
+	if (leaves.size() < 4) { return false; }
+
+	uint split_value = 0;
+	float3 split_center = make_float3(0, 0, 0);
+	for (CoreTri* tri : leaves) {
+		float3 center = (tri->vertex0 + tri->vertex1 + tri->vertex2) / 3.0f;
+
+		// Calculate the value of the split
+		uint left_amount = 0;
+		for (CoreTri* tri2 : leaves) {
+			float3 center2 = (tri2->vertex0 + tri2->vertex1 + tri2->vertex2) / 3.0f;
+			
+			if (center2.x < center.x) {
+				left_amount++;
+			}
+		}
+
+		if (left_amount * (leaves.size() - left_amount) > split_value) {
+			split_value = left_amount * (leaves.size() - left_amount);
+			split_center = center;
+		}
+	}
+
+	// If there is no value in splitting, don't split
+	if (split_value == 0) { return false; }
 
 	BVH* left; BVH* right;
 	children.push_back(left = new BVH());
@@ -269,8 +291,7 @@ void BVH::Split() {
 
 	for (CoreTri* tri : leaves) {
 		float3 center = (tri->vertex0 + tri->vertex1 + tri->vertex2) / 3.0f;
-		
-		if (center.x < parent_center.x) {
+		if (center.x < split_center.x) {
 			left->leaves.push_back(tri);
 		}
 		else {
@@ -283,6 +304,7 @@ void BVH::Split() {
 
 	isLeaf = false;
 	leaves.clear();
+	return true;
 }
 
 void BVH::UpdateBounds() {
@@ -311,6 +333,14 @@ void BVH::UpdateBounds() {
 	min_bound = min_b; max_bound = max_b;
 }
 
+void BVH::RecursiveSplit() {
+	if (Split()) {
+		for (BVH* child : children) {
+			child->RecursiveSplit();
+		}
+	}
+}
+
 void BVH::RecursivePrint() {
 	if (isLeaf) {
 		cout << "[" << leaves.size() << "]";
@@ -329,6 +359,16 @@ void BVH::RecursiveDelete() {
 		child->RecursiveDelete();
 		delete child;
 	}
+}
+
+float BVH::SplitCost(vector<CoreTri&> left, vector<CoreTri&> right) {
+	// Calculate left area
+	float left_area = 0.0f;
+
+	// Calculate right area
+	float right_area = 0.0f;
+
+	return left_area * left.size() + right_area * right.size();
 }
 
 Scene::~Scene()
