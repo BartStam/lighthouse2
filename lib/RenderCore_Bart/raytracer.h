@@ -58,10 +58,8 @@ class BVH {
 public:
 	BVH() = default;
 	~BVH();
-	bool Split();
 	void UpdateBounds();
 	void RecursiveSplit();
-	void RecursiveDelete();
 	void RecursivePrint();
 
 	float3 min_bound = make_float3(0, 0, 0);
@@ -71,7 +69,10 @@ public:
 	bool isLeaf = true;
 
 private:
-	// float SplitCost(vector<CoreTri&> left, vector<CoreTri&> right);
+	bool Split();
+	bool HeuristicSplit();
+	float SplitCost(vector<CoreTri*> leaves);
+	void RecursiveDelete();
 };
 
 class Ray {
@@ -84,8 +85,8 @@ public:
 	const float3 direction() { return D; }
 	const float3 point(float t) { return O + t * D; }
 
-	bool IntersectsTriangle(const CoreTri& triangle, float& t);							// If the ray intersects a triangle
-	bool IntersectsBVH(const BVH& bvh, float& t);										// If the ray intersects the AABB of a BVH
+	bool IntersectsTriangle(const CoreTri& triangle, float& t);			// If the ray intersects a triangle
+	bool IntersectsBVH(const BVH& bvh, float& t);						// If the ray intersects the AABB of a BVH
 	bool RecursiveIntersection(const BVH& bvh, CoreTri& tri, float& t);	// Finds the closest triangle intersection in a BVH
 
 private:

@@ -296,6 +296,68 @@ bool BVH::Split() {
 	return true;
 }
 
+bool BVH::HeuristicSplit() {
+	if (leaves.size() < 4) { return false; }
+
+	float best_split_cost = FLT_MAX;
+	float best_split_pos;
+	char best_split_axis;
+
+	for (CoreTri* tri : leaves) {
+		// x split
+		vector<CoreTri*> left_split;
+		vector<CoreTri*> right_split;
+		float3 tri_center = (tri->vertex0 + tri->vertex1 + tri->vertex2) / 3.0f;
+
+		for (CoreTri* tri2 : leaves) {
+			float3 tri2_center = (tri2->vertex0 + tri2->vertex1 + tri2->vertex2) / 3.0f;
+			if (tri2_center.x + EPSILON < tri_center.x) {
+				left_split.push_back(tri2);
+			}
+			else {
+				right_split.push_back(tri2);
+			}
+		}
+
+		float split_cost = SplitCost(left_split) + SplitCost(right_split);
+		if (split_cost + EPSILON < best_split_cost) {
+			best_split_cost = split_cost;
+			best_split_axis = 'X';
+			best_split_pos = tri_center.x;
+		}
+	}
+
+	// If there is no value in splitting, don't split
+	if (SplitCost(leaves) - EPSILON < best_split_cost) { 
+		return false;
+	}
+
+	BVH* left; BVH* right;
+	children.push_back(left = new BVH());
+	children.push_back(right = new BVH());
+
+	for (CoreTri* tri : leaves) {
+		float3 center = (tri->vertex0 + tri->vertex1 + tri->vertex2) / 3.0f;
+
+		// x split
+		if (best_split_axis == 'X') {
+			if (center.x < best_split_pos) {
+				left->leaves.push_back(tri);
+			}
+			else {
+				right->leaves.push_back(tri);
+			}
+		}
+	}
+
+	left->UpdateBounds();
+	right->UpdateBounds();
+
+	isLeaf = false;
+	leaves.clear();
+	return true;
+}
+
 void BVH::UpdateBounds() {
 	float3 min_b = make_float3(FLT_MAX, FLT_MAX, FLT_MAX);
 	float3 max_b = make_float3(FLT_MIN, FLT_MIN, FLT_MIN);
@@ -323,7 +385,7 @@ void BVH::UpdateBounds() {
 }
 
 void BVH::RecursiveSplit() {
-	if (Split()) {
+	if (HeuristicSplit()) {
 		for (BVH* child : children) {
 			child->RecursiveSplit();
 		}
@@ -350,9 +412,24 @@ void BVH::RecursiveDelete() {
 	}
 }
 
-//float BVH::SplitCost(vector<CoreTri&> left, vector<CoreTri&> right) {
-//	return 0.0f;
-//}
+float BVH::SplitCost(vector<CoreTri*> leaves) {
+	float3 min_b = make_float3(0, 0, 0);
+	float3 max_b = make_float3(0, 0, 0);
+
+	// Calculate AABB bounds
+	for (CoreTri* tri : leaves) {
+		float3 tri_min_bound = fminf(fminf(tri->vertex0, tri->vertex1), tri->vertex2);
+		float3 tri_max_bound = fmaxf(fmaxf(tri->vertex0, tri->vertex1), tri->vertex2);
+
+		min_b = fminf(min_b, tri_min_bound);
+		max_b = fmaxf(max_b, tri_max_bound);
+	}
+
+	float3 dims = max_b - min_b; // Dimensions of the AABB
+	float area = 2 * dims.x * dims.y + 2 * dims.x * dims.z + 2 * dims.y * dims.z; // AABB surface area
+
+	return leaves.size() * area;
+}
 
 Scene::~Scene()
 {
