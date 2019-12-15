@@ -79,37 +79,26 @@ bool Ray::IntersectsBVH(const BVH& bvh, float& t) {
 }
 
 bool Ray::RecursiveIntersection(const BVH& bvh, CoreTri& tri, float& t) {
-	if (!IntersectsBVH(bvh, t)) { return false; }
+	float initial_t = t;
+	float found_t = t;
 
-	float smallest_t = FLT_MAX;
-	CoreTri closest_tri;
+	if (!IntersectsBVH(bvh, found_t) || t < found_t) { return false; }
 
 	if (bvh.isLeaf) {
-		float found_t = FLT_MAX;
 		for (CoreTri* leaf : bvh.leaves) {
-			if (IntersectsTriangle(*leaf, found_t) && found_t < smallest_t) {
-				smallest_t = found_t;
-				closest_tri = *leaf;
+			if (IntersectsTriangle(*leaf, found_t) && found_t < t) {
+				t = found_t;
+				tri = *leaf;
 			}
 		}
 	}
 	else {
 		for (BVH* child : bvh.children) {
-			float found_t = FLT_MAX;
-			CoreTri found_tri;
-			if (RecursiveIntersection(*child, found_tri, found_t) && found_t < smallest_t) {
-				smallest_t = found_t;
-				closest_tri = found_tri;
-			}
+			RecursiveIntersection(*child, tri, t);
 		}
 	}
 
-	// If an intersection was found
-	if (smallest_t < FLT_MAX) {
-		tri = closest_tri;
-		t = smallest_t;
-		return true;
-	}
+	if (t < initial_t) { return true; } // If an intersection was found
 
 	return false;
 }
@@ -361,15 +350,9 @@ void BVH::RecursiveDelete() {
 	}
 }
 
-float BVH::SplitCost(vector<CoreTri&> left, vector<CoreTri&> right) {
-	// Calculate left area
-	float left_area = 0.0f;
-
-	// Calculate right area
-	float right_area = 0.0f;
-
-	return left_area * left.size() + right_area * right.size();
-}
+//float BVH::SplitCost(vector<CoreTri&> left, vector<CoreTri&> right) {
+//	return 0.0f;
+//}
 
 Scene::~Scene()
 {

@@ -71,7 +71,7 @@ public:
 	bool isLeaf = true;
 
 private:
-	float SplitCost(vector<CoreTri&> left, vector<CoreTri&> right);
+	// float SplitCost(vector<CoreTri&> left, vector<CoreTri&> right);
 };
 
 class Ray {
@@ -84,8 +84,8 @@ public:
 	const float3 direction() { return D; }
 	const float3 point(float t) { return O + t * D; }
 
-	bool IntersectsTriangle(const CoreTri& triangle, float& t); // If the ray intersects a triangle
-	bool IntersectsBVH(const BVH& bvh, float& t);				// If the ray intersects the AABB of a BVH
+	bool IntersectsTriangle(const CoreTri& triangle, float& t);							// If the ray intersects a triangle
+	bool IntersectsBVH(const BVH& bvh, float& t);										// If the ray intersects the AABB of a BVH
 	bool RecursiveIntersection(const BVH& bvh, CoreTri& tri, float& t);	// Finds the closest triangle intersection in a BVH
 
 private:
