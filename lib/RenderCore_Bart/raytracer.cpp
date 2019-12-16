@@ -96,17 +96,23 @@ bool Ray::RecursiveIntersection(const BVH& bvh, CoreTri& tri, float& t) {
 		float t_left = FLT_MAX;
 		float t_right = FLT_MAX;
 
-		IntersectsBVH(*bvh.children[0], t_left);
-		IntersectsBVH(*bvh.children[1], t_right);
-
-		// Traverse closest BVH child first
-		if (t_left < t_right) {
-			RecursiveIntersection(*bvh.children[0], tri, t);
-			RecursiveIntersection(*bvh.children[1], tri, t);
+		if (IntersectsBVH(*bvh.children[0], t_left)) {
+			if (IntersectsBVH(*bvh.children[1], t_right)) {
+				if (t_left < t_right) {
+					RecursiveIntersection(*bvh.children[0], tri, t);
+					RecursiveIntersection(*bvh.children[1], tri, t);
+				}
+				else {
+					RecursiveIntersection(*bvh.children[1], tri, t);
+					RecursiveIntersection(*bvh.children[0], tri, t);
+				}
+			}
+			else {
+				RecursiveIntersection(*bvh.children[0], tri, t);
+			}
 		}
-		else {
+		else if (IntersectsBVH(*bvh.children[1], t_right)) {
 			RecursiveIntersection(*bvh.children[1], tri, t);
-			RecursiveIntersection(*bvh.children[0], tri, t);
 		}
 	}
 
