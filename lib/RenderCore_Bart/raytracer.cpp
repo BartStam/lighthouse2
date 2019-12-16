@@ -82,8 +82,6 @@ bool Ray::RecursiveIntersection(const BVH& bvh, CoreTri& tri, float& t) {
 	float initial_t = t;
 	float found_t = t;
 
-	if (!IntersectsBVH(bvh, found_t) || t < found_t) { return false; }
-
 	if (bvh.isLeaf) {
 		for (CoreTri* leaf : bvh.leaves) {
 			if (IntersectsTriangle(*leaf, found_t) && found_t < t) {
@@ -96,9 +94,10 @@ bool Ray::RecursiveIntersection(const BVH& bvh, CoreTri& tri, float& t) {
 		float t_left = FLT_MAX;
 		float t_right = FLT_MAX;
 
+		// Only traverse children that are actually intersected
 		if (IntersectsBVH(*bvh.children[0], t_left)) {
 			if (IntersectsBVH(*bvh.children[1], t_right)) {
-				if (t_left < t_right) {
+				if (t_left < t_right) { // Traverse the closest child first
 					RecursiveIntersection(*bvh.children[0], tri, t);
 					RecursiveIntersection(*bvh.children[1], tri, t);
 				}
