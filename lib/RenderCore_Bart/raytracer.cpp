@@ -93,8 +93,20 @@ bool Ray::RecursiveIntersection(const BVH& bvh, CoreTri& tri, float& t) {
 		}
 	}
 	else {
-		for (BVH* child : bvh.children) {
-			RecursiveIntersection(*child, tri, t);
+		float t_left = FLT_MAX;
+		float t_right = FLT_MAX;
+
+		IntersectsBVH(*bvh.children[0], t_left);
+		IntersectsBVH(*bvh.children[1], t_right);
+
+		// Traverse closest BVH child first
+		if (t_left < t_right) {
+			RecursiveIntersection(*bvh.children[0], tri, t);
+			RecursiveIntersection(*bvh.children[1], tri, t);
+		}
+		else {
+			RecursiveIntersection(*bvh.children[1], tri, t);
+			RecursiveIntersection(*bvh.children[0], tri, t);
 		}
 	}
 
@@ -250,61 +262,13 @@ void RayTracer::ConstructBVH() {
 bool BVH::Split() {
 	if (leaves.size() < 4) { return false; }
 
-	uint split_value = 0;
-	float3 split_center = make_float3(0, 0, 0);
-	for (CoreTri* tri : leaves) {
-		float3 center = (tri->vertex0 + tri->vertex1 + tri->vertex2) / 3.0f;
-
-		// Calculate the value of the split
-		uint left_amount = 0;
-		for (CoreTri* tri2 : leaves) {
-			float3 center2 = (tri2->vertex0 + tri2->vertex1 + tri2->vertex2) / 3.0f;
-			
-			if (center2.x < center.x) {
-				left_amount++;
-			}
-		}
-
-		if (left_amount * (leaves.size() - left_amount) > split_value) {
-			split_value = left_amount * (leaves.size() - left_amount);
-			split_center = center;
-		}
-	}
-
-	// If there is no value in splitting, don't split
-	if (split_value == 0) { return false; }
-
-	BVH* left; BVH* right;
-	children.push_back(left = new BVH());
-	children.push_back(right = new BVH());
-
-	for (CoreTri* tri : leaves) {
-		float3 center = (tri->vertex0 + tri->vertex1 + tri->vertex2) / 3.0f;
-		if (center.x < split_center.x) {
-			left->leaves.push_back(tri);
-		}
-		else {
-			right->leaves.push_back(tri);
-		}
-	}
-
-	left->UpdateBounds();
-	right->UpdateBounds();
-
-	isLeaf = false;
-	leaves.clear();
-	return true;
-}
-
-bool BVH::HeuristicSplit() {
-	if (leaves.size() < 4) { return false; }
-
 	float best_split_cost = FLT_MAX;
 	float best_split_pos;
 	char best_split_axis;
-
+	
+	// Horribly ugly function, my apologies
+	// X split
 	for (CoreTri* tri : leaves) {
-		// x split
 		vector<CoreTri*> left_split;
 		vector<CoreTri*> right_split;
 		float3 tri_center = (tri->vertex0 + tri->vertex1 + tri->vertex2) / 3.0f;
@@ -327,6 +291,54 @@ bool BVH::HeuristicSplit() {
 		}
 	}
 
+	// Y split
+	for (CoreTri* tri : leaves) {
+		vector<CoreTri*> left_split;
+		vector<CoreTri*> right_split;
+		float3 tri_center = (tri->vertex0 + tri->vertex1 + tri->vertex2) / 3.0f;
+
+		for (CoreTri* tri2 : leaves) {
+			float3 tri2_center = (tri2->vertex0 + tri2->vertex1 + tri2->vertex2) / 3.0f;
+			if (tri2_center.y + EPSILON < tri_center.y) {
+				left_split.push_back(tri2);
+			}
+			else {
+				right_split.push_back(tri2);
+			}
+		}
+
+		float split_cost = SplitCost(left_split) + SplitCost(right_split);
+		if (split_cost + EPSILON < best_split_cost) {
+			best_split_cost = split_cost;
+			best_split_axis = 'Y';
+			best_split_pos = tri_center.y;
+		}
+	}
+
+	// Z split
+	for (CoreTri* tri : leaves) {
+		vector<CoreTri*> left_split;
+		vector<CoreTri*> right_split;
+		float3 tri_center = (tri->vertex0 + tri->vertex1 + tri->vertex2) / 3.0f;
+
+		for (CoreTri* tri2 : leaves) {
+			float3 tri2_center = (tri2->vertex0 + tri2->vertex1 + tri2->vertex2) / 3.0f;
+			if (tri2_center.z + EPSILON < tri_center.z) {
+				left_split.push_back(tri2);
+			}
+			else {
+				right_split.push_back(tri2);
+			}
+		}
+
+		float split_cost = SplitCost(left_split) + SplitCost(right_split);
+		if (split_cost + EPSILON < best_split_cost) {
+			best_split_cost = split_cost;
+			best_split_axis = 'Z';
+			best_split_pos = tri_center.z;
+		}
+	}
+
 	// If there is no value in splitting, don't split
 	if (SplitCost(leaves) - EPSILON < best_split_cost) { 
 		return false;
@@ -339,9 +351,29 @@ bool BVH::HeuristicSplit() {
 	for (CoreTri* tri : leaves) {
 		float3 center = (tri->vertex0 + tri->vertex1 + tri->vertex2) / 3.0f;
 
-		// x split
+		// X split
 		if (best_split_axis == 'X') {
 			if (center.x < best_split_pos) {
+				left->leaves.push_back(tri);
+			}
+			else {
+				right->leaves.push_back(tri);
+			}
+		}
+
+		// Y split
+		if (best_split_axis == 'Y') {
+			if (center.y < best_split_pos) {
+				left->leaves.push_back(tri);
+			}
+			else {
+				right->leaves.push_back(tri);
+			}
+		}
+
+		// Z split
+		if (best_split_axis == 'Z') {
+			if (center.z < best_split_pos) {
 				left->leaves.push_back(tri);
 			}
 			else {
@@ -385,7 +417,7 @@ void BVH::UpdateBounds() {
 }
 
 void BVH::RecursiveSplit() {
-	if (HeuristicSplit()) {
+	if (Split()) {
 		for (BVH* child : children) {
 			child->RecursiveSplit();
 		}

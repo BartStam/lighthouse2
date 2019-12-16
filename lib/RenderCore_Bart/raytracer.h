@@ -70,7 +70,6 @@ public:
 
 private:
 	bool Split();
-	bool HeuristicSplit();
 	float SplitCost(vector<CoreTri*> leaves);
 	void RecursiveDelete();
 };
