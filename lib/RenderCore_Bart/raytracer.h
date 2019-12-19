@@ -58,24 +58,19 @@ class BVH {
 public:
 	BVH() = default;
 	~BVH();
-	void UpdateBounds();
-	void RecursiveSplit();
-	void RecursivePrint();
 
 	float3 min_bound = make_float3(0, 0, 0);
 	float3 max_bound = make_float3(0, 0, 0); // AABB positions
-	vector<BVH*> children;
 	vector<CoreTri*> leaves;
 
 	BVH* left;
 	BVH* right;
-	int first, count;
+	int first;
+	int count = 0;
 
 	bool isLeaf = true;
 
 private:
-	bool Split();
-	float SplitCost(vector<CoreTri*> leaves);
 	void RecursiveDelete();
 };
 
@@ -86,10 +81,6 @@ public:
 
 	}
 	const float3 point(float t) { return O + t * D; }
-
-	bool IntersectsTriangle(const CoreTri& triangle, float& t);							// If the ray intersects a triangle
-	bool IntersectsBVH(const BVH& bvh, float& t);										// If the ray intersects the AABB of a BVH
-	bool RecursiveIntersection(const BVH& bvh, CoreTri& tri, float& t);					// Finds the closest triangle intersection in a BVH
 
 	float3 O;
 	float3 D;
@@ -146,6 +137,7 @@ public:
 	bool SplitBVH(BVH& bvh);															// Splits a BVH in two based on the SplitCost() implementation
 	void RecursiveSplitBVH(BVH& bvh);													// Recursively splits a BVH (2 children) until splitting is no longer worth it
 	void UpdateBounds(BVH& bvh);														// Updates the AABB of a BVH
+	void PrintBVH(const BVH& bvh);														// Print a text-based representation of a BVH to cout
 
 	// Intersection
 	bool IntersectTriangle(const Ray& ray, const CoreTri& triangle, float& t);			// Returns whether a ray intersects a triangle, and reports the distance as t

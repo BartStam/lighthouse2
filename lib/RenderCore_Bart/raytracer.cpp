@@ -8,118 +8,6 @@ uint ScaleColor(uint c, int scale)
 	return rb + g;
 }
 
-bool Ray::IntersectsTriangle(const CoreTri& triangle, float& t) {
-	float3 vertex0 = triangle.vertex0;
-	float3 vertex1 = triangle.vertex1;
-	float3 vertex2 = triangle.vertex2;
-	float3 edge1, edge2, h, s, q;
-	float a, f, u, v;
-	edge1 = vertex1 - vertex0;
-	edge2 = vertex2 - vertex0;
-	h = cross(D, edge2);
-	a = dot(edge1, h);
-	if (a > -EPSILON && a < EPSILON)
-		return false;    // This ray is parallel to this triangle.
-	f = 1.0 / a;
-	s = O - vertex0;
-	u = f * dot(s, h);
-	if (u < 0.0 || u > 1.0)
-		return false;
-	q = cross(s, edge1);
-
-	v = f * dot(D, q);
-	if (v < 0.0 || u + v > 1.0)
-		return false;
-	// At this stage we can compute t to find out where the intersection point is on the line.
-	float tt = f * dot(edge2, q);
-	if (tt > EPSILON && tt < 1 / EPSILON) // ray intersection
-	{
-		t = tt;
-		return true;
-	}
-	else // This means that there is a line intersection but not a ray intersection.
-		return false;
-}
-
-bool Ray::IntersectsBVH(const BVH& bvh, float& t) {
-	// Taken from: https://gamedev.stackexchange.com/a/18459
-
-	float3 dir_frac = make_float3(0, 0, 0);
-
-	// D is the unit direction of the ray
-	dir_frac.x = 1.0f / D.x;
-	dir_frac.y = 1.0f / D.y;
-	dir_frac.z = 1.0f / D.z;
-
-	// O is the origin of ray
-	float t1 = (bvh.min_bound.x - O.x) * dir_frac.x;
-	float t2 = (bvh.max_bound.x - O.x) * dir_frac.x;
-	float t3 = (bvh.min_bound.y - O.y) * dir_frac.y;
-	float t4 = (bvh.max_bound.y - O.y) * dir_frac.y;
-	float t5 = (bvh.min_bound.z - O.z) * dir_frac.z;
-	float t6 = (bvh.max_bound.z - O.z) * dir_frac.z;
-
-	float t_min = max(max(min(t1, t2), min(t3, t4)), min(t5, t6));
-	float t_max = min(min(max(t1, t2), max(t3, t4)), max(t5, t6));
-
-	// If tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
-	if (t_max < 0) {
-		t = t_max;
-		return false;
-	}
-
-	// If tmin > tmax, ray doesn't intersect AABB
-	if (t_min > t_max) {
-		t = t_max;
-		return false;
-	}
-
-	t = t_min;
-	return true;
-}
-
-bool Ray::RecursiveIntersection(const BVH& bvh, CoreTri& tri, float& t) {
-	float initial_t = t;
-	float found_t = t;
-
-	if (bvh.isLeaf) {
-		for (CoreTri* leaf : bvh.leaves) {
-			if (IntersectsTriangle(*leaf, found_t) && found_t < t) {
-				t = found_t;
-				tri = *leaf;
-			}
-		}
-	}
-	else {
-		float t_left = FLT_MAX;
-		float t_right = FLT_MAX;
-
-		// Only traverse children that are actually intersected
-		if (IntersectsBVH(*bvh.children[0], t_left)) {
-			if (IntersectsBVH(*bvh.children[1], t_right)) {
-				if (t_left < t_right) { // Traverse the closest child first
-					RecursiveIntersection(*bvh.children[0], tri, t);
-					RecursiveIntersection(*bvh.children[1], tri, t);
-				}
-				else {
-					RecursiveIntersection(*bvh.children[1], tri, t);
-					RecursiveIntersection(*bvh.children[0], tri, t);
-				}
-			}
-			else {
-				RecursiveIntersection(*bvh.children[0], tri, t);
-			}
-		}
-		else if (IntersectsBVH(*bvh.children[1], t_right)) {
-			RecursiveIntersection(*bvh.children[1], tri, t);
-		}
-	}
-
-	if (t < initial_t) { return true; } // If an intersection was found
-
-	return false;
-}
-
 void Accumulator::Rebuild(int width, int height) {
 	frame.clear();
 	frame.resize(width * height, make_float3(0, 0, 0));
@@ -219,7 +107,7 @@ float3 RayTracer::Illumination(float3 color, float3 O) {
 		float t_light = length(fabs(direction));
 		float t = FLT_MAX;
 		for (Mesh& mesh : scene.meshes) for (int i = 0; i < mesh.vcount / 3; i++) {
-			if (shadow_ray.IntersectsTriangle(mesh.triangles[i], t) && t < t_light) {
+			if (IntersectTriangle(shadow_ray, mesh.triangles[i], t) && t < t_light) {
 				break;
 			}
 		}
@@ -246,7 +134,7 @@ float3 RayTracer::Illumination(float3 color, float3 O) {
 
 		float t_light = length(fabs(direction)), t = FLT_MAX;
 		for (Mesh& mesh : scene.meshes) for (int m = 0; m < mesh.vcount / 3; m++) {
-			if (shadow_ray.IntersectsTriangle(mesh.triangles[m], t) && t < t_light) {
+			if (IntersectTriangle(shadow_ray, mesh.triangles[m], t) && t < t_light) {
 				break;
 			}
 		}
@@ -266,11 +154,15 @@ void RayTracer::ConstructBVH() {
 
 	// Fill the triangle pointer array
 	triangle_pointers = new CoreTri[N];
-	for (Mesh mesh : scene.meshes) for (int i = 0; i < mesh.vcount / 3; i++) {
-		triangle_pointers = &mesh.triangles[i];
+
+	int idx = 0;
+	for (Mesh mesh : scene.meshes) {
+		for (int i = 0; i < mesh.vcount / 3; i++) {
+			triangle_pointers[idx++] = mesh.triangles[i];
+		}
 	}
 
-	pool = new BVH[2 * N];
+	// pool = new BVH[2 * N];
 
 	root_bvh.first = 0;
 	root_bvh.count = N;
@@ -285,7 +177,7 @@ bool RayTracer::SplitBVH(BVH& bvh) {
 
 	float best_split_cost = FLT_MAX;
 	float best_split_pos;
-	char best_split_axis;
+	char best_split_plane;
 
 	CoreTri* left_split = new CoreTri[bvh.count];
 	CoreTri* right_split = new CoreTri[bvh.count];
@@ -314,12 +206,12 @@ bool RayTracer::SplitBVH(BVH& bvh) {
 		float split_cost = SplitCost(left_split, 0, left_count) + SplitCost(right_split, 0, right_count);
 		if (split_cost + EPSILON < best_split_cost) {
 			best_split_cost = split_cost;
-			best_split_axis = 'X';
+			best_split_plane = 'X';
 			best_split_pos = tri_center.x;
 		}
 	}
 
-	// X split
+	// Y split
 	for (int i = bvh.first; i < bvh.first + bvh.count; i++) {
 		CoreTri& tri = triangle_pointers[i];
 		float3 tri_center = (tri.vertex0 + tri.vertex1 + tri.vertex2) / 3.0f;
@@ -341,12 +233,12 @@ bool RayTracer::SplitBVH(BVH& bvh) {
 		float split_cost = SplitCost(left_split, 0, left_count) + SplitCost(right_split, 0, right_count);
 		if (split_cost + EPSILON < best_split_cost) {
 			best_split_cost = split_cost;
-			best_split_axis = 'Y';
-			best_split_pos = tri_center.x;
+			best_split_plane = 'Y';
+			best_split_pos = tri_center.y;
 		}
 	}
 
-	// X split
+	// Z split
 	for (int i = bvh.first; i < bvh.first + bvh.count; i++) {
 		CoreTri& tri = triangle_pointers[i];
 		float3 tri_center = (tri.vertex0 + tri.vertex1 + tri.vertex2) / 3.0f;
@@ -368,15 +260,21 @@ bool RayTracer::SplitBVH(BVH& bvh) {
 		float split_cost = SplitCost(left_split, 0, left_count) + SplitCost(right_split, 0, right_count);
 		if (split_cost + EPSILON < best_split_cost) {
 			best_split_cost = split_cost;
-			best_split_axis = 'Z';
-			best_split_pos = tri_center.x;
+			best_split_plane = 'Z';
+			best_split_pos = tri_center.z;
 		}
 	}
 
 	// If there is no value in splitting, don't split
-	if (SplitCost(triangle_pointers, bvh.first, bvh.count) - EPSILON < best_split_cost) {
-		return false;
-	}
+	//if (SplitCost(triangle_pointers, bvh.first, bvh.count) - EPSILON < best_split_cost) {
+	//	cout << "No value in splitting" << endl;
+	//	return false;
+	//}
+
+	cout << "Splitting BVH with count: " << bvh.count << endl;
+	cout << "  Split plane: " << best_split_plane << endl;
+	cout << "  Split pos:   " << best_split_pos << endl;
+	cout << "  Split cost:  " << best_split_cost << "(vs. " << SplitCost(triangle_pointers, bvh.first, bvh.count) << ")" << endl;
 
 	// Define the best splits
 	left_count = 0;
@@ -387,32 +285,32 @@ bool RayTracer::SplitBVH(BVH& bvh) {
 		float3 center = (tri.vertex0 + tri.vertex1 + tri.vertex2) / 3.0f;
 
 		// X split
-		if (best_split_axis == 'X') {
+		if (best_split_plane == 'X') {
 			if (center.x < best_split_pos) {
-				left_split[i] = tri;
+				left_split[left_count++] = tri;
 			}
 			else {
-				right_split[i] = tri;
+				right_split[right_count++] = tri;
 			}
 		}
 
 		// Y split
-		if (best_split_axis == 'Y') {
+		if (best_split_plane == 'Y') {
 			if (center.y < best_split_pos) {
-				left_split[i] = tri;
+				left_split[left_count++] = tri;
 			}
 			else {
-				right_split[i] = tri;
+				right_split[right_count++] = tri;
 			}
 		}
 
 		// Z split
-		if (best_split_axis == 'Z') {
+		if (best_split_plane == 'Z') {
 			if (center.z < best_split_pos) {
-				left_split[i] = tri;
+				left_split[left_count++] = tri;
 			}
 			else {
-				right_split[i] = tri;
+				right_split[right_count++] = tri;
 			}
 		}
 	}
@@ -437,6 +335,9 @@ bool RayTracer::SplitBVH(BVH& bvh) {
 
 	UpdateBounds(*bvh.left);
 	UpdateBounds(*bvh.right);
+
+	cout << "  Left count:  " << left_count << endl;
+	cout << "  Right count: " << right_count << endl;
 
 	delete[] left_split;
 	delete[] right_split;
@@ -574,23 +475,23 @@ bool RayTracer::RecursiveIntersectBVH(const Ray& ray, const BVH& bvh, CoreTri& t
 		float t_right = FLT_MAX;
 
 		// Only traverse children that are actually intersected
-		if (IntersectBVH(ray, *bvh.children[0], t_left)) {
-			if (IntersectBVH(ray, *bvh.children[1], t_right)) {
+		if (IntersectBVH(ray, *bvh.left, t_left)) {
+			if (IntersectBVH(ray, *bvh.right, t_right)) {
 				if (t_left < t_right) { // Traverse the closest child first
-					RecursiveIntersectBVH(ray, *bvh.children[0], tri, t);
-					RecursiveIntersectBVH(ray, *bvh.children[1], tri, t);
+					RecursiveIntersectBVH(ray, *bvh.left, tri, t);
+					RecursiveIntersectBVH(ray, *bvh.right, tri, t);
 				}
 				else {
-					RecursiveIntersectBVH(ray, *bvh.children[1], tri, t);
-					RecursiveIntersectBVH(ray, *bvh.children[0], tri, t);
+					RecursiveIntersectBVH(ray, *bvh.left, tri, t);
+					RecursiveIntersectBVH(ray, *bvh.right, tri, t);
 				}
 			}
 			else {
-				RecursiveIntersectBVH(ray, *bvh.children[0], tri, t);
+				RecursiveIntersectBVH(ray, *bvh.left, tri, t);
 			}
 		}
-		else if (IntersectBVH(ray, *bvh.children[1], t_right)) {
-			RecursiveIntersectBVH(ray, *bvh.children[1], tri, t);
+		else if (IntersectBVH(ray, *bvh.right, t_right)) {
+			RecursiveIntersectBVH(ray, *bvh.right, tri, t);
 		}
 	}
 
@@ -599,210 +500,25 @@ bool RayTracer::RecursiveIntersectBVH(const Ray& ray, const BVH& bvh, CoreTri& t
 	return false;
 }
 
-
-
-
-bool BVH::Split() {
-	if (leaves.size() < 4) { return false; }
-
-	float best_split_cost = FLT_MAX;
-	float best_split_pos;
-	char best_split_axis;
-	
-	// Horribly ugly function, my apologies
-	// X split
-	for (CoreTri* tri : leaves) {
-		vector<CoreTri*> left_split;
-		vector<CoreTri*> right_split;
-		float3 tri_center = (tri->vertex0 + tri->vertex1 + tri->vertex2) / 3.0f;
-
-		for (CoreTri* tri2 : leaves) {
-			float3 tri2_center = (tri2->vertex0 + tri2->vertex1 + tri2->vertex2) / 3.0f;
-			if (tri2_center.x + EPSILON < tri_center.x) {
-				left_split.push_back(tri2);
-			}
-			else {
-				right_split.push_back(tri2);
-			}
-		}
-
-		float split_cost = SplitCost(left_split) + SplitCost(right_split);
-		if (split_cost + EPSILON < best_split_cost) {
-			best_split_cost = split_cost;
-			best_split_axis = 'X';
-			best_split_pos = tri_center.x;
-		}
-	}
-
-	// Y split
-	for (CoreTri* tri : leaves) {
-		vector<CoreTri*> left_split;
-		vector<CoreTri*> right_split;
-		float3 tri_center = (tri->vertex0 + tri->vertex1 + tri->vertex2) / 3.0f;
-
-		for (CoreTri* tri2 : leaves) {
-			float3 tri2_center = (tri2->vertex0 + tri2->vertex1 + tri2->vertex2) / 3.0f;
-			if (tri2_center.y + EPSILON < tri_center.y) {
-				left_split.push_back(tri2);
-			}
-			else {
-				right_split.push_back(tri2);
-			}
-		}
-
-		float split_cost = SplitCost(left_split) + SplitCost(right_split);
-		if (split_cost + EPSILON < best_split_cost) {
-			best_split_cost = split_cost;
-			best_split_axis = 'Y';
-			best_split_pos = tri_center.y;
-		}
-	}
-
-	// Z split
-	for (CoreTri* tri : leaves) {
-		vector<CoreTri*> left_split;
-		vector<CoreTri*> right_split;
-		float3 tri_center = (tri->vertex0 + tri->vertex1 + tri->vertex2) / 3.0f;
-
-		for (CoreTri* tri2 : leaves) {
-			float3 tri2_center = (tri2->vertex0 + tri2->vertex1 + tri2->vertex2) / 3.0f;
-			if (tri2_center.z + EPSILON < tri_center.z) {
-				left_split.push_back(tri2);
-			}
-			else {
-				right_split.push_back(tri2);
-			}
-		}
-
-		float split_cost = SplitCost(left_split) + SplitCost(right_split);
-		if (split_cost + EPSILON < best_split_cost) {
-			best_split_cost = split_cost;
-			best_split_axis = 'Z';
-			best_split_pos = tri_center.z;
-		}
-	}
-
-	// If there is no value in splitting, don't split
-	if (SplitCost(leaves) - EPSILON < best_split_cost) { 
-		return false;
-	}
-
-	BVH* left; BVH* right;
-	children.push_back(left = new BVH());
-	children.push_back(right = new BVH());
-
-	for (CoreTri* tri : leaves) {
-		float3 center = (tri->vertex0 + tri->vertex1 + tri->vertex2) / 3.0f;
-
-		// X split
-		if (best_split_axis == 'X') {
-			if (center.x < best_split_pos) {
-				left->leaves.push_back(tri);
-			}
-			else {
-				right->leaves.push_back(tri);
-			}
-		}
-
-		// Y split
-		if (best_split_axis == 'Y') {
-			if (center.y < best_split_pos) {
-				left->leaves.push_back(tri);
-			}
-			else {
-				right->leaves.push_back(tri);
-			}
-		}
-
-		// Z split
-		if (best_split_axis == 'Z') {
-			if (center.z < best_split_pos) {
-				left->leaves.push_back(tri);
-			}
-			else {
-				right->leaves.push_back(tri);
-			}
-		}
-	}
-
-	left->UpdateBounds();
-	right->UpdateBounds();
-
-	isLeaf = false;
-	leaves.clear();
-	return true;
-}
-
-void BVH::UpdateBounds() {
-	float3 min_b = make_float3(FLT_MAX, FLT_MAX, FLT_MAX);
-	float3 max_b = make_float3(FLT_MIN, FLT_MIN, FLT_MIN);
-
-	if (isLeaf) {
-		for (CoreTri* tri : leaves) {
-			float3 tri_min_bound = fminf(fminf(tri->vertex0, tri->vertex1), tri->vertex2);
-			float3 tri_max_bound = fmaxf(fmaxf(tri->vertex0, tri->vertex1), tri->vertex2);
-
-			min_b = fminf(min_b, tri_min_bound);
-			max_b = fmaxf(max_b, tri_max_bound);
-		}
-	}
-	else {
-		for (BVH* child : children) {
-			float3 child_min_bound = fminf(child->min_bound, child->max_bound);
-			float3 child_max_bound = fmaxf(child->min_bound, child->max_bound);
-
-			min_b = fminf(min_b, child_min_bound);
-			max_b = fmaxf(max_b, child_max_bound);
-		}
-	}
-
-	min_bound = min_b; max_bound = max_b;
-}
-
-void BVH::RecursiveSplit() {
-	if (Split()) {
-		for (BVH* child : children) {
-			child->RecursiveSplit();
-		}
-	}
-}
-
-void BVH::RecursivePrint() {
-	if (count < 4) {
-		cout << "[" << count << "]";
+void RayTracer::PrintBVH(const BVH& bvh) {
+	if (bvh.count < 4) {
+		cout << "[" << bvh.count << "]";
 	}
 	else {
 		cout << "[";
-		left->RecursivePrint();
-		right->RecursivePrint();
+		PrintBVH(*bvh.left);
+		PrintBVH(*bvh.right);
 		cout << "]";
 	}
 }
 
+
+
 void BVH::RecursiveDelete() {
-	for (BVH* child : children) {
-		child->RecursiveDelete();
-		delete child;
-	}
-}
-
-float BVH::SplitCost(vector<CoreTri*> leaves) {
-	float3 min_b = make_float3(0, 0, 0);
-	float3 max_b = make_float3(0, 0, 0);
-
-	// Calculate AABB bounds
-	for (CoreTri* tri : leaves) {
-		float3 tri_min_bound = fminf(fminf(tri->vertex0, tri->vertex1), tri->vertex2);
-		float3 tri_max_bound = fmaxf(fmaxf(tri->vertex0, tri->vertex1), tri->vertex2);
-
-		min_b = fminf(min_b, tri_min_bound);
-		max_b = fmaxf(max_b, tri_max_bound);
-	}
-
-	float3 dims = max_b - min_b; // Dimensions of the AABB
-	float area = 2 * dims.x * dims.y + 2 * dims.x * dims.z + 2 * dims.y * dims.z; // AABB surface area
-
-	return leaves.size() * area;
+	left->RecursiveDelete();
+	right->RecursiveDelete();
+	delete left;
+	delete right;
 }
 
 Scene::~Scene()
