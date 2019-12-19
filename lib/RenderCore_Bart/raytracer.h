@@ -66,6 +66,11 @@ public:
 	float3 max_bound = make_float3(0, 0, 0); // AABB positions
 	vector<BVH*> children;
 	vector<CoreTri*> leaves;
+
+	BVH* left;
+	BVH* right;
+	int first, count;
+
 	bool isLeaf = true;
 
 private:
@@ -80,15 +85,12 @@ public:
 		: O(o), D(normalize(d)), IOR(ior) {
 
 	}
-	const float3 origin() { return O; }
-	const float3 direction() { return D; }
 	const float3 point(float t) { return O + t * D; }
 
-	bool IntersectsTriangle(const CoreTri& triangle, float& t);			// If the ray intersects a triangle
-	bool IntersectsBVH(const BVH& bvh, float& t);						// If the ray intersects the AABB of a BVH
-	bool RecursiveIntersection(const BVH& bvh, CoreTri& tri, float& t);	// Finds the closest triangle intersection in a BVH
+	bool IntersectsTriangle(const CoreTri& triangle, float& t);							// If the ray intersects a triangle
+	bool IntersectsBVH(const BVH& bvh, float& t);										// If the ray intersects the AABB of a BVH
+	bool RecursiveIntersection(const BVH& bvh, CoreTri& tri, float& t);					// Finds the closest triangle intersection in a BVH
 
-private:
 	float3 O;
 	float3 D;
 	float IOR;
@@ -125,16 +127,32 @@ public:
 class RayTracer
 {
 public:
-	void ConstructBVH(); // Constructs a BVH from the meshes in the scene
-
 	RayTracer() = default;
-	float3 Color(float3 O, float3 D, uint depth, bool outside=true);
-	float3 Illumination(float3 color, float3 O);
-	static Scene scene;
-	Accumulator accumulator;
-	BVH BVH;
+	~RayTracer();
+	float3 Color(float3 O, float3 D, uint depth, bool outside=true);					// Trace a ray and return its color
+	float3 Illumination(float3 color, float3 O);										// Given a color at a location, scale it based on visible lighting
 
+	Accumulator accumulator;
+	BVH root_bvh;
 	int frameCount = 0;
+
+	// BVH
+	int poolPtr = 0;																	// Pointer to a BVH in pool array
+	int N;																				// Total amount of primitives encompassed by the BVH
+	CoreTri* triangle_pointers;															// Pointers to primitives, referenced inside BVH struct
+	BVH* pool;																			// Pool of BVHs, neighbours are next to each other in the pool
+	void ConstructBVH();																// Constructs a BVH from the meshes in the scene and recursively splits it
+	float SplitCost(CoreTri* primitives, int first, int count);							// Defines the cost of a given split based on number of primites * surface area
+	bool SplitBVH(BVH& bvh);															// Splits a BVH in two based on the SplitCost() implementation
+	void RecursiveSplitBVH(BVH& bvh);													// Recursively splits a BVH (2 children) until splitting is no longer worth it
+	void UpdateBounds(BVH& bvh);														// Updates the AABB of a BVH
+
+	// Intersection
+	bool IntersectTriangle(const Ray& ray, const CoreTri& triangle, float& t);			// Returns whether a ray intersects a triangle, and reports the distance as t
+	bool IntersectBVH(const Ray& ray, const BVH& bvh, float& t);						// Returns whether a ray intersects a BVH, and reports the distance as t
+	bool RecursiveIntersectBVH(const Ray& ray, const BVH& bvh, CoreTri& tri, float& t); // Recursively intersect a BVH, return the first hit as tri and distance as t
+
+	static Scene scene;
 };
 
 } // namespace lh2core

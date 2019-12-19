@@ -148,8 +148,7 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge )
 {
 	if (raytracer.frameCount == 0) {
 		raytracer.ConstructBVH();
-		raytracer.BVH.RecursiveSplit();
-		raytracer.BVH.RecursivePrint(); cout << endl;
+		raytracer.root_bvh.RecursivePrint(); cout << endl;
 		raytracer.frameCount++;
 	}
 	screen->Clear();
