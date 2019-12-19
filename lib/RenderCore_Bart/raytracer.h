@@ -54,24 +54,11 @@ public:
 	float3 radiance;
 };
 
-class BVH {
-public:
-	BVH() = default;
-	~BVH();
-
-	float3 min_bound = make_float3(0, 0, 0);
-	float3 max_bound = make_float3(0, 0, 0); // AABB positions
-	vector<CoreTri*> leaves;
-
-	BVH* left;
-	BVH* right;
-	int first;
-	int count = 0;
-
-	bool isLeaf = true;
-
-private:
-	void RecursiveDelete();
+struct BVH {
+	float3 min_bound;	// 12
+	int first;			// 4
+	float3 max_bound;	// 12
+	int count = 0;		// 4
 };
 
 class Ray {
@@ -124,14 +111,13 @@ public:
 	float3 Illumination(float3 color, float3 O);										// Given a color at a location, scale it based on visible lighting
 
 	Accumulator accumulator;
-	BVH root_bvh;
 	int frameCount = 0;
 
 	// BVH
 	int poolPtr = 0;																	// Pointer to a BVH in pool array
 	int N;																				// Total amount of primitives encompassed by the BVH
 	CoreTri* triangle_pointers;															// Pointers to primitives, referenced inside BVH struct
-	BVH* pool;																			// Pool of BVHs, neighbours are next to each other in the pool
+	BVH* alignas(128) pool;																// Pool of BVHs, neighbours are next to each other in the pool
 	void ConstructBVH();																// Constructs a BVH from the meshes in the scene and recursively splits it
 	float SplitCost(CoreTri* primitives, int first, int count);							// Defines the cost of a given split based on number of primites * surface area
 	bool SplitBVH(BVH& bvh);															// Splits a BVH in two based on the SplitCost() implementation

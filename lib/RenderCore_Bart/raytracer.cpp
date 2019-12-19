@@ -34,7 +34,7 @@ float3 RayTracer::Color(float3 O, float3 D, uint depth, bool outside) {
 	CoreTri triangle;
 
 	// The ray hit the skydome, we don't do lighting
-	if (!RecursiveIntersectBVH(ray, root_bvh, triangle, t)) {
+	if (!RecursiveIntersectBVH(ray, pool[0], triangle, t)) {
 		float3 Dn = normalize(D);
 		float u = 1 + atan2(Dn.x, -Dn.z) * INVPI;
 		float v = acos(Dn.y) * INVPI;
@@ -162,14 +162,18 @@ void RayTracer::ConstructBVH() {
 		}
 	}
 
-	// pool = new BVH[2 * N];
+	pool = new BVH[2 * N];
+	BVH& root = pool[0];
+	poolPtr = 2;
 
-	root_bvh.first = 0;
-	root_bvh.count = N;
+	root.first = 0;
+	root.count = N;
 
-	UpdateBounds(root_bvh);
+	UpdateBounds(pool[0]);
 
-	RecursiveSplitBVH(root_bvh);
+	poolPtr = 2;
+
+	RecursiveSplitBVH(pool[0]);
 }
 
 bool RayTracer::SplitBVH(BVH& bvh) {
@@ -266,15 +270,9 @@ bool RayTracer::SplitBVH(BVH& bvh) {
 	}
 
 	// If there is no value in splitting, don't split
-	//if (SplitCost(triangle_pointers, bvh.first, bvh.count) - EPSILON < best_split_cost) {
-	//	cout << "No value in splitting" << endl;
-	//	return false;
-	//}
-
-	cout << "Splitting BVH with count: " << bvh.count << endl;
-	cout << "  Split plane: " << best_split_plane << endl;
-	cout << "  Split pos:   " << best_split_pos << endl;
-	cout << "  Split cost:  " << best_split_cost << "(vs. " << SplitCost(triangle_pointers, bvh.first, bvh.count) << ")" << endl;
+	if (SplitCost(triangle_pointers, bvh.first, bvh.count) - EPSILON < best_split_cost) {
+		return false;
+	}
 
 	// Define the best splits
 	left_count = 0;
@@ -324,20 +322,20 @@ bool RayTracer::SplitBVH(BVH& bvh) {
 		triangle_pointers[bvh.first + left_count + i] = right_split[i];
 	}
 
-	bvh.left = new BVH();
-	bvh.right = new BVH();
+	BVH& left = pool[poolPtr];
+	BVH& right = pool[poolPtr+1];
 
-	bvh.left->first = bvh.first;
-	bvh.left->count = left_count;
+	left.first = bvh.first;
+	left.count = left_count;
 
-	bvh.right->first = bvh.first + left_count;
-	bvh.right->count = right_count;
+	right.first = bvh.first + left_count;
+	right.count = right_count;
 
-	UpdateBounds(*bvh.left);
-	UpdateBounds(*bvh.right);
+	UpdateBounds(left);
+	UpdateBounds(right);
 
-	cout << "  Left count:  " << left_count << endl;
-	cout << "  Right count: " << right_count << endl;
+	bvh.count = 0;			// This node is not a leaf anymore
+	bvh.first = poolPtr;	// Point to its left child
 
 	delete[] left_split;
 	delete[] right_split;
@@ -347,8 +345,11 @@ bool RayTracer::SplitBVH(BVH& bvh) {
 
 void RayTracer::RecursiveSplitBVH(BVH& bvh) {
 	if (SplitBVH(bvh)) {
-		RecursiveSplitBVH(*bvh.left);
-		RecursiveSplitBVH(*bvh.right);
+		BVH& left = pool[poolPtr++];
+		BVH& right = pool[poolPtr++];
+
+		RecursiveSplitBVH(left);
+		RecursiveSplitBVH(right);
 	}
 }
 
@@ -462,7 +463,7 @@ bool RayTracer::RecursiveIntersectBVH(const Ray& ray, const BVH& bvh, CoreTri& t
 	float initial_t = t;
 	float found_t = t;
 
-	if (bvh.count < 4) {
+	if (bvh.count > 0) { // If the node is a leaf
 		for (int i = 0; i < bvh.first + bvh.count; i++) {
 			if (IntersectTriangle(ray, triangle_pointers[i], found_t) && found_t < t) {
 				t = found_t;
@@ -475,23 +476,23 @@ bool RayTracer::RecursiveIntersectBVH(const Ray& ray, const BVH& bvh, CoreTri& t
 		float t_right = FLT_MAX;
 
 		// Only traverse children that are actually intersected
-		if (IntersectBVH(ray, *bvh.left, t_left)) {
-			if (IntersectBVH(ray, *bvh.right, t_right)) {
+		if (IntersectBVH(ray, pool[bvh.first], t_left)) {
+			if (IntersectBVH(ray, pool[bvh.first+1], t_right)) {
 				if (t_left < t_right) { // Traverse the closest child first
-					RecursiveIntersectBVH(ray, *bvh.left, tri, t);
-					RecursiveIntersectBVH(ray, *bvh.right, tri, t);
+					RecursiveIntersectBVH(ray, pool[bvh.first], tri, t);
+					RecursiveIntersectBVH(ray, pool[bvh.first+1], tri, t);
 				}
 				else {
-					RecursiveIntersectBVH(ray, *bvh.left, tri, t);
-					RecursiveIntersectBVH(ray, *bvh.right, tri, t);
+					RecursiveIntersectBVH(ray, pool[bvh.first], tri, t);
+					RecursiveIntersectBVH(ray, pool[bvh.first+1], tri, t);
 				}
 			}
 			else {
-				RecursiveIntersectBVH(ray, *bvh.left, tri, t);
+				RecursiveIntersectBVH(ray, pool[bvh.first], tri, t);
 			}
 		}
-		else if (IntersectBVH(ray, *bvh.right, t_right)) {
-			RecursiveIntersectBVH(ray, *bvh.right, tri, t);
+		else if (IntersectBVH(ray, pool[bvh.first+1], t_right)) {
+			RecursiveIntersectBVH(ray, pool[bvh.first+1], tri, t);
 		}
 	}
 
@@ -501,35 +502,25 @@ bool RayTracer::RecursiveIntersectBVH(const Ray& ray, const BVH& bvh, CoreTri& t
 }
 
 void RayTracer::PrintBVH(const BVH& bvh) {
-	if (bvh.count < 4) {
+	if (bvh.count > 0) {
 		cout << "[" << bvh.count << "]";
 	}
 	else {
 		cout << "[";
-		PrintBVH(*bvh.left);
-		PrintBVH(*bvh.right);
+		PrintBVH(pool[bvh.first]);
+		PrintBVH(pool[bvh.first+1]);
 		cout << "]";
 	}
 }
 
 
 
-void BVH::RecursiveDelete() {
-	left->RecursiveDelete();
-	right->RecursiveDelete();
-	delete left;
-	delete right;
-}
 
 Scene::~Scene()
 {
 	for (auto mat : matList) delete mat;
 	for (auto pointLight : pointLights) delete pointLight;
 	for (auto areaLight : areaLights) delete areaLight;
-}
-
-BVH::~BVH(){
-	RecursiveDelete();
 }
 
 RayTracer::~RayTracer() {
