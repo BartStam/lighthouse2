@@ -21,9 +21,6 @@ float3 Triangle::RandomPoint() {
 	return vertex0 + a * (vertex1 - vertex0) + b * (vertex2 - vertex0);
 }
 
-
-
-
 float3 RayTracer::Color(float3 O, float3 D, uint depth, bool outside) {
 	float3 color = make_float3(0, 0, 0);
 	if (depth <= 0) { return color; }
@@ -151,6 +148,8 @@ float3 RayTracer::Illumination(float3 color, float3 O) {
 void RayTracer::ConstructBVH() {
 	N = 0;
 	for (Mesh mesh : scene.meshes) { N += mesh.vcount / 3; }
+
+	cout << "Total triangle amount: " << N << endl;
 
 	// Fill the triangle pointer array
 	triangle_pointers = new CoreTri[N];
@@ -345,6 +344,8 @@ bool RayTracer::SplitBVH(BVH& bvh) {
 
 void RayTracer::RecursiveSplitBVH(BVH& bvh) {
 	if (SplitBVH(bvh)) {
+		// PrintBVH(pool[0]);
+
 		BVH& left = pool[poolPtr++];
 		BVH& right = pool[poolPtr++];
 
@@ -512,9 +513,6 @@ void RayTracer::PrintBVH(const BVH& bvh) {
 		cout << "]";
 	}
 }
-
-
-
 
 Scene::~Scene()
 {

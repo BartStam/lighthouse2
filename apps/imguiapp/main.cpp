@@ -41,19 +41,11 @@ static CoreStats coreStats;
 void PrepareScene()
 {
 	// Scene
-	// renderer->AddScene("Box0.gltf", "data/simple/", mat4::Scale(1.0f) * mat4::Translate(0, 0, 0));
-	renderer->AddScene("three_cubes.gltf", "data/cubes/", mat4::Scale(1.0f) * mat4::Translate(0, 0, 0));
-	materialFile = string("data/cubes/three_cubes_materials.xml");
-	
-	// Floor
-	//int floorMat = renderer->AddMaterial( make_float3( 0.5f, 0.5f, 0.6f ) );
-	//int floorQuad = renderer->AddQuad( make_float3( 0, 1, 0 ), make_float3( 0, -1.0f, 0 ), 40, 40, floorMat );
-	//renderer->AddInstance( floorQuad );
+	renderer->AddScene("bvh_test_scene.gltf", "data/bvh_test_scene/", mat4::Scale(1.0f) * mat4::Translate(0, 0, 0));
+	materialFile = string("data/bvh_test_scene/bvh_test_scene_materials.xml");
 
-	// Lights
-	//renderer->AddPointLight(make_float3(-2, 3, -8), make_float3(12, 4, 12));
-	//renderer->AddPointLight(make_float3(-6, 8, -2), make_float3(8, 16, 8));
-	//renderer->AddPointLight(make_float3(6, 4, 6), make_float3(4, 4, 4));
+	//renderer->AddScene("three_cubes.gltf", "data/cubes/", mat4::Scale(1.0f) * mat4::Translate(0, 0, 0));
+	//materialFile = string("data/cubes/three_cubes_materials.xml");
 
 	int lightMat1 = renderer->AddMaterial(make_float3(8, 20, 20));
 	int lightQuad1 = renderer->AddQuad(make_float3(0.5, -1, 0.5), make_float3(-5.0f, 10.0f, -5.0f), 6.9f, 6.9f, lightMat1);
@@ -65,12 +57,10 @@ void PrepareScene()
 
 	renderer->DeserializeMaterials(materialFile.c_str());
 
-	animPaused = true;
-
-//#if 0
+//#if 1
 //	// mushrooms
-//	materialFile = string( "data/woodville/wood_materials.xml" );
-//	renderer->AddScene( "PUP_Woodville.gltf", "data/woodville/", mat4::Scale( 2 ) * mat4::Translate( 0, 0, 0 ) );
+//	materialFile = string( "data/mushrooms/mush_materials.xml" );
+//	renderer->AddScene( "scene.gltf", "data/mushrooms/", mat4::Scale( 2 ) * mat4::Translate( 0, 0, 0 ) );
 //	int rootNode = renderer->FindNode( "RootNode (gltf orientation matrix)" );
 //	renderer->SetNodeTransform( rootNode, mat4::RotateX( -PI / 2 ) );
 //	animPaused = true;
@@ -82,9 +72,9 @@ void PrepareScene()
 //	renderer->SetNodeTransform( rootNode, mat4::RotateX( -PI / 2 ) );
 //#endif
 //#if 1
-	//// overhead light, use regular PT
-	//int lightMat = renderer->AddMaterial( make_float3( 50, 50, 45 ) );
-	//int lightQuad = renderer->AddQuad( make_float3( 0, -1, 0 ), make_float3( 0, 26.0f, 0 ), 6.9f, 6.9f, lightMat );
+//	// overhead light, use regular PT
+//	int lightMat = renderer->AddMaterial( make_float3( 50, 50, 45 ) );
+//	int lightQuad = renderer->AddQuad( make_float3( 0, -1, 0 ), make_float3( 0, 26.0f, 0 ), 6.9f, 6.9f, lightMat );
 //#else
 //	// difficult light; use BDPT
 //	int lightMat = renderer->AddMaterial( make_float3( 500, 500, 400 ) );
@@ -271,7 +261,7 @@ int main()
 		if (!running) break;
 	}
 	// save material changes
-	// renderer->SerializeMaterials( materialFile.c_str() );
+	renderer->SerializeMaterials( materialFile.c_str() );
 	// clean up
 	renderer->SerializeCamera( "camera.xml" );
 	renderer->Shutdown();

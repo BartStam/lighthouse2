@@ -1,0 +1,63 @@
+<materials>
+    <material_count>5</material_count>
+    <material_0>
+        <name>Material.001</name>
+        <origin>data/bvh_test_scene/bvh_test_scene.gltf</origin>
+        <id>0</id>
+        <flags>5</flags>
+        <color b="0.049014322" g="0.023062008" r="0.80000007"/>
+        <absorption b="1e-32" g="1e-32" r="1e-32"/>
+        <metallic>0</metallic>
+        <subsurface>1e-32</subsurface>
+        <specular>1e-32</specular>
+        <roughness>0.5</roughness>
+        <specularTint>1e-32</specularTint>
+        <anisotropic>1e-32</anisotropic>
+        <sheen>1e-32</sheen>
+        <sheenTint>1e-32</sheenTint>
+        <clearcoat>1e-32</clearcoat>
+        <clearcoatGloss>1e-32</clearcoatGloss>
+        <transmission>0.6</transmission>
+        <eta>1.2</eta>
+    </material_0>
+    <material_1>
+        <name>Material.002</name>
+        <origin>data/bvh_test_scene/bvh_test_scene.gltf</origin>
+        <id>1</id>
+        <flags>5</flags>
+        <color b="0.80000007" g="0.23884644" r="0.049284246"/>
+        <absorption b="1e-32" g="1e-32" r="1e-32"/>
+        <metallic>0</metallic>
+        <subsurface>1e-32</subsurface>
+        <specular>0.6</specular>
+        <roughness>0.5</roughness>
+        <specularTint>1e-32</specularTint>
+        <anisotropic>1e-32</anisotropic>
+        <sheen>1e-32</sheen>
+        <sheenTint>1e-32</sheenTint>
+        <clearcoat>1e-32</clearcoat>
+        <clearcoatGloss>1e-32</clearcoatGloss>
+        <transmission>1e-32</transmission>
+        <eta>1e-32</eta>
+    </material_1>
+    <material_2>
+        <name>Material.003</name>
+        <origin>data/bvh_test_scene/bvh_test_scene.gltf</origin>
+        <id>2</id>
+        <flags>5</flags>
+        <color b="0.041562188" g="0.80000007" r="0.039082695"/>
+        <absorption b="1e-32" g="1e-32" r="1e-32"/>
+        <metallic>0</metallic>
+        <subsurface>1e-32</subsurface>
+        <specular>1e-32</specular>
+        <roughness>0.5</roughness>
+        <specularTint>1e-32</specularTint>
+        <anisotropic>1e-32</anisotropic>
+        <sheen>1e-32</sheen>
+        <sheenTint>1e-32</sheenTint>
+        <clearcoat>1e-32</clearcoat>
+        <clearcoatGloss>1e-32</clearcoatGloss>
+        <transmission>1e-32</transmission>
+        <eta>1e-32</eta>
+    </material_2>
+</materials>

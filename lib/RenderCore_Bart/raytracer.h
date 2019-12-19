@@ -107,11 +107,12 @@ class RayTracer
 public:
 	RayTracer() = default;
 	~RayTracer();
-	float3 Color(float3 O, float3 D, uint depth, bool outside=true);					// Trace a ray and return its color
-	float3 Illumination(float3 color, float3 O);										// Given a color at a location, scale it based on visible lighting
 
 	Accumulator accumulator;
 	int frameCount = 0;
+
+	float3 Color(float3 O, float3 D, uint depth, bool outside=true);					// Trace a ray and return its color
+	float3 Illumination(float3 color, float3 O);										// Given a color at a location, scale it based on visible lighting
 
 	// BVH
 	int poolPtr = 0;																	// Pointer to a BVH in pool array

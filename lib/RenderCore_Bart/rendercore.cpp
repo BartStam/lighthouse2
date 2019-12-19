@@ -147,9 +147,11 @@ void RenderCore::SetSkyData(const float3* pixels, const uint width, const uint h
 void RenderCore::Render( const ViewPyramid& view, const Convergence converge )
 {
 	if (raytracer.frameCount == 0) {
-		cout << "BVH size: " << sizeof(BVH) << endl;
+		DWORD trace_start = GetTickCount();
 		raytracer.ConstructBVH();
 		raytracer.frameCount++;
+		DWORD trace_time = GetTickCount() - trace_start;
+		cout << "Finished building BVH in " << trace_time / 1000.0f << " seconds." << endl;
 	}
 	screen->Clear();
 	if (converge) { raytracer.accumulator.Rebuild(screen->width, screen->height); }
