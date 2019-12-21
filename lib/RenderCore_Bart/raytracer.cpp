@@ -32,9 +32,8 @@ float3 RayTracer::Color(float3 O, float3 D, uint depth, bool outside) {
 
 	// The ray hit the skydome, we don't do lighting
 	if (!RecursiveIntersectBVH(ray, pool[0], triangle, t)) {
-		float3 Dn = normalize(D);
-		float u = 1 + atan2(Dn.x, -Dn.z) * INVPI;
-		float v = acos(Dn.y) * INVPI;
+		float u = 1 + atan2(D.x, -D.z) * INVPI;
+		float v = acos(D.y) * INVPI;
 
 		unsigned long long width = round(u * scene.skyHeight);
 		unsigned long long height = round(v * scene.skyHeight);
@@ -52,41 +51,43 @@ float3 RayTracer::Color(float3 O, float3 D, uint depth, bool outside) {
 	}
 
 	float diffusion = 1.0f - specularity - transmission;
-
 	float3 N = make_float3(triangle.Nx, triangle.Ny, triangle.Nz); // Normalized
 
 	// Transmission
-	float H1 = 1.0f, H2 = scene.matList[triangle.material]->IOR;
+	if (transmission > 0.01f) {
+		float H1 = 1.0f, H2 = scene.matList[triangle.material]->IOR;
 
-	if (!outside) {		// If the ray is exiting a transmissive material
-		swap(H1, H2);	// Swap the IOR
-		N = -N;			// Invert the normal
+		if (!outside) {		// If the ray is exiting a transmissive material
+			swap(H1, H2);	// Swap the IOR
+			N = -N;			// Invert the normal
+		}
+
+		float cosTi = dot(-D, N);
+		float sin2Tt = (H1 / H2) * (H1 / H2) * (1.0f - (cosTi * cosTi));
+
+		// Calculate using Schlick's approximation
+		float fresnel;
+		float R0 = ((H1 - H2) / (H1 + H2)) * ((H1 - H2) / (H1 + H2));
+		if (H1 > H2 && sin2Tt > 1.0f) { // If there is TIR
+			fresnel = 1.0f;
+
+			// Testing purposes, colors area of TIR green
+			// return make_float3(0, 1, 0);
+		}
+		else {
+			float x = 1.0f - cosTi;
+			fresnel = R0 + (1.0f - R0) * x * x * x * x * x;
+		}
+
+		specularity = specularity + transmission * fresnel;
+		transmission = transmission * (1.0f - fresnel);
+
+		float H = H1 / H2;
+		float S = sqrt(1 - sin2Tt);
+
+		color += transmission * Color(ray.point(t) - N * 2 * EPSILON, H * D + (H * cosTi - S) * N, depth - 1, !outside);
 	}
 
-	float cosTi = dot(-D, N);
-	float sin2Tt = (H1 / H2) * (H1 / H2) * (1.0f - (cosTi * cosTi));
-
-	// Calculate using Schlick's approximation
-	float fresnel;
-	float R0 = ((H1 - H2) / (H1 + H2)) * ((H1 - H2) / (H1 + H2));
-	if (H1 > H2 && sin2Tt > 1.0f) { // If there is TIR
-		fresnel = 1.0f;
-
-		// Testing purposes, colors area of TIR green
-		// return make_float3(0, 1, 0);
-	}
-	else {
-		float x = 1.0f - cosTi;
-		fresnel = R0 + (1.0f - R0) * x * x * x * x * x;
-	}
-
-	specularity = specularity + transmission * fresnel;
-	transmission = transmission * (1.0f - fresnel);
-
-	float H = H1 / H2;
-	float S = sqrt(1 - sin2Tt);
-
-	if (transmission > 0.01f) { color += transmission * Color(ray.point(t) - N * 2 * EPSILON, H * D + (H * cosTi - S) * N, depth - 1, !outside); }
 	if (specularity > 0.01f) { color += specularity * Color(ray.point(t), D - 2 * (D * N) * N, depth - 1, outside); }
 	if (diffusion > 0.01f) { color += diffusion * Illumination(scene.matList[triangle.material]->diffuse, ray.point(t)); }
 
@@ -103,40 +104,28 @@ float3 RayTracer::Illumination(float3 color, float3 O) {
 
 		float t_light = length(fabs(direction));
 		float t = FLT_MAX;
-		for (Mesh& mesh : scene.meshes) for (int i = 0; i < mesh.vcount / 3; i++) {
-			if (IntersectTriangle(shadow_ray, mesh.triangles[i], t) && t < t_light) {
-				break;
-			}
-		}
+		CoreTri triangle;
 
-		// If the triangle is illuminated by this light
+		RecursiveIntersectBVH(shadow_ray, pool[0], triangle, t);
 		if (t_light <= t) {
 			light_color += scene.pointLights[i]->radiance / (t_light * t_light);
 		}
 	}
 
 	// Monte Carlo area lighting
-	float total_area = 0;
-	for (int i = 0; i < scene.areaLights.size(); i++) {
-		total_area += scene.areaLights[i]->area;
-	}
-
-	int N = 8;
+	int N = 1;
 	for (int n = 0; n < N; n++) {
 		uint i = RandomUInt() % scene.areaLights.size();
-		float p = scene.areaLights[i]->area / total_area; // Probability of hitting this light
+		float p = scene.areaLights[i]->area / total_light_area; // Probability of hitting this light
 
 		float3 direction = scene.areaLights[i]->RandomPoint() - O;
 		Ray shadow_ray = Ray(O, direction);
 
-		float t_light = length(fabs(direction)), t = FLT_MAX;
-		for (Mesh& mesh : scene.meshes) for (int m = 0; m < mesh.vcount / 3; m++) {
-			if (IntersectTriangle(shadow_ray, mesh.triangles[m], t) && t < t_light) {
-				break;
-			}
-		}
+		float t_light = length(fabs(direction));
+		float t = FLT_MAX;
+		CoreTri triangle;
 
-		// If the triangle is illuminated by this light (V is 1 in rendering equation)
+		RecursiveIntersectBVH(shadow_ray, pool[0], triangle, t);
 		if (t_light <= t) {
 			light_color += ((scene.areaLights[i]->radiance / (t_light * t_light)) / p) / N;
 		}
@@ -146,10 +135,10 @@ float3 RayTracer::Illumination(float3 color, float3 O) {
 }
 
 void RayTracer::ConstructBVH() {
-	N = 0;
+	int N = 0;
 	for (Mesh mesh : scene.meshes) { N += mesh.vcount / 3; }
 
-	cout << "Total triangle amount: " << N << endl;
+	cout << "Total triangle count: " << N << endl;
 
 	// Fill the triangle pointer array
 	triangle_pointers = new CoreTri[N];
@@ -167,12 +156,8 @@ void RayTracer::ConstructBVH() {
 
 	root.first = 0;
 	root.count = N;
-
-	UpdateBounds(pool[0]);
-
-	poolPtr = 2;
-
-	RecursiveSplitBVH(pool[0]);
+	UpdateBounds(root);
+	RecursiveSplitBVH(root);
 }
 
 bool RayTracer::SplitBVH(BVH& bvh) {
@@ -344,8 +329,6 @@ bool RayTracer::SplitBVH(BVH& bvh) {
 
 void RayTracer::RecursiveSplitBVH(BVH& bvh) {
 	if (SplitBVH(bvh)) {
-		// PrintBVH(pool[0]);
-
 		BVH& left = pool[poolPtr++];
 		BVH& right = pool[poolPtr++];
 
@@ -465,14 +448,14 @@ bool RayTracer::RecursiveIntersectBVH(const Ray& ray, const BVH& bvh, CoreTri& t
 	float found_t = t;
 
 	if (bvh.count > 0) { // If the node is a leaf
-		for (int i = 0; i < bvh.first + bvh.count; i++) {
+		for (int i = bvh.first; i < bvh.first + bvh.count; i++) {
 			if (IntersectTriangle(ray, triangle_pointers[i], found_t) && found_t < t) {
 				t = found_t;
 				tri = triangle_pointers[i];
 			}
 		}
 	}
-	else {
+	else { // If the node is not a leaf
 		float t_left = FLT_MAX;
 		float t_right = FLT_MAX;
 
@@ -484,8 +467,8 @@ bool RayTracer::RecursiveIntersectBVH(const Ray& ray, const BVH& bvh, CoreTri& t
 					RecursiveIntersectBVH(ray, pool[bvh.first+1], tri, t);
 				}
 				else {
-					RecursiveIntersectBVH(ray, pool[bvh.first], tri, t);
 					RecursiveIntersectBVH(ray, pool[bvh.first+1], tri, t);
+					RecursiveIntersectBVH(ray, pool[bvh.first], tri, t);
 				}
 			}
 			else {

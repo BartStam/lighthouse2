@@ -17,7 +17,7 @@
         <sheenTint>1e-32</sheenTint>
         <clearcoat>1e-32</clearcoat>
         <clearcoatGloss>1e-32</clearcoatGloss>
-        <transmission>0.6</transmission>
+        <transmission>0.60000002</transmission>
         <eta>1.2</eta>
     </material_0>
     <material_1>
@@ -29,7 +29,7 @@
         <absorption b="1e-32" g="1e-32" r="1e-32"/>
         <metallic>0</metallic>
         <subsurface>1e-32</subsurface>
-        <specular>0.6</specular>
+        <specular>0.60000002</specular>
         <roughness>0.5</roughness>
         <specularTint>1e-32</specularTint>
         <anisotropic>1e-32</anisotropic>

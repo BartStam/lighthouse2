@@ -116,7 +116,6 @@ public:
 
 	// BVH
 	int poolPtr = 0;																	// Pointer to a BVH in pool array
-	int N;																				// Total amount of primitives encompassed by the BVH
 	CoreTri* triangle_pointers;															// Pointers to primitives, referenced inside BVH struct
 	BVH* alignas(128) pool;																// Pool of BVHs, neighbours are next to each other in the pool
 	void ConstructBVH();																// Constructs a BVH from the meshes in the scene and recursively splits it
@@ -130,6 +129,9 @@ public:
 	bool IntersectTriangle(const Ray& ray, const CoreTri& triangle, float& t);			// Returns whether a ray intersects a triangle, and reports the distance as t
 	bool IntersectBVH(const Ray& ray, const BVH& bvh, float& t);						// Returns whether a ray intersects a BVH, and reports the distance as t
 	bool RecursiveIntersectBVH(const Ray& ray, const BVH& bvh, CoreTri& tri, float& t); // Recursively intersect a BVH, return the first hit as tri and distance as t
+
+	// Lights
+	float total_light_area = 0;
 
 	static Scene scene;
 };

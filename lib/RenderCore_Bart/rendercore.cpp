@@ -117,6 +117,7 @@ void RenderCore::SetLights(const CoreLightTri* areaLights, const int areaLightCo
 		float A = areaLights[i].area;
 		float3 rad = areaLights[i].radiance;
 		raytracer.scene.areaLights.push_back(l = new AreaLight(v0, v1, v2, N, c, A, rad));
+		raytracer.total_light_area += A;
 	}
 
 	// Add point lights to scene
@@ -149,6 +150,7 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge )
 	if (raytracer.frameCount == 0) {
 		DWORD trace_start = GetTickCount();
 		raytracer.ConstructBVH();
+		raytracer.PrintBVH(raytracer.pool[0]); cout << endl;
 		raytracer.frameCount++;
 		DWORD trace_time = GetTickCount() - trace_start;
 		cout << "Finished building BVH in " << trace_time / 1000.0f << " seconds." << endl;
@@ -173,7 +175,7 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge )
 			float3 sx = (x * dx + rx) * (view.p2 - view.p1);	// Screen x
 			float3 sy = (y * dy + dy) * (view.p3 - view.p1);	// Screen y
 			float3 P = view.p1 + sx + sy;						// Point on screen
-			float3 D = normalize(P - view.pos);					// Ray direction
+			float3 D = P - view.pos;							// Ray direction, normalized inside function
 			float3 c = raytracer.Color(view.pos, D, depth);		// Color vector
 			raytracer.accumulator.addPixel(x, y, c);
 
@@ -184,7 +186,8 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge )
 	}
 
 	DWORD trace_time = GetTickCount() - trace_start;
-	cout << "\r" << setw(4) << std::setfill(' ') << nx * ny / trace_time << "K primary rays per s" << std::flush;
+	cout << "\rRender time: " << setw(4) << std::setfill(' ') << trace_time / 1000.0f << "s per frame." << std::flush;
+	// cout << "\r" << setw(4) << std::setfill(' ') << nx * ny / trace_time << "K primary rays per s" << std::flush;
 
 	// copy pixel buffer to OpenGL render target texture
 	glBindTexture(GL_TEXTURE_2D, targetTextureID);
