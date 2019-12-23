@@ -148,17 +148,20 @@ void RenderCore::SetSkyData(const float3* pixels, const uint width, const uint h
 void RenderCore::Render( const ViewPyramid& view, const Convergence converge )
 {
 	if (raytracer.frameCount == 0) {
+		cout << endl;
 		DWORD trace_start = GetTickCount();
 		raytracer.ConstructBVH();
-		raytracer.PrintBVH(raytracer.pool[0]); cout << endl;
+		// raytracer.PrintBVH(raytracer.pool[0]); cout << endl;
+		cout << "Mesh count: " << raytracer.scene.meshes.size() << endl;
 		raytracer.frameCount++;
 		DWORD trace_time = GetTickCount() - trace_start;
 		cout << "Finished building BVH in " << trace_time / 1000.0f << " seconds." << endl;
+		cout << endl;
 	}
 	screen->Clear();
 	if (converge) { raytracer.accumulator.Rebuild(screen->width, screen->height); }
 
-	int depth = 6; // Maximum ray recursion depth
+	int depth = 8; // Maximum ray recursion depth
 
 	int nx = screen->width;
 	int ny = screen->height;
@@ -177,6 +180,7 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge )
 			float3 P = view.p1 + sx + sy;						// Point on screen
 			float3 D = P - view.pos;							// Ray direction, normalized inside function
 			float3 c = raytracer.Color(view.pos, D, depth);		// Color vector
+			// float3 c = raytracer.ColorDebugBVH(view.pos, D); // BVH Debug mode
 			raytracer.accumulator.addPixel(x, y, c);
 
 			float3 cv = raytracer.accumulator.Pixel(x, y);
@@ -187,7 +191,6 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge )
 
 	DWORD trace_time = GetTickCount() - trace_start;
 	cout << "\rRender time: " << setw(4) << std::setfill(' ') << trace_time / 1000.0f << "s per frame." << std::flush;
-	// cout << "\r" << setw(4) << std::setfill(' ') << nx * ny / trace_time << "K primary rays per s" << std::flush;
 
 	// copy pixel buffer to OpenGL render target texture
 	glBindTexture(GL_TEXTURE_2D, targetTextureID);

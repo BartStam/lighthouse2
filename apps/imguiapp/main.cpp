@@ -41,10 +41,13 @@ static CoreStats coreStats;
 void PrepareScene()
 {
 	// Scene
-	renderer->AddScene("bvh_test_scene.gltf", "data/bvh_test_scene/", mat4::Scale(1.0f) * mat4::Translate(0, 0, 0));
-	materialFile = string("data/bvh_test_scene/bvh_test_scene_materials.xml");
+	//renderer->AddScene("bvh_test_scene.gltf", "data/bvh_test_scene/", mat4::Scale(1.0f) * mat4::Translate(0, 0, 0));
+	//materialFile = string("data/bvh_test_scene/bvh_test_scene_materials.xml");
 
-	//renderer->AddScene("three_cubes.gltf", "data/cubes/", mat4::Scale(1.0f) * mat4::Translate(0, 0, 0));
+	renderer->AddScene("scene.gltf", "data/pica/", mat4::Scale(1.0f) * mat4::Translate(0, 0, 0));
+	materialFile = string("data/pica/pica_materials.xml");
+
+	//renderer->AddScene("three_cubes_no_floor.gltf", "data/cubes/", mat4::Scale(1.0f) * mat4::Translate(0, 0, 0));
 	//materialFile = string("data/cubes/three_cubes_materials.xml");
 
 	int lightMat1 = renderer->AddMaterial(make_float3(8, 20, 20));
@@ -95,7 +98,7 @@ void PrepareScene()
 bool HandleInput( float frameTime )
 {
 	// handle keyboard input
-	float tspd = (keystates[GLFW_KEY_LEFT_SHIFT] ? 15.0f : 5.0f) * frameTime, rspd = 0.25f * frameTime;
+	float tspd = (keystates[GLFW_KEY_LEFT_SHIFT] ? 15.0f : 5.0f) * frameTime, rspd = 0.2f * frameTime;
 	bool changed = false;
 	Camera *camera = renderer->GetCamera();
 	if (keystates[GLFW_KEY_A]) { changed = true; camera->TranslateRelative( make_float3( -tspd, 0, 0 ) ); }
