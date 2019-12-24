@@ -31,7 +31,7 @@ float3 RayTracer::Color(float3 O, float3 D, uint depth, bool outside) {
 	CoreTri triangle;
 
 	// The ray hit the skydome, we don't do lighting
-	if (!RecursiveIntersectBVH(ray, pool[0], triangle, t)) {
+	if (!IntersectTopBVH(ray, triangle, t)) {
 		float u = 1 + atan2(D.x, -D.z) * INVPI;
 		float v = acos(D.y) * INVPI;
 
@@ -101,15 +101,15 @@ float3 RayTracer::ColorDebugBVH(float3 O, float3 D) {
 	Ray ray = Ray(O, D);
 	CoreTri triangle;
 	float t = FLT_MAX;
-	int c = -1;
+	int c = 0;
 
-	if (RecursiveIntersectBVH(ray, pool[0], triangle, t, &c)) {
+	if (IntersectTopBVH(ray, triangle, t, &c)) {
 		// return make_float3(1, 1, 1);
 	}
 
 	if (c == 0) { return make_float3(0, 0, 0); } // No BVH intersection, black
 
-	float delta = 0.002f;
+	float delta = 0.004f;
 	color += make_float3(c * delta, c * -delta, 0);
 
 	return clamp(color, 0, 1);
@@ -127,7 +127,7 @@ float3 RayTracer::Illumination(float3 color, float3 O) {
 		float t = FLT_MAX;
 		CoreTri triangle;
 
-		RecursiveIntersectBVH(shadow_ray, pool[0], triangle, t);
+		IntersectTopBVH(shadow_ray, triangle, t);
 		if (t_light <= t) {
 			light_color += scene.pointLights[i]->radiance / (t_light * t_light);
 		}
@@ -146,7 +146,7 @@ float3 RayTracer::Illumination(float3 color, float3 O) {
 		float t = FLT_MAX;
 		CoreTri triangle;
 
-		RecursiveIntersectBVH(shadow_ray, pool[0], triangle, t);
+		IntersectTopBVH(shadow_ray, triangle, t);
 		if (t_light <= t) {
 			light_color += ((scene.areaLights[i]->radiance / (t_light * t_light)) / p) / N;
 		}
@@ -156,11 +156,6 @@ float3 RayTracer::Illumination(float3 color, float3 O) {
 }
 
 void RayTracer::ConstructBVH() {
-	N = 0;
-	for (Mesh mesh : scene.meshes) { N += mesh.vcount / 3; }
-
-	cout << "Total triangle count: " << N << endl;
-
 	// Fill the triangle pointer array
 	triangle_pointers = new CoreTri[N];
 
@@ -171,13 +166,22 @@ void RayTracer::ConstructBVH() {
 		}
 	}
 
-	pool = new BVH[2 * N];
-	BVH& root = pool[0];
-	poolPtr = 2;
+	// Build a BVH over every mesh
+	pool = new BVH[2 * N - 1 + scene.meshes.size()];
 
-	root.first = 0;
-	root.count = N;
-	RecursiveSplitBVH(root);
+	for (Mesh mesh : scene.meshes) {
+		BVH& root = pool[pool_ptr];
+		top_bvh.root_nodes.push_back(pool_ptr);	// Save the root node pointer in the top level BVH
+		pool_ptr += 2;							// Skip node after root for alignment
+
+		root.first = geometry_ptr;
+		root.count = mesh.vcount / 3;
+
+		geometry_ptr += mesh.vcount / 3;
+
+		RecursiveSplitBVH(root);
+	}
+
 	UpdateBounds();
 }
 
@@ -200,8 +204,8 @@ bool RayTracer::SplitBVH(BVH& bvh) {
 		}
 
 		// Split the BVH in two
-		BVH& left = pool[poolPtr];
-		BVH& right = pool[poolPtr + 1];
+		BVH& left = pool[pool_ptr];
+		BVH& right = pool[pool_ptr + 1];
 
 		left.first = bvh.first;
 		left.count = left_count;
@@ -210,7 +214,7 @@ bool RayTracer::SplitBVH(BVH& bvh) {
 		right.count = bvh.count - left_count;
 
 		bvh.count = 0;			// This node is not a leaf anymore
-		bvh.first = poolPtr;	// Point to its left child
+		bvh.first = pool_ptr;	// Point to its left child
 
 		delete[] left_split;
 		delete[] right_split;
@@ -226,8 +230,8 @@ bool RayTracer::SplitBVH(BVH& bvh) {
 
 void RayTracer::RecursiveSplitBVH(BVH& bvh) {
 	if (SplitBVH(bvh)) {
-		BVH& left = pool[poolPtr++];
-		BVH& right = pool[poolPtr++];
+		BVH& left = pool[pool_ptr++];
+		BVH& right = pool[pool_ptr++];
 
 		RecursiveSplitBVH(left);
 		RecursiveSplitBVH(right);
@@ -255,7 +259,7 @@ float RayTracer::SplitCost(CoreTri* primitives, int first, int count) {
 }
 
 void RayTracer::UpdateBounds() {
-	for (int i = poolPtr - 1; i >= 0; i--) {
+	for (int i = pool_ptr - 1; i >= 0; i--) {
 		// Unused BVH
 		if (pool[i].count == -1) {
 			continue;
@@ -290,6 +294,15 @@ void RayTracer::UpdateBounds() {
 		}
 
 		pool[i].min_bound = min_b; pool[i].max_bound = max_b;
+	}
+
+	// Update top level BVH bounds
+	top_bvh.min_bound = make_float3(FLT_MAX, FLT_MAX, FLT_MAX);
+	top_bvh.max_bound = make_float3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+
+	for (int i = 0; i < top_bvh.root_nodes.size(); i++) {
+		top_bvh.min_bound = fminf(top_bvh.min_bound, pool[top_bvh.root_nodes[i]].min_bound);
+		top_bvh.max_bound = fmaxf(top_bvh.max_bound, pool[top_bvh.root_nodes[i]].max_bound);
 	}
 }
 
@@ -403,6 +416,59 @@ bool RayTracer::RecursiveIntersectBVH(const Ray& ray, const BVH& bvh, CoreTri& t
 	}
 
 	return t < initial_t; // If an intersection was found
+}
+
+bool RayTracer::IntersectTopBVH(const Ray& ray, CoreTri&tri, float&t, int* c) {
+	// First check if we actually intersect the top level BVH
+	float3 dir_frac = make_float3(0, 0, 0);
+
+	// D is the unit direction of the ray
+	dir_frac.x = 1.0f / ray.D.x;
+	dir_frac.y = 1.0f / ray.D.y;
+	dir_frac.z = 1.0f / ray.D.z;
+
+	// O is the origin of ray
+	float t1 = (top_bvh.min_bound.x - ray.O.x) * dir_frac.x;
+	float t2 = (top_bvh.max_bound.x - ray.O.x) * dir_frac.x;
+	float t3 = (top_bvh.min_bound.y - ray.O.y) * dir_frac.y;
+	float t4 = (top_bvh.max_bound.y - ray.O.y) * dir_frac.y;
+	float t5 = (top_bvh.min_bound.z - ray.O.z) * dir_frac.z;
+	float t6 = (top_bvh.max_bound.z - ray.O.z) * dir_frac.z;
+
+	float t_min = max(max(min(t1, t2), min(t3, t4)), min(t5, t6));
+	float t_max = min(min(max(t1, t2), max(t3, t4)), max(t5, t6));
+
+	// If tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
+	if (t_max < 0) {
+		return false;
+	}
+
+	// If tmin > tmax, ray doesn't intersect AABB
+	if (t_min > t_max) {
+		return false;
+	}
+
+	// Intersect children
+	float initial_t = t;
+
+	vector<tuple<float, int>> traversal_order;
+
+	for (int i = 0; i < top_bvh.root_nodes.size(); i++) {
+		float aabb_t = FLT_MAX;
+		if (IntersectBVH(ray, pool[top_bvh.root_nodes[i]], aabb_t)) {
+			traversal_order.push_back(make_tuple(aabb_t, top_bvh.root_nodes[i]));
+		}
+	}
+
+	sort(traversal_order.begin(), traversal_order.end());
+
+	for (int i = 0; i < traversal_order.size(); i++) {
+		if (get<1>(traversal_order[i]) < t) {
+			RecursiveIntersectBVH(ray, pool[get<1>(traversal_order[i])], tri, t, c);
+		}
+	}
+
+	return t < initial_t;
 }
 
 bool RayTracer::PartitionSAH(BVH& bvh, CoreTri* left, CoreTri* right, int& left_count) {

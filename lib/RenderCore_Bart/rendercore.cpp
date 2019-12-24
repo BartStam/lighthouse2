@@ -62,6 +62,9 @@ void RenderCore::SetGeometry( const int meshIdx, const float4* vertexData, const
 		newMesh.triangles = new CoreTri[vertexCount / 3];
 		memcpy(newMesh.triangles, triangleData, (vertexCount / 3) * sizeof(CoreTri));
 		raytracer.scene.meshes.push_back(newMesh);
+
+
+		raytracer.N += vertexCount / 3; // Total triangle count in scene, later used for BVH construction
 	}
 }
 
@@ -150,6 +153,7 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge )
 	if (raytracer.frameCount == 0) {
 		cout << endl;
 		DWORD trace_start = GetTickCount();
+		cout << "Total triangle count: " << raytracer.N << endl;
 		raytracer.ConstructBVH();
 		// raytracer.PrintBVH(raytracer.pool[0]); cout << endl;
 		cout << "Mesh count: " << raytracer.scene.meshes.size() << endl;

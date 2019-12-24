@@ -61,6 +61,12 @@ struct BVH {
 	int count = -1;		// 4
 };
 
+struct TopBVH {
+	vector<int> root_nodes;
+	float3 min_bound;
+	float3 max_bound;
+};
+
 class Ray {
 public:
 	Ray(const float3& o, const float3 d, float ior = 1.0f)
@@ -116,10 +122,12 @@ public:
 	float3 Illumination(float3 color, float3 O);										// Given a color at a location, scale it based on visible lighting
 
 	// BVH
-	int N;																				// Total amount of primitives in the scene
-	int poolPtr = 0;																	// Pointer to a BVH in pool array
+	int N = 0;																			// Total amount of primitives in the scene
+	int pool_ptr = 0;																	// Pointer to a BVH in pool array
+	int geometry_ptr = 0;																// Pointer to a triangle in the triangle_pointers array
 	CoreTri* triangle_pointers;															// Pointers to primitives, referenced inside BVH struct
 	BVH* alignas(128) pool;																// Pool of BVHs, neighbours are next to each other in the pool
+	TopBVH top_bvh;																		// Top level BVH, holds a child BVH for every mesh in the scene
 	void ConstructBVH();																// Constructs a BVH from the meshes in the scene and recursively splits it
 	float SplitCost(CoreTri* primitives, int first, int count);							// Defines the cost of a given split based on number of primites * surface area
 	bool SplitBVH(BVH& bvh);															// Splits a BVH in two based on the SplitCost() implementation
@@ -133,7 +141,8 @@ public:
 	bool IntersectTriangle(const Ray& ray, const CoreTri& triangle, float& t);			// Returns whether a ray intersects a triangle, and reports the distance as t
 	bool IntersectBVH(const Ray& ray, const BVH& bvh, float& t);						// Returns whether a ray intersects a BVH, and reports the distance as t
 	bool RecursiveIntersectBVH(const Ray& ray, const BVH& bvh, CoreTri& tri,			// Recursively intersect a BVH, return the first hit as tri and distance as t
-		float& t, int* c=nullptr);														
+		float& t, int* c = nullptr);
+	bool IntersectTopBVH(const Ray& ray, CoreTri&tri, float&t, int* c = nullptr);
 
 	// Lights
 	float total_light_area = 0;
