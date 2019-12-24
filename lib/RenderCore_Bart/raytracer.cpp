@@ -418,7 +418,7 @@ bool RayTracer::RecursiveIntersectBVH(const Ray& ray, const BVH& bvh, CoreTri& t
 	return t < initial_t; // If an intersection was found
 }
 
-bool RayTracer::IntersectTopBVH(const Ray& ray, CoreTri&tri, float&t, int* c) {
+bool RayTracer::IntersectTopBVH(const Ray& ray, CoreTri& tri, float& t, int* c) {
 	// First check if we actually intersect the top level BVH
 	float3 dir_frac = make_float3(0, 0, 0);
 
@@ -438,15 +438,8 @@ bool RayTracer::IntersectTopBVH(const Ray& ray, CoreTri&tri, float&t, int* c) {
 	float t_min = max(max(min(t1, t2), min(t3, t4)), min(t5, t6));
 	float t_max = min(min(max(t1, t2), max(t3, t4)), max(t5, t6));
 
-	// If tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
-	if (t_max < 0) {
-		return false;
-	}
-
-	// If tmin > tmax, ray doesn't intersect AABB
-	if (t_min > t_max) {
-		return false;
-	}
+	if (t_max < 0) { return false; } // If tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
+	if (t_min > t_max) { return false; } // If tmin > tmax, ray doesn't intersect AABB
 
 	// Sort children based on the distance to their AABB
 	// Children whose AABB is not intersected are disregarded
@@ -461,11 +454,11 @@ bool RayTracer::IntersectTopBVH(const Ray& ray, CoreTri&tri, float&t, int* c) {
 
 	sort(traversal_order.begin(), traversal_order.end());
 
-	// Intersect children
+	// Intersect children in order of proximity
 	float initial_t = t;
 
 	for (int i = 0; i < traversal_order.size(); i++) {
-		if (get<1>(traversal_order[i]) < t) {
+		if (get<0>(traversal_order[i]) < t) {
 			RecursiveIntersectBVH(ray, pool[get<1>(traversal_order[i])], tri, t, c);
 		}
 	}

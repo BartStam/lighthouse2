@@ -142,7 +142,7 @@ public:
 	bool IntersectBVH(const Ray& ray, const BVH& bvh, float& t);						// Returns whether a ray intersects a BVH, and reports the distance as t
 	bool RecursiveIntersectBVH(const Ray& ray, const BVH& bvh, CoreTri& tri,			// Recursively intersect a BVH, return the first hit as tri and distance as t
 		float& t, int* c = nullptr);
-	bool IntersectTopBVH(const Ray& ray, CoreTri&tri, float&t, int* c = nullptr);
+	bool IntersectTopBVH(const Ray& ray, CoreTri& tri, float& t, int* c = nullptr);
 
 	// Lights
 	float total_light_area = 0;
