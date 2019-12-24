@@ -119,7 +119,7 @@ public:
 	int N;																				// Total amount of primitives in the scene
 	int poolPtr = 0;																	// Pointer to a BVH in pool array
 	CoreTri* triangle_pointers;															// Pointers to primitives, referenced inside BVH struct
-	BVH* pool;																			// Pool of BVHs, neighbours are next to each other in the pool
+	BVH* alignas(128) pool;																// Pool of BVHs, neighbours are next to each other in the pool
 	void ConstructBVH();																// Constructs a BVH from the meshes in the scene and recursively splits it
 	float SplitCost(CoreTri* primitives, int first, int count);							// Defines the cost of a given split based on number of primites * surface area
 	bool SplitBVH(BVH& bvh);															// Splits a BVH in two based on the SplitCost() implementation
