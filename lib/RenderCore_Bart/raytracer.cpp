@@ -109,7 +109,7 @@ float3 RayTracer::ColorDebugBVH(float3 O, float3 D) {
 
 	if (c == 0) { return make_float3(0, 0, 0); } // No BVH intersection, black
 
-	float delta = 0.025f;
+	float delta = 0.003f;
 	color += make_float3(c * delta, c * -delta, 0);
 
 	return clamp(color, 0, 1);
@@ -402,9 +402,7 @@ bool RayTracer::RecursiveIntersectBVH(const Ray& ray, const BVH& bvh, CoreTri& t
 		}
 	}
 
-	if (t < initial_t) { return true; } // If an intersection was found
-
-	return false;
+	return t < initial_t; // If an intersection was found
 }
 
 bool RayTracer::PartitionSAH(BVH& bvh, CoreTri* left, CoreTri* right, int& left_count) {
@@ -544,9 +542,9 @@ bool RayTracer::PartitionSAH(BVH& bvh, CoreTri* left, CoreTri* right, int& left_
 }
 
 bool RayTracer::PartitionBinningSAH(BVH& bvh, CoreTri* left, CoreTri* right, int& left_count) {
-	float base_cost = SplitCost(triangle_pointers, bvh.first, bvh.count);
-	float3 c_min_bound = make_float3(FLT_MAX, FLT_MAX, FLT_MAX);	// Triangle centroids AABB min bound
-	float3 c_max_bound = make_float3(-FLT_MAX, -FLT_MAX, -FLT_MAX); // Triangle centroids AABB max bound
+	float base_cost = SplitCost(triangle_pointers, bvh.first, bvh.count);	// Cost of current BVH before splitting, according to SAH heuristic
+	float3 c_min_bound = make_float3(FLT_MAX, FLT_MAX, FLT_MAX);			// Triangle centroids AABB min bound
+	float3 c_max_bound = make_float3(-FLT_MAX, -FLT_MAX, -FLT_MAX);			// Triangle centroids AABB max bound
 
 	left_count = 0;
 	int right_count;
@@ -566,92 +564,92 @@ bool RayTracer::PartitionBinningSAH(BVH& bvh, CoreTri* left, CoreTri* right, int
 	}
 
 	// X split
-	float interval = (c_max_bound.x - c_min_bound.x) / bin_count;
-	for (int i = 0; i < bin_count; i++) {
-		float pos = c_min_bound.x + i * interval;
+	if (c_min_bound.x != c_max_bound.x) { // If all primitives have the same X position, don't split over X axis
+		float interval = (c_max_bound.x - c_min_bound.x) / bin_count;
+		for (int i = 0; i < bin_count; i++) {
+			float pos = c_min_bound.x + i * interval;
 
-		left_count = 0;
-		right_count = 0;
+			left_count = 0;
+			right_count = 0;
 
-		for (int j = bvh.first; j < bvh.first + bvh.count; j++) {
-			CoreTri& tri = triangle_pointers[j];
-			float3 tri_center = (tri.vertex0 + tri.vertex1 + tri.vertex2) / 3.0f;
+			for (int j = bvh.first; j < bvh.first + bvh.count; j++) {
+				CoreTri& tri = triangle_pointers[j];
+				float3 tri_center = (tri.vertex0 + tri.vertex1 + tri.vertex2) / 3.0f;
 
-			if (tri_center.x <= pos) {
-				left[left_count++] = tri;
+				if (tri_center.x <= pos) {
+					left[left_count++] = tri;
+				}
+				else {
+					right[right_count++] = tri;
+				}
 			}
-			else {
-				right[right_count++] = tri;
+
+			float split_cost = SplitCost(left, 0, left_count) + SplitCost(right, 0, right_count);
+			if (split_cost + EPSILON < best_split_cost) {
+				best_split_cost = split_cost;
+				best_split_plane = 'X';
+				best_split_pos = pos;
 			}
-		}
-
-		if (right_count == 0) { break; } // All primitives have the same X coordinate
-
-		float split_cost = SplitCost(left, 0, left_count) + SplitCost(right, 0, right_count);
-		if (split_cost + EPSILON < best_split_cost) {
-			best_split_cost = split_cost;
-			best_split_plane = 'X';
-			best_split_pos = pos;
 		}
 	}
 
 	// Y split
-	interval = (c_max_bound.y - c_min_bound.y) / bin_count;
-	for (int i = 0; i < bin_count; i++) {
-		float pos = c_min_bound.y + i * interval;
+	if (c_min_bound.y != c_max_bound.y) {
+		float interval = (c_max_bound.y - c_min_bound.y) / bin_count;
+		for (int i = 0; i < bin_count; i++) {
+			float pos = c_min_bound.y + i * interval;
 
-		left_count = 0;
-		right_count = 0;
+			left_count = 0;
+			right_count = 0;
 
-		for (int j = bvh.first; j < bvh.first + bvh.count; j++) {
-			CoreTri& tri = triangle_pointers[j];
-			float3 tri_center = (tri.vertex0 + tri.vertex1 + tri.vertex2) / 3.0f;
+			for (int j = bvh.first; j < bvh.first + bvh.count; j++) {
+				CoreTri& tri = triangle_pointers[j];
+				float3 tri_center = (tri.vertex0 + tri.vertex1 + tri.vertex2) / 3.0f;
 
-			if (tri_center.y <= pos) {
-				left[left_count++] = tri;
+				if (tri_center.y <= pos) {
+					left[left_count++] = tri;
+				}
+				else {
+					right[right_count++] = tri;
+				}
 			}
-			else {
-				right[right_count++] = tri;
+
+			float split_cost = SplitCost(left, 0, left_count) + SplitCost(right, 0, right_count);
+			if (split_cost + EPSILON < best_split_cost) {
+				best_split_cost = split_cost;
+				best_split_plane = 'Y';
+				best_split_pos = pos;
 			}
-		}
-
-		if (right_count == 0) { break; } // All primitives have the same Y coordinate
-
-		float split_cost = SplitCost(left, 0, left_count) + SplitCost(right, 0, right_count);
-		if (split_cost + EPSILON < best_split_cost) {
-			best_split_cost = split_cost;
-			best_split_plane = 'Y';
-			best_split_pos = pos;
 		}
 	}
 
 	// Z split
-	interval = (c_max_bound.z - c_min_bound.z) / bin_count;
-	for (int i = 0; i < bin_count; i++) {
-		float pos = c_min_bound.z + i * interval;
+	if (c_min_bound.z != c_max_bound.z) {
+		float interval = (c_max_bound.z - c_min_bound.z) / bin_count;
+		for (int i = 0; i < bin_count; i++) {
+			float pos = c_min_bound.z + i * interval;
 
-		left_count = 0;
-		right_count = 0;
+			left_count = 0;
+			right_count = 0;
 
-		for (int j = bvh.first; j < bvh.first + bvh.count; j++) {
-			CoreTri& tri = triangle_pointers[j];
-			float3 tri_center = (tri.vertex0 + tri.vertex1 + tri.vertex2) / 3.0f;
+			for (int j = bvh.first; j < bvh.first + bvh.count; j++) {
+				CoreTri& tri = triangle_pointers[j];
+				float3 tri_center = (tri.vertex0 + tri.vertex1 + tri.vertex2) / 3.0f;
 
-			if (tri_center.z <= pos) {
-				left[left_count++] = tri;
+				if (tri_center.z <= pos) {
+					left[left_count++] = tri;
+				}
+				else {
+					right[right_count++] = tri;
+				}
 			}
-			else {
-				right[right_count++] = tri;
+
+			float split_cost = SplitCost(left, 0, left_count) + SplitCost(right, 0, right_count);
+			if (split_cost + EPSILON < best_split_cost) {
+				best_split_cost = split_cost;
+				best_split_plane = 'Z';
+				best_split_pos = pos;
 			}
-		}
-
-		if (right_count == 0) { break; } // All primitives have the same Z coordinate
-
-		float split_cost = SplitCost(left, 0, left_count) + SplitCost(right, 0, right_count);
-		if (split_cost + EPSILON < best_split_cost) {
-			best_split_cost = split_cost;
-			best_split_plane = 'Z';
-			best_split_pos = pos;
 		}
 	}
 
@@ -699,6 +697,7 @@ bool RayTracer::PartitionBinningSAH(BVH& bvh, CoreTri* left, CoreTri* right, int
 		}
 	}
 
+	// Debug, if we somehow end up with all primitives on one side of the split
 	if (left_count == 0 || right_count == 0) {
 		cout << "Left count: " << left_count << endl;
 		cout << "Right count: " << right_count << endl;

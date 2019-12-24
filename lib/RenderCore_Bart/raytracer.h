@@ -127,7 +127,7 @@ public:
 	bool PartitionSAH(BVH& bvh, CoreTri* left, CoreTri* right, int& left_count);		// Partitions a BVH based on the Surface Area Heuristic
 	bool PartitionBinningSAH(BVH& bvh, CoreTri* left, CoreTri* right, int& left_count); // Partitions a BVH based on the Surface Area Heuristic and binning (8 bins)
 	void UpdateBounds();																// Updates the AABB of all BVH nodes (called after constructing full BVH)
-	void PrintBVH(const BVH& bvh);														// Print a text-based representation of a BVH to cout
+	void PrintBVH(const BVH& bvh);														// Print a text-based representation of a BVH to cout (for debug purposes)
 
 	// Intersection
 	bool IntersectTriangle(const Ray& ray, const CoreTri& triangle, float& t);			// Returns whether a ray intersects a triangle, and reports the distance as t
