@@ -448,9 +448,8 @@ bool RayTracer::IntersectTopBVH(const Ray& ray, CoreTri&tri, float&t, int* c) {
 		return false;
 	}
 
-	// Intersect children
-	float initial_t = t;
-
+	// Sort children based on the distance to their AABB
+	// Children whose AABB is not intersected are disregarded
 	vector<tuple<float, int>> traversal_order;
 
 	for (int i = 0; i < top_bvh.root_nodes.size(); i++) {
@@ -461,6 +460,9 @@ bool RayTracer::IntersectTopBVH(const Ray& ray, CoreTri&tri, float&t, int* c) {
 	}
 
 	sort(traversal_order.begin(), traversal_order.end());
+
+	// Intersect children
+	float initial_t = t;
 
 	for (int i = 0; i < traversal_order.size(); i++) {
 		if (get<1>(traversal_order[i]) < t) {

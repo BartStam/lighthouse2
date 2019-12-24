@@ -124,7 +124,7 @@ public:
 	// BVH
 	int N = 0;																			// Total amount of primitives in the scene
 	int pool_ptr = 0;																	// Pointer to a BVH in pool array
-	int geometry_ptr = 0;																// Pointer to a triangle in the triangle_pointers array
+	int geometry_ptr = 0;																// Pointer to a triangles in triangle_pointers, for top-level BVH construction
 	CoreTri* triangle_pointers;															// Pointers to primitives, referenced inside BVH struct
 	BVH* alignas(128) pool;																// Pool of BVHs, neighbours are next to each other in the pool
 	TopBVH top_bvh;																		// Top level BVH, holds a child BVH for every mesh in the scene
