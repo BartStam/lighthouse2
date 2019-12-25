@@ -50,8 +50,8 @@ void PrepareScene()
 	//renderer->AddScene("three_cubes_no_floor.gltf", "data/cubes/", mat4::Scale(1.0f) * mat4::Translate(0, 0, 0));
 	//materialFile = string("data/cubes/three_cubes_materials.xml");
 
-	int lightMat1 = renderer->AddMaterial(make_float3(8, 20, 20));
-	int lightQuad1 = renderer->AddQuad(make_float3(0.5, -1, 0.5), make_float3(-5.0f, 10.0f, -5.0f), 6.9f, 6.9f, lightMat1);
+	int lightMat1 = renderer->AddMaterial(make_float3(80, 80, 80));
+	int lightQuad1 = renderer->AddQuad(make_float3(0.5, -1, 0.5), make_float3(-5.0f, 25.0f, -5.0f), 6.9f, 6.9f, lightMat1);
 	int lightInst1 = renderer->AddInstance(lightQuad1);
 
 	int lightMat2 = renderer->AddMaterial(make_float3(10, 4, 10));
