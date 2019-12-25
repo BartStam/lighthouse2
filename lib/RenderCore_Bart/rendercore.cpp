@@ -27,6 +27,8 @@ void RenderCore::Init()
 {
 	cout << "BVH size: " << sizeof(BVH) << endl;
 	cout << "Ray size: " << sizeof(Ray) << endl;
+	cout << "Pointer size: " << sizeof(int*) << endl;
+	cout << "int size: " << sizeof(int) << endl;
 }
 
 //  +-----------------------------------------------------------------------------+
@@ -93,11 +95,11 @@ void RenderCore::SetMaterials(CoreMaterial* mat, const int materialCount) {
 			m->transmission = mat[i].transmission.value;
 			m->IOR = mat[i].eta.value;
 
-			cout << "  Material " << i << endl;
-			cout << "    Color:        " << r << ", " << g << ", " << b << endl;
-			cout << "    Specularity:  " << m->specularity << endl;
-			cout << "    Transmission: " << m->transmission << endl;
-			cout << "    IOR:          " << m->IOR << endl;
+			//cout << "  Material " << i << endl;
+			//cout << "    Color:        " << r << ", " << g << ", " << b << endl;
+			//cout << "    Specularity:  " << m->specularity << endl;
+			//cout << "    Transmission: " << m->transmission << endl;
+			//cout << "    IOR:          " << m->IOR << endl;
 		}
 		else {
 			// TODO: textures, replacement code below
@@ -121,6 +123,7 @@ void RenderCore::SetLights(const CoreLightTri* areaLights, const int areaLightCo
 		float3 rad = areaLights[i].radiance;
 		raytracer.scene.areaLights.push_back(l = new AreaLight(v0, v1, v2, N, c, A, rad));
 		raytracer.total_light_area += A;
+		cout << "Light " << i << " area: " << A << endl;
 	}
 
 	// Add point lights to scene
@@ -182,7 +185,7 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge )
 			float3 sx = (x * dx + rx) * (view.p2 - view.p1);	// Screen x
 			float3 sy = (y * dy + dy) * (view.p3 - view.p1);	// Screen y
 			float3 P = view.p1 + sx + sy;						// Point on screen
-			float3 D = P - view.pos;							// Ray direction, normalized inside function
+			float3 D = P - view.pos;							// Ray direction, normalized in Ray() constructor
 			float3 c = raytracer.Color(view.pos, D, depth);		// Color vector
 			// float3 c = raytracer.ColorDebugBVH(view.pos, D); // BVH Debug mode
 			raytracer.accumulator.addPixel(x, y, c);

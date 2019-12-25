@@ -24,7 +24,6 @@ float3 Triangle::RandomPoint() {
 float3 RayTracer::Color(float3 O, float3 D, uint depth, bool outside) {
 	float3 color = make_float3(0, 0, 0);
 	if (depth <= 0) { return color; }
-	D = normalize(D);
 
 	Ray ray = Ray(O, D);
 	float t = FLT_MAX;
@@ -32,8 +31,8 @@ float3 RayTracer::Color(float3 O, float3 D, uint depth, bool outside) {
 
 	// The ray hit the skydome, we don't do lighting
 	if (!IntersectTopBVH(ray, triangle, t)) {
-		float u = 1 + atan2(D.x, -D.z) * INVPI;
-		float v = acos(D.y) * INVPI;
+		float u = 1 + atan2(ray.D.x, -ray.D.z) * INVPI;
+		float v = acos(ray.D.y) * INVPI;
 
 		unsigned long long width = round(u * scene.skyHeight);
 		unsigned long long height = round(v * scene.skyHeight);
@@ -96,7 +95,6 @@ float3 RayTracer::Color(float3 O, float3 D, uint depth, bool outside) {
 
 float3 RayTracer::ColorDebugBVH(float3 O, float3 D) {
 	float3 color = make_float3(0, 1.0f, 0);
-	D = normalize(D);
 
 	Ray ray = Ray(O, D);
 	CoreTri triangle;
@@ -137,18 +135,21 @@ float3 RayTracer::Illumination(float3 color, float3 O) {
 	int N = 1;
 	for (int n = 0; n < N; n++) {
 		uint i = RandomUInt() % scene.areaLights.size();
-		float p = scene.areaLights[i]->area / total_light_area; // Probability of hitting this light
 
+		float p = 1.0f / scene.areaLights.size();
 		float3 direction = scene.areaLights[i]->RandomPoint() - O;
-		Ray shadow_ray = Ray(O, direction);
+		float distance = length(fabs(direction));
 
-		float t_light = length(fabs(direction));
+		float3 L = scene.areaLights[i]->radiance / (distance * distance);
+		
+		Ray shadow_ray = Ray(O, direction);
 		float t = FLT_MAX;
 		CoreTri triangle;
 
 		IntersectTopBVH(shadow_ray, triangle, t);
-		if (t_light <= t) {
-			light_color += ((scene.areaLights[i]->radiance / (t_light * t_light)) / p) / N;
+
+		if (distance <= t) { // If the shadow ray hit the light
+			light_color += L / (p * N);
 		}
 	}
 
@@ -167,17 +168,18 @@ void RayTracer::ConstructBVH() {
 	}
 
 	// Build a BVH over every mesh
-	pool = new BVH[2 * N - 1 + scene.meshes.size()];
+	bvh_root_nodes = new int[scene.meshes.size()];
+	pool = new BVH[2 * N];
 
-	for (Mesh mesh : scene.meshes) {
+	for (int i = 0; i < scene.meshes.size(); i++) {
 		BVH& root = pool[pool_ptr];
-		top_bvh.root_nodes.push_back(pool_ptr);	// Save the root node pointer in the top level BVH
+		bvh_root_nodes[i] = pool_ptr;	// Save the root node pointer in the top level BVH
 		pool_ptr += 2;							// Skip node after root for alignment
 
 		root.first = geometry_ptr;
-		root.count = mesh.vcount / 3;
+		root.count = scene.meshes[i].vcount / 3;
 
-		geometry_ptr += mesh.vcount / 3;
+		geometry_ptr += scene.meshes[i].vcount / 3;
 
 		RecursiveSplitBVH(root);
 	}
@@ -300,9 +302,9 @@ void RayTracer::UpdateBounds() {
 	top_bvh.min_bound = make_float3(FLT_MAX, FLT_MAX, FLT_MAX);
 	top_bvh.max_bound = make_float3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 
-	for (int i = 0; i < top_bvh.root_nodes.size(); i++) {
-		top_bvh.min_bound = fminf(top_bvh.min_bound, pool[top_bvh.root_nodes[i]].min_bound);
-		top_bvh.max_bound = fmaxf(top_bvh.max_bound, pool[top_bvh.root_nodes[i]].max_bound);
+	for (int i = 0; i < scene.meshes.size(); i++) {
+		top_bvh.min_bound = fminf(top_bvh.min_bound, pool[bvh_root_nodes[i]].min_bound);
+		top_bvh.max_bound = fmaxf(top_bvh.max_bound, pool[bvh_root_nodes[i]].max_bound);
 	}
 }
 
@@ -445,10 +447,10 @@ bool RayTracer::IntersectTopBVH(const Ray& ray, CoreTri& tri, float& t, int* c) 
 	// Children whose AABB is not intersected are disregarded
 	vector<tuple<float, int>> traversal_order;
 
-	for (int i = 0; i < top_bvh.root_nodes.size(); i++) {
+	for (int i = 0; i < scene.meshes.size(); i++) {
 		float aabb_t = FLT_MAX;
-		if (IntersectBVH(ray, pool[top_bvh.root_nodes[i]], aabb_t)) {
-			traversal_order.push_back(make_tuple(aabb_t, top_bvh.root_nodes[i]));
+		if (IntersectBVH(ray, pool[bvh_root_nodes[i]], aabb_t)) {
+			traversal_order.push_back(make_tuple(aabb_t, bvh_root_nodes[i]));
 		}
 	}
 

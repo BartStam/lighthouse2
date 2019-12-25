@@ -62,7 +62,6 @@ struct BVH {
 };
 
 struct TopBVH {
-	vector<int> root_nodes;
 	float3 min_bound;
 	float3 max_bound;
 };
@@ -121,13 +120,16 @@ public:
 	float3 ColorDebugBVH(float3 O, float3 D);											// Trace primary rays and color based on how many BVHs they intersected
 	float3 Illumination(float3 color, float3 O);										// Given a color at a location, scale it based on visible lighting
 
+	// Top-level BVH
+	TopBVH top_bvh;																		// Top level BVH, holds a child BVH for every mesh in the scene
+	int* bvh_root_nodes;
+	int geometry_ptr = 0;																// Pointer to a triangle in triangle_pointers, for top-level BVH construction
+
 	// BVH
 	int N = 0;																			// Total amount of primitives in the scene
 	int pool_ptr = 0;																	// Pointer to a BVH in pool array
-	int geometry_ptr = 0;																// Pointer to a triangles in triangle_pointers, for top-level BVH construction
 	CoreTri* triangle_pointers;															// Pointers to primitives, referenced inside BVH struct
 	BVH* alignas(128) pool;																// Pool of BVHs, neighbours are next to each other in the pool
-	TopBVH top_bvh;																		// Top level BVH, holds a child BVH for every mesh in the scene
 	void ConstructBVH();																// Constructs a BVH from the meshes in the scene and recursively splits it
 	float SplitCost(CoreTri* primitives, int first, int count);							// Defines the cost of a given split based on number of primites * surface area
 	bool SplitBVH(BVH& bvh);															// Splits a BVH in two based on the SplitCost() implementation

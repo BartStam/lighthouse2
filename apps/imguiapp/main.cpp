@@ -50,13 +50,13 @@ void PrepareScene()
 	//renderer->AddScene("three_cubes_no_floor.gltf", "data/cubes/", mat4::Scale(1.0f) * mat4::Translate(0, 0, 0));
 	//materialFile = string("data/cubes/three_cubes_materials.xml");
 
-	int lightMat1 = renderer->AddMaterial(make_float3(80, 80, 80));
-	int lightQuad1 = renderer->AddQuad(make_float3(0.5, -1, 0.5), make_float3(-5.0f, 25.0f, -5.0f), 6.9f, 6.9f, lightMat1);
+	int lightMat1 = renderer->AddMaterial(make_float3(80.0f, 80.0f, 80.0f));
+	int lightQuad1 = renderer->AddQuad(make_float3(0.5, -1, 0.5), make_float3(-5.0f, 20.0f, -5.0f), 1.0f, 2.0f, lightMat1);
 	int lightInst1 = renderer->AddInstance(lightQuad1);
 
-	int lightMat2 = renderer->AddMaterial(make_float3(10, 4, 10));
-	int lightQuad2 = renderer->AddQuad(make_float3(-0.5, -1, -0.2), make_float3(6.0f, 14.0f, 2.0f), 3.0f, 4.0f, lightMat2);
-	int lightInst2 = renderer->AddInstance(lightQuad2);
+	//int lightMat2 = renderer->AddMaterial(make_float3(1.0f, 1.0f, 2.0f));
+	//int lightQuad2 = renderer->AddQuad(make_float3(-0.5, -1, -0.2), make_float3(12.0f, 300.0f, 12.0f), 100.0f, 100.0f, lightMat2);
+	//int lightInst2 = renderer->AddInstance(lightQuad2);
 
 	renderer->DeserializeMaterials(materialFile.c_str());
 
