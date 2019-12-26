@@ -122,7 +122,6 @@ void RenderCore::SetLights(const CoreLightTri* areaLights, const int areaLightCo
 		float A = areaLights[i].area;
 		float3 rad = areaLights[i].radiance;
 		raytracer.scene.areaLights.push_back(l = new AreaLight(v0, v1, v2, N, c, A, rad));
-		raytracer.total_light_area += A;
 		cout << "Light " << i << " area: " << A << endl;
 	}
 

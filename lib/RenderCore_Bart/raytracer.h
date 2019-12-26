@@ -146,9 +146,6 @@ public:
 		float& t, int* c = nullptr);
 	bool IntersectTopBVH(const Ray& ray, CoreTri& tri, float& t, int* c = nullptr);
 
-	// Lights
-	float total_light_area = 0;
-
 	static Scene scene;
 };
 
