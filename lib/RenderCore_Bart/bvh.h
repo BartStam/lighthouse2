@@ -23,7 +23,7 @@ struct BVH4Node : BVHNode {
 };
 
 struct TopBVHNode : BVH2Node {
-	
+	vector<BVH*> bvh_pointers;
 };
 
 /*
@@ -37,8 +37,7 @@ public:
 
 	int N;
 	int pool_pointer = 2;
-	CoreTri* triangle_pointers;
-
+	
 	float SplitCost(const CoreTri* triangles, int first, int count);
 	bool IntersectAABB(const Ray& ray, const BVHNode& bvh, float& t);
 
@@ -56,6 +55,7 @@ public:
 	~BVH2();
 
 	BVH2Node* alignas(128) pool;
+	CoreTri* triangle_pointers;
 
 	const BVHNode& Root();
 	bool Partition(BVHNode& bvh, CoreTri* triangles, int* counts);
@@ -71,6 +71,7 @@ public:
 	~BVH4();
 
 	BVH4Node* alignas(128) pool;
+	CoreTri* triangle_pointers;
 
 	const BVHNode& Root();
 	bool Partition(BVHNode& bvh, CoreTri* triangles, int* counts);
@@ -85,8 +86,10 @@ public:
 	TopLevelBVH();
 	~TopLevelBVH();
 
+	vector<BVH*> bvh_vector;		// Stores pointers to all mesh-level BVHs in no particular order
+	int* bvh_indices;				// Index of a BVH in bvh_vector
 	TopBVHNode* alignas(128) pool;
-	vector<BVH*> leaf_pointers;
+	
 	
 	const BVHNode& Root();
 	bool Partition(BVHNode& bvh, CoreTri* triangles, int* counts);

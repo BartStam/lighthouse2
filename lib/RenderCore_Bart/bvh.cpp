@@ -6,7 +6,7 @@
 */
 
 BVH::~BVH() {
-	delete[] triangle_pointers;
+	
 }
 
 float BVH::SplitCost(const CoreTri* triangles, int first, int count) {
@@ -92,6 +92,7 @@ BVH2::BVH2(Mesh mesh) {
 
 BVH2::~BVH2() {
 	delete[] pool;
+	delete[] triangle_pointers;
 }
 
 const BVHNode& BVH2::Root() {
@@ -427,6 +428,7 @@ BVH4::BVH4(Mesh mesh) {
 
 BVH4::~BVH4() {
 	delete[] pool;
+	delete[] triangle_pointers;
 }
 
 const BVHNode& BVH4::Root() {
@@ -462,7 +464,7 @@ TopLevelBVH::TopLevelBVH() {
 }
 
 TopLevelBVH::~TopLevelBVH() {
-	for (BVH* bvh : leaf_pointers) { delete bvh; }
+	for (BVH* bvh : bvh_pointers) { delete bvh; }
 }
 
 const BVHNode& TopLevelBVH::Root() {
@@ -486,9 +488,9 @@ void TopLevelBVH::UpdateBounds() {
 	root.min_bound = make_float3(FLT_MAX, FLT_MAX, FLT_MAX);
 	root.max_bound = make_float3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 
-	for (int i = 0; i < leaf_pointers.size(); i++) {
-		root.min_bound = fminf(root.min_bound, leaf_pointers[i]->Root().min_bound);
-		root.max_bound = fmaxf(root.max_bound, leaf_pointers[i]->Root().max_bound);
+	for (int i = 0; i < bvh_pointers.size(); i++) {
+		root.min_bound = fminf(root.min_bound, bvh_pointers[i]->Root().min_bound);
+		root.max_bound = fmaxf(root.max_bound, bvh_pointers[i]->Root().max_bound);
 	}
 }
 
@@ -500,10 +502,10 @@ bool TopLevelBVH::Traverse(Ray& ray, const BVHNode& bvh, CoreTri& tri, float& t,
 	// Children whose AABB is not intersected are discarded
 	vector<tuple<float, BVH*>> traversal_order;
 
-	for (int i = 0; i < leaf_pointers.size(); i++) {
+	for (int i = 0; i < bvh_pointers.size(); i++) {
 		float aabb_t = FLT_MAX;
-		if (IntersectAABB(ray, leaf_pointers[i]->Root(), aabb_t)) {
-			traversal_order.push_back(make_tuple(aabb_t, leaf_pointers[i]));
+		if (IntersectAABB(ray, bvh_pointers[i]->Root(), aabb_t)) {
+			traversal_order.push_back(make_tuple(aabb_t, bvh_pointers[i]));
 		}
 	}
 
@@ -524,10 +526,28 @@ bool TopLevelBVH::Traverse(Ray& ray, const BVHNode& bvh, CoreTri& tri, float& t,
 }
 
 void TopLevelBVH::AddBVH(BVH* bvh, bool rebuild) {
-	leaf_pointers.push_back(bvh);
+	bvh_pointers.push_back(bvh);
 	if (rebuild) { Rebuild(); }
 }
 
 void TopLevelBVH::Rebuild() {
-	
+	N = bvh_vector.size();
+
+	// Clean up last build
+	delete[] pool;
+	//delete[] bvh_indices;
+
+	bvh_indices = new int[N];
+
+	for (int i = 0; i < N; i++) {
+		
+	}
+
+	pool = new TopBVHNode[2 * N];
+	TopBVHNode& root = pool[0];
+
+	root.first = 0;
+	root.count = N;
+
+	UpdateBounds();
 }
