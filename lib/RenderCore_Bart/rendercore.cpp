@@ -23,20 +23,15 @@ using namespace lh2core;
 //  |  RenderCore::Init                                                           |
 //  |  Initialization.                                                      LH2'19|
 //  +-----------------------------------------------------------------------------+
-void RenderCore::Init()
-{
-	cout << "BVH size: " << sizeof(IBVH) << endl;
-	cout << "Ray size: " << sizeof(Ray) << endl;
-	cout << "Pointer size: " << sizeof(int*) << endl;
-	cout << "int size: " << sizeof(int) << endl;
+void RenderCore::Init() {
+	
 }
 
 //  +-----------------------------------------------------------------------------+
 //  |  RenderCore::SetTarget                                                      |
 //  |  Set the OpenGL texture that serves as the render target.             LH2'19|
 //  +-----------------------------------------------------------------------------+
-void RenderCore::SetTarget( GLTexture* target )
-{
+void RenderCore::SetTarget( GLTexture* target ) {
 	// synchronize OpenGL viewport
 	targetTextureID = target->ID;
 	if (screen != 0 && target->width == screen->width && target->height == screen->height) return; // nothing changed
@@ -50,8 +45,7 @@ void RenderCore::SetTarget( GLTexture* target )
 //  |  RenderCore::SetGeometry                                                    |
 //  |  Set the geometry data for a model.                                   LH2'19|
 //  +-----------------------------------------------------------------------------+
-void RenderCore::SetGeometry( const int meshIdx, const float4* vertexData, const int vertexCount, const int triangleCount, const CoreTri* triangleData, const uint* alphaFlags )
-{	
+void RenderCore::SetGeometry( const int meshIdx, const float4* vertexData, const int vertexCount, const int triangleCount, const CoreTri* triangleData, const uint* alphaFlags ) {
 	// Only add meshes that are not area lights. We leave area lights invisible for now.
 	if (triangleData->ltriIdx == -1) {
 		Mesh newMesh;
@@ -65,11 +59,7 @@ void RenderCore::SetGeometry( const int meshIdx, const float4* vertexData, const
 		memcpy(newMesh.triangles, triangleData, (vertexCount / 3) * sizeof(CoreTri));
 		raytracer.scene.meshes.push_back(newMesh);
 
-		cout << "Added mesh with triangle count: " << newMesh.vcount / 3 << endl;
-		raytracer.top_level_bvh.AddBVH(new BVH2(newMesh));
-		
-
-		raytracer.N += vertexCount / 3; // Total triangle count in scene, later used for BVH construction
+		raytracer.top_level_bvh.AddBVH(new BVH2(newMesh), true);
 	}
 }
 
@@ -112,7 +102,6 @@ void RenderCore::SetMaterials(CoreMaterial* mat, const int materialCount) {
 
 void RenderCore::SetLights(const CoreLightTri* areaLights, const int areaLightCount, const CorePointLight* pointLights, const int pointLightCount,
 	const CoreSpotLight* spotLights, const int spotLightCount, const CoreDirectionalLight* directionalLights, const int directionalLightCount) {
-
 	// Add area lights to scene
 	for (int i = 0; i < areaLightCount; i++) {
 		if (raytracer.scene.areaLights.size() > i) { continue; }
@@ -153,14 +142,16 @@ void RenderCore::SetSkyData(const float3* pixels, const uint width, const uint h
 //  |  RenderCore::Render                                                         |
 //  |  Produce one image.                                                   LH2'19|
 //  +-----------------------------------------------------------------------------+
-void RenderCore::Render( const ViewPyramid& view, const Convergence converge )
-{
+void RenderCore::Render( const ViewPyramid& view, const Convergence converge ) {
 	if (raytracer.frameCount == 0) {
 		cout << endl;
-		cout << "Total triangle count: " << raytracer.N << endl;
 		cout << "Mesh count: " << raytracer.scene.meshes.size() << endl;
 
 		raytracer.top_level_bvh.Rebuild();
+		raytracer.top_level_bvh.Print(raytracer.top_level_bvh.Root());
+		cout << endl;
+
+		raytracer.frameCount++;
 
 		//DWORD trace_start = GetTickCount();
 		//raytracer.ConstructBVH();
@@ -213,8 +204,7 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge )
 //  |  RenderCore::Shutdown                                                       |
 //  |  Free all resources.                                                  LH2'19|
 //  +-----------------------------------------------------------------------------+
-void RenderCore::Shutdown()
-{
+void RenderCore::Shutdown() {
 	delete screen;
 }
 

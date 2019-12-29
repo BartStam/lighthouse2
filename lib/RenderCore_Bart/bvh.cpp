@@ -80,8 +80,8 @@ BVH2::BVH2(Mesh mesh) {
 		triangle_pointers[i] = mesh.triangles[i];
 	}
 
-	pool = new BVH2Node[2 * N];
-	BVH2Node& root = pool[0];
+	pool = new BVHNode[2 * N];
+	BVHNode& root = pool[0];
 	
 	root.first = 0;
 	root.count = N;
@@ -95,7 +95,7 @@ BVH2::~BVH2() {
 	delete[] triangle_pointers;
 }
 
-const BVHNode& BVH2::Root() {
+BVHNode& BVH2::Root() {
 	return pool[0];
 }
 
@@ -271,6 +271,10 @@ bool BVH2::Partition(BVHNode& bvh, CoreTri* triangles, int* counts) {
 	delete[] right;
 
 	// Debug, if we somehow end up with all primitives on one side of the split
+	if (bvh.count != counts[0] + counts[1]) {
+		cout << "bvh.count != counts[0] + counts[1]" << endl;
+	}
+
 	if (counts[0] == 0 || counts[1] == 0) {
 		cout << "Left count: " << counts[0] << endl;
 		cout << "Right count: " << counts[1] << endl;
@@ -296,17 +300,13 @@ bool BVH2::Subdivide(BVHNode& bvh) {
 	// If there is value in splitting
 	if (Partition(bvh, triangles, counts)) {
 		// Update triangle pointer array
-		for (int i = 0; i < counts[0]; i++) {
-			triangle_pointers[bvh.first + i] = triangles[i];
-		}
-
-		for (int i = counts[0]; i < counts[0] + counts[1]; i++) {
+		for (int i = 0; i < bvh.count; i++) {
 			triangle_pointers[bvh.first + i] = triangles[i];
 		}
 
 		// Split the BVH in two
-		BVH2Node& left = pool[pool_pointer];
-		BVH2Node& right = pool[pool_pointer + 1];
+		BVHNode& left = pool[pool_pointer];
+		BVHNode& right = pool[pool_pointer + 1];
 
 		left.first = bvh.first;
 		left.count = counts[0];
@@ -329,8 +329,8 @@ bool BVH2::Subdivide(BVHNode& bvh) {
 
 void BVH2::SubdivideRecursively(BVHNode& bvh) {
 	if (Subdivide(bvh)) {
-		BVH2Node& left = pool[pool_pointer++];
-		BVH2Node& right = pool[pool_pointer++];
+		BVHNode& left = pool[pool_pointer++];
+		BVHNode& right = pool[pool_pointer++];
 
 		SubdivideRecursively(left);
 		SubdivideRecursively(right);
@@ -338,7 +338,7 @@ void BVH2::SubdivideRecursively(BVHNode& bvh) {
 }
 
 void BVH2::UpdateBounds() {
-	for (int i = N - 1; i >= 0; i--) {
+	for (int i = pool_pointer - 1; i >= 0; i--) {
 		// Unused BVH
 		if (pool[i].count == -1) {
 			continue;
@@ -346,8 +346,8 @@ void BVH2::UpdateBounds() {
 
 		// Node, inheret AABB from children
 		if (pool[i].count == 0) {
-			BVH2Node& left = pool[pool[i].first];
-			BVH2Node& right = pool[pool[i].first + 1];
+			BVHNode& left = pool[pool[i].first];
+			BVHNode& right = pool[pool[i].first + 1];
 
 			float3 min_bound = fminf(left.min_bound, right.min_bound);
 			float3 max_bound = fmaxf(left.max_bound, right.max_bound);
@@ -418,6 +418,18 @@ bool BVH2::Traverse(Ray& ray, const BVHNode& bvh, CoreTri& tri, float& t, int* c
 	return t < initial_t; // If an intersection was found
 }
 
+void BVH2::Print(BVHNode& bvh) {
+	if (bvh.count > 0) {
+		cout << "[" << bvh.count << "]";
+	}
+	else {
+		cout << "[";
+		Print(pool[bvh.first]);
+		Print(pool[bvh.first + 1]);
+		cout << "]";
+	}
+}
+
 /*
 	BVH4
 */
@@ -431,7 +443,7 @@ BVH4::~BVH4() {
 	delete[] triangle_pointers;
 }
 
-const BVHNode& BVH4::Root() {
+BVHNode& BVH4::Root() {
 	return pool[0];
 }
 
@@ -452,7 +464,12 @@ void BVH4::UpdateBounds() {
 }
 
 bool BVH4::Traverse(Ray& ray, const BVHNode& bvh, CoreTri& tri, float& t, int* c) {
+	cout << "traversing BVH4" << endl;
 	return false;
+}
+
+void BVH4::Print(BVHNode& bvh) {
+
 }
 
 /*
@@ -464,10 +481,10 @@ TopLevelBVH::TopLevelBVH() {
 }
 
 TopLevelBVH::~TopLevelBVH() {
-	for (BVH* bvh : bvh_pointers) { delete bvh; }
+	for (BVH* bvh : bvh_vector) { delete bvh; }
 }
 
-const BVHNode& TopLevelBVH::Root() {
+BVHNode& TopLevelBVH::Root() {
 	return pool[0];
 }
 
@@ -484,67 +501,112 @@ void TopLevelBVH::SubdivideRecursively(BVHNode& bvh) {
 }
 
 void TopLevelBVH::UpdateBounds() {
-	BVH2Node& root = pool[0];
-	root.min_bound = make_float3(FLT_MAX, FLT_MAX, FLT_MAX);
-	root.max_bound = make_float3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+	for (int i = pool_pointer - 1; i >= 0; i--) {
+		// Unused BVH
+		if (pool[i].count == -1) {
+			continue;
+		}
 
-	for (int i = 0; i < bvh_pointers.size(); i++) {
-		root.min_bound = fminf(root.min_bound, bvh_pointers[i]->Root().min_bound);
-		root.max_bound = fmaxf(root.max_bound, bvh_pointers[i]->Root().max_bound);
+		// Node, inheret AABB from children
+		if (pool[i].count == 0) {
+			BVHNode& left = pool[pool[i].first];
+			BVHNode& right = pool[pool[i].first + 1];
+
+			float3 min_bound = fminf(left.min_bound, right.min_bound);
+			float3 max_bound = fmaxf(left.max_bound, right.max_bound);
+
+			pool[i].min_bound = min_bound;
+			pool[i].max_bound = max_bound;
+
+			continue;
+		}
+
+		// Leaf, calculate AABB from mesh-level BVHs
+		float3 min_b = make_float3(FLT_MAX, FLT_MAX, FLT_MAX);
+		float3 max_b = make_float3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+
+		for (int j = pool[i].first; j < pool[i].first + pool[i].count; j++) {
+			BVH* bvh = bvh_vector[bvh_indices[j]];
+
+			float3 bvh_min_bound = bvh->Root().min_bound;
+			float3 bvh_max_bound = bvh->Root().max_bound;
+
+			min_b = fminf(min_b, bvh_min_bound);
+			max_b = fmaxf(max_b, bvh_max_bound);
+		}
+
+		pool[i].min_bound = min_b; pool[i].max_bound = max_b;
 	}
 }
 
 bool TopLevelBVH::Traverse(Ray& ray, const BVHNode& bvh, CoreTri& tri, float& t, int* c) {
-	// First check if we actually intersect the top level BVH
-	if (!IntersectAABB(ray, pool[0], t)) { return false; }
+	if (c) { (*c)++; } // If we are doing BVH debugging, increment the count of BVH intersections
 
-	// Sort children based on the distance to their AABB
-	// Children whose AABB is not intersected are discarded
-	vector<tuple<float, BVH*>> traversal_order;
-
-	for (int i = 0; i < bvh_pointers.size(); i++) {
-		float aabb_t = FLT_MAX;
-		if (IntersectAABB(ray, bvh_pointers[i]->Root(), aabb_t)) {
-			traversal_order.push_back(make_tuple(aabb_t, bvh_pointers[i]));
-		}
-	}
-
-	sort(traversal_order.begin(), traversal_order.end());
-
-	// Intersect children in order of proximity
 	float initial_t = t;
 
-	for (int i = 0; i < traversal_order.size(); i++) {
-		if (get<0>(traversal_order[i]) < t) {
-			get<1>(traversal_order[i])->Traverse(ray, get<1>(traversal_order[i])->Root(), tri, t, c);
+	if (bvh.count > 0) { // If the node is a leaf
+		for (int i = bvh.first; i < bvh.first + bvh.count; i++) {
+			bvh_vector[bvh_indices[i]]->Traverse(ray, bvh_vector[bvh_indices[i]]->Root(), tri, t, c); // Naively intersect every mesh-level BVH
+		}
+	}
+	else { // If the node is not a leaf
+		float t_left = FLT_MAX;
+		float t_right = FLT_MAX;
+
+		// Only traverse children that are actually intersected
+		if (IntersectAABB(ray, pool[bvh.first], t_left)) {
+			if (IntersectAABB(ray, pool[bvh.first + 1], t_right)) {
+				if (t_left < t_right) { // Traverse the closest child first
+					Traverse(ray, pool[bvh.first], tri, t, c);
+					Traverse(ray, pool[bvh.first + 1], tri, t, c);
+				}
+				else {
+					Traverse(ray, pool[bvh.first + 1], tri, t, c);
+					Traverse(ray, pool[bvh.first], tri, t, c);
+				}
+			}
+			else {
+				Traverse(ray, pool[bvh.first], tri, t, c);
+			}
+		}
+		else if (IntersectAABB(ray, pool[bvh.first + 1], t_right)) {
+			Traverse(ray, pool[bvh.first + 1], tri, t, c);
 		}
 	}
 
-	return t < initial_t;
+	return t < initial_t; // If an intersection was found
+}
 
-	return false;
+void TopLevelBVH::Print(BVHNode& bvh) {
+	if (bvh.count > 0) {
+		cout << "[" << bvh.count << "]";
+	}
+	else {
+		cout << "[";
+		Print(pool[bvh.first]);
+		Print(pool[bvh.first + 1]);
+		cout << "]";
+	}
 }
 
 void TopLevelBVH::AddBVH(BVH* bvh, bool rebuild) {
-	bvh_pointers.push_back(bvh);
+	bvh_vector.push_back(bvh);
 	if (rebuild) { Rebuild(); }
 }
 
 void TopLevelBVH::Rebuild() {
 	N = bvh_vector.size();
 
-	// Clean up last build
 	delete[] pool;
-	//delete[] bvh_indices;
+	delete[] bvh_indices;
 
 	bvh_indices = new int[N];
-
 	for (int i = 0; i < N; i++) {
-		
+		bvh_indices[i] = i;
 	}
 
-	pool = new TopBVHNode[2 * N];
-	TopBVHNode& root = pool[0];
+	pool = new BVHNode[2 * N];
+	BVHNode& root = pool[0];
 
 	root.first = 0;
 	root.count = N;
