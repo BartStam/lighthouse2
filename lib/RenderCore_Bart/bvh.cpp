@@ -1,0 +1,533 @@
+#include "core_settings.h"
+#include <iostream>
+
+/*
+	BVH
+*/
+
+BVH::~BVH() {
+	delete[] triangle_pointers;
+}
+
+float BVH::SplitCost(const CoreTri* triangles, int first, int count) {
+	float3 min_b = make_float3(0, 0, 0);
+	float3 max_b = make_float3(0, 0, 0);
+
+	// Calculate AABB bounds
+	for (int i = first; i < first + count; i++) {
+		const CoreTri& tri = triangles[i];
+		float3 tri_min_bound = fminf(fminf(tri.vertex0, tri.vertex1), tri.vertex2);
+		float3 tri_max_bound = fmaxf(fmaxf(tri.vertex0, tri.vertex1), tri.vertex2);
+
+		min_b = fminf(min_b, tri_min_bound);
+		max_b = fmaxf(max_b, tri_max_bound);
+	}
+
+	float3 dims = max_b - min_b; // Dimensions of the AABB
+	float area = 2 * dims.x * dims.y + 2 * dims.x * dims.z + 2 * dims.y * dims.z; // AABB surface area
+
+	return count * area;
+}
+
+bool BVH::IntersectAABB(const Ray& ray, const BVHNode& bvh, float& t) {
+	// Taken from: https://gamedev.stackexchange.com/a/18459
+
+	float3 dir_frac = make_float3(0, 0, 0);
+
+	// D is the unit direction of the ray
+	dir_frac.x = 1.0f / ray.D.x;
+	dir_frac.y = 1.0f / ray.D.y;
+	dir_frac.z = 1.0f / ray.D.z;
+
+	// O is the origin of ray
+	float t1 = (bvh.min_bound.x - ray.O.x) * dir_frac.x;
+	float t2 = (bvh.max_bound.x - ray.O.x) * dir_frac.x;
+	float t3 = (bvh.min_bound.y - ray.O.y) * dir_frac.y;
+	float t4 = (bvh.max_bound.y - ray.O.y) * dir_frac.y;
+	float t5 = (bvh.min_bound.z - ray.O.z) * dir_frac.z;
+	float t6 = (bvh.max_bound.z - ray.O.z) * dir_frac.z;
+
+	float t_min = max(max(min(t1, t2), min(t3, t4)), min(t5, t6));
+	float t_max = min(min(max(t1, t2), max(t3, t4)), max(t5, t6));
+
+	// If tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
+	if (t_max < 0) {
+		t = t_max;
+		return false;
+	}
+
+	// If tmin > tmax, ray doesn't intersect AABB
+	if (t_min > t_max) {
+		t = t_max;
+		return false;
+	}
+
+	t = t_min;
+	return true;
+}
+
+/*
+	BVH2
+*/
+
+BVH2::BVH2(Mesh mesh) {
+	N = mesh.vcount / 3;
+
+	// Fill the triangle pointer array
+	triangle_pointers = new CoreTri[N];
+
+	for (int i = 0; i < N; i++) {
+		triangle_pointers[i] = mesh.triangles[i];
+	}
+
+	pool = new BVH2Node[2 * N];
+	BVH2Node& root = pool[0];
+	
+	root.first = 0;
+	root.count = N;
+
+	SubdivideRecursively(root);
+	UpdateBounds();
+}
+
+BVH2::~BVH2() {
+	delete[] pool;
+}
+
+const BVHNode& BVH2::Root() {
+	return pool[0];
+}
+
+bool BVH2::Partition(BVHNode& bvh, CoreTri* triangles, int* counts) {
+	int bin_count = 8; // Must be larger than 1
+
+	CoreTri* left = new CoreTri[bvh.count];
+	CoreTri* right = new CoreTri[bvh.count];
+
+	float base_cost = SplitCost(triangle_pointers, bvh.first, bvh.count);	// Cost of current BVH before splitting, according to SAH heuristic
+	float3 c_min_bound = make_float3(FLT_MAX, FLT_MAX, FLT_MAX);			// Triangle centroids AABB min bound
+	float3 c_max_bound = make_float3(-FLT_MAX, -FLT_MAX, -FLT_MAX);			// Triangle centroids AABB max bound
+
+	float best_split_cost = FLT_MAX;
+	float best_split_pos;
+	char best_split_plane;
+
+	// Calculate the centroid AABB
+	for (int i = bvh.first; i < bvh.first + bvh.count; i++) {
+		CoreTri& tri = triangle_pointers[i];
+		float3 center = (tri.vertex0 + tri.vertex1 + tri.vertex2) / 3.0f;
+
+		c_min_bound = fminf(c_min_bound, center);
+		c_max_bound = fmaxf(c_max_bound, center);
+	}
+
+	// X split
+	if (c_min_bound.x != c_max_bound.x) { // If all primitives have the same X position, don't split over X axis
+		float interval = (c_max_bound.x - c_min_bound.x) / bin_count;
+		for (int i = 0; i < bin_count; i++) {
+			float pos = c_min_bound.x + i * interval;
+
+			counts[0] = 0; // Left count
+			counts[1] = 0; // Right counts
+
+			for (int j = bvh.first; j < bvh.first + bvh.count; j++) {
+				CoreTri& tri = triangle_pointers[j];
+				float3 tri_center = (tri.vertex0 + tri.vertex1 + tri.vertex2) / 3.0f;
+
+				if (tri_center.x <= pos) {
+					left[counts[0]++] = tri;
+				}
+				else {
+					right[counts[1]++] = tri;
+				}
+			}
+
+			float split_cost = SplitCost(left, 0, counts[0]) + SplitCost(right, 0, counts[1]);
+			if (split_cost + EPSILON < best_split_cost) {
+				best_split_cost = split_cost;
+				best_split_plane = 'X';
+				best_split_pos = pos;
+			}
+		}
+	}
+
+	// Y split
+	if (c_min_bound.y != c_max_bound.y) {
+		float interval = (c_max_bound.y - c_min_bound.y) / bin_count;
+		for (int i = 0; i < bin_count; i++) {
+			float pos = c_min_bound.y + i * interval;
+
+			counts[0] = 0; // Left count
+			counts[1] = 0; // Right counts
+
+			for (int j = bvh.first; j < bvh.first + bvh.count; j++) {
+				CoreTri& tri = triangle_pointers[j];
+				float3 tri_center = (tri.vertex0 + tri.vertex1 + tri.vertex2) / 3.0f;
+
+				if (tri_center.y <= pos) {
+					left[counts[0]++] = tri;
+				}
+				else {
+					right[counts[1]++] = tri;
+				}
+			}
+
+			float split_cost = SplitCost(left, 0, counts[0]) + SplitCost(right, 0, counts[1]);
+			if (split_cost + EPSILON < best_split_cost) {
+				best_split_cost = split_cost;
+				best_split_plane = 'Y';
+				best_split_pos = pos;
+			}
+		}
+	}
+
+	// Z split
+	if (c_min_bound.z != c_max_bound.z) {
+		float interval = (c_max_bound.z - c_min_bound.z) / bin_count;
+		for (int i = 0; i < bin_count; i++) {
+			float pos = c_min_bound.z + i * interval;
+
+			counts[0] = 0; // Left count
+			counts[1] = 0; // Right counts
+
+			for (int j = bvh.first; j < bvh.first + bvh.count; j++) {
+				CoreTri& tri = triangle_pointers[j];
+				float3 tri_center = (tri.vertex0 + tri.vertex1 + tri.vertex2) / 3.0f;
+
+				if (tri_center.z <= pos) {
+					left[counts[0]++] = tri;
+				}
+				else {
+					right[counts[1]++] = tri;
+				}
+			}
+
+			float split_cost = SplitCost(left, 0, counts[0]) + SplitCost(right, 0, counts[1]);
+			if (split_cost + EPSILON < best_split_cost) {
+				best_split_cost = split_cost;
+				best_split_plane = 'Z';
+				best_split_pos = pos;
+			}
+		}
+	}
+
+	// If there is no value in splitting, don't split
+	if (base_cost - EPSILON < best_split_cost) {
+		delete[] left;
+		delete[] right;
+		return false;
+	}
+
+	// Define the best splits
+	counts[0] = 0; // Left count
+	counts[1] = 0; // Right counts
+
+	for (int i = bvh.first; i < bvh.first + bvh.count; i++) {
+		CoreTri& tri = triangle_pointers[i];
+		float3 center = (tri.vertex0 + tri.vertex1 + tri.vertex2) / 3.0f;
+
+		// X split
+		if (best_split_plane == 'X') {
+			if (center.x <= best_split_pos) {
+				left[counts[0]++] = tri;
+			}
+			else {
+				right[counts[1]++] = tri;
+			}
+		}
+
+		// Y split
+		if (best_split_plane == 'Y') {
+			if (center.y <= best_split_pos) {
+				left[counts[0]++] = tri;
+			}
+			else {
+				right[counts[1]++] = tri;
+			}
+		}
+
+		// Z split
+		if (best_split_plane == 'Z') {
+			if (center.z <= best_split_pos) {
+				left[counts[0]++] = tri;
+			}
+			else {
+				right[counts[1]++] = tri;
+			}
+		}
+	}
+
+	// Merge left and right into one triangle array
+	for (int i = 0; i < counts[0]; i++) {
+		triangles[i] = left[i];
+	}
+
+	for (int i = 0; i < counts[1]; i++) {
+		triangles[counts[0] + i] = right[i];
+	}
+
+	delete[] left;
+	delete[] right;
+
+	// Debug, if we somehow end up with all primitives on one side of the split
+	if (counts[0] == 0 || counts[1] == 0) {
+		cout << "Left count: " << counts[0] << endl;
+		cout << "Right count: " << counts[1] << endl;
+		cout << "Axis: " << best_split_plane << endl;
+		cout << "Position: " << best_split_pos << endl;
+		cout << "Min bounds: " << c_min_bound.x << ", " << c_min_bound.y << ", " << c_min_bound.z << endl;
+		cout << "Max bounds: " << c_max_bound.x << ", " << c_max_bound.y << ", " << c_max_bound.z << endl;
+		cout << "Base cost: " << base_cost - EPSILON << endl;
+		cout << "Best cost: " << best_split_cost << endl;
+		cout << "c_min_bound.z <= pos: " << ((c_min_bound.z <= best_split_pos) ? "true" : "false") << endl;
+		cout << endl;
+	}
+
+	return true;
+}
+
+bool BVH2::Subdivide(BVHNode& bvh) {
+	if (bvh.count < 4) { return false; } // Leaves have at least 2 primitives in them
+
+	CoreTri* triangles = new CoreTri[bvh.count];
+	int counts[2] = {0};
+
+	// If there is value in splitting
+	if (Partition(bvh, triangles, counts)) {
+		// Update triangle pointer array
+		for (int i = 0; i < counts[0]; i++) {
+			triangle_pointers[bvh.first + i] = triangles[i];
+		}
+
+		for (int i = counts[0]; i < counts[0] + counts[1]; i++) {
+			triangle_pointers[bvh.first + i] = triangles[i];
+		}
+
+		// Split the BVH in two
+		BVH2Node& left = pool[pool_pointer];
+		BVH2Node& right = pool[pool_pointer + 1];
+
+		left.first = bvh.first;
+		left.count = counts[0];
+
+		right.first = bvh.first + counts[0];
+		right.count = counts[1];
+
+		bvh.count = 0;				// This node is not a leaf anymore
+		bvh.first = pool_pointer;	// Point to its left child
+
+		delete[] triangles;
+
+		return true;
+	}
+
+	delete[] triangles;
+
+	return false; // We did not split
+}
+
+void BVH2::SubdivideRecursively(BVHNode& bvh) {
+	if (Subdivide(bvh)) {
+		BVH2Node& left = pool[pool_pointer++];
+		BVH2Node& right = pool[pool_pointer++];
+
+		SubdivideRecursively(left);
+		SubdivideRecursively(right);
+	}
+}
+
+void BVH2::UpdateBounds() {
+	for (int i = N - 1; i >= 0; i--) {
+		// Unused BVH
+		if (pool[i].count == -1) {
+			continue;
+		}
+
+		// Node, inheret AABB from children
+		if (pool[i].count == 0) {
+			BVH2Node& left = pool[pool[i].first];
+			BVH2Node& right = pool[pool[i].first + 1];
+
+			float3 min_bound = fminf(left.min_bound, right.min_bound);
+			float3 max_bound = fmaxf(left.max_bound, right.max_bound);
+
+			pool[i].min_bound = min_bound;
+			pool[i].max_bound = max_bound;
+
+			continue;
+		}
+
+		// Leaf, calculate AABB from primitives
+		float3 min_b = make_float3(FLT_MAX, FLT_MAX, FLT_MAX);
+		float3 max_b = make_float3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+
+		for (int j = pool[i].first; j < pool[i].first + pool[i].count; j++) {
+			CoreTri& tri = triangle_pointers[j];
+
+			float3 tri_min_bound = fminf(fminf(tri.vertex0, tri.vertex1), tri.vertex2);
+			float3 tri_max_bound = fmaxf(fmaxf(tri.vertex0, tri.vertex1), tri.vertex2);
+
+			min_b = fminf(min_b, tri_min_bound);
+			max_b = fmaxf(max_b, tri_max_bound);
+		}
+
+		pool[i].min_bound = min_b; pool[i].max_bound = max_b;
+	}
+}
+
+bool BVH2::Traverse(Ray& ray, const BVHNode& bvh, CoreTri& tri, float& t, int* c) {
+	if (c) { (*c)++; } // If we are doing BVH debugging, increment the count of BVH intersections
+
+	float initial_t = t;
+	float found_t = t;
+
+	if (bvh.count > 0) { // If the node is a leaf
+		for (int i = bvh.first; i < bvh.first + bvh.count; i++) {
+			if (ray.IntersectTriangle(triangle_pointers[i], found_t) && found_t < t) {
+				t = found_t;
+				tri = triangle_pointers[i];
+			}
+		}
+	}
+	else { // If the node is not a leaf
+		float t_left = FLT_MAX;
+		float t_right = FLT_MAX;
+
+		// Only traverse children that are actually intersected
+		if (IntersectAABB(ray, pool[bvh.first], t_left)) {
+			if (IntersectAABB(ray, pool[bvh.first + 1], t_right)) {
+				if (t_left < t_right) { // Traverse the closest child first
+					Traverse(ray, pool[bvh.first], tri, t, c);
+					Traverse(ray, pool[bvh.first + 1], tri, t, c);
+				}
+				else {
+					Traverse(ray, pool[bvh.first + 1], tri, t, c);
+					Traverse(ray, pool[bvh.first], tri, t, c);
+				}
+			}
+			else {
+				Traverse(ray, pool[bvh.first], tri, t, c);
+			}
+		}
+		else if (IntersectAABB(ray, pool[bvh.first + 1], t_right)) {
+			Traverse(ray, pool[bvh.first + 1], tri, t, c);
+		}
+	}
+
+	return t < initial_t; // If an intersection was found
+}
+
+/*
+	BVH4
+*/
+
+BVH4::BVH4(Mesh mesh) {
+	N = mesh.vcount / 3;
+}
+
+BVH4::~BVH4() {
+	delete[] pool;
+}
+
+const BVHNode& BVH4::Root() {
+	return pool[0];
+}
+
+bool BVH4::Partition(BVHNode& bvh, CoreTri* triangles, int* counts) {
+	return false;
+}
+
+bool BVH4::Subdivide(BVHNode& bvh) {
+	return false;
+}
+
+void BVH4::SubdivideRecursively(BVHNode& bvh) {
+
+}
+
+void BVH4::UpdateBounds() {
+
+}
+
+bool BVH4::Traverse(Ray& ray, const BVHNode& bvh, CoreTri& tri, float& t, int* c) {
+	return false;
+}
+
+/*
+	TopLevelBVH
+*/
+
+TopLevelBVH::TopLevelBVH() {
+	
+}
+
+TopLevelBVH::~TopLevelBVH() {
+	for (BVH* bvh : leaf_pointers) { delete bvh; }
+}
+
+const BVHNode& TopLevelBVH::Root() {
+	return pool[0];
+}
+
+bool TopLevelBVH::Partition(BVHNode& bvh, CoreTri* triangles, int* counts) {
+	return false;
+}
+
+bool TopLevelBVH::Subdivide(BVHNode& bvh) {
+	return false;
+}
+
+void TopLevelBVH::SubdivideRecursively(BVHNode& bvh) {
+
+}
+
+void TopLevelBVH::UpdateBounds() {
+	BVH2Node& root = pool[0];
+	root.min_bound = make_float3(FLT_MAX, FLT_MAX, FLT_MAX);
+	root.max_bound = make_float3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+
+	for (int i = 0; i < leaf_pointers.size(); i++) {
+		root.min_bound = fminf(root.min_bound, leaf_pointers[i]->Root().min_bound);
+		root.max_bound = fmaxf(root.max_bound, leaf_pointers[i]->Root().max_bound);
+	}
+}
+
+bool TopLevelBVH::Traverse(Ray& ray, const BVHNode& bvh, CoreTri& tri, float& t, int* c) {
+	// First check if we actually intersect the top level BVH
+	if (!IntersectAABB(ray, pool[0], t)) { return false; }
+
+	// Sort children based on the distance to their AABB
+	// Children whose AABB is not intersected are discarded
+	vector<tuple<float, BVH*>> traversal_order;
+
+	for (int i = 0; i < leaf_pointers.size(); i++) {
+		float aabb_t = FLT_MAX;
+		if (IntersectAABB(ray, leaf_pointers[i]->Root(), aabb_t)) {
+			traversal_order.push_back(make_tuple(aabb_t, leaf_pointers[i]));
+		}
+	}
+
+	sort(traversal_order.begin(), traversal_order.end());
+
+	// Intersect children in order of proximity
+	float initial_t = t;
+
+	for (int i = 0; i < traversal_order.size(); i++) {
+		if (get<0>(traversal_order[i]) < t) {
+			get<1>(traversal_order[i])->Traverse(ray, get<1>(traversal_order[i])->Root(), tri, t, c);
+		}
+	}
+
+	return t < initial_t;
+
+	return false;
+}
+
+void TopLevelBVH::AddBVH(BVH* bvh, bool rebuild) {
+	leaf_pointers.push_back(bvh);
+	if (rebuild) { Rebuild(); }
+}
+
+void TopLevelBVH::Rebuild() {
+	
+}

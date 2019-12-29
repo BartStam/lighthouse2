@@ -25,7 +25,7 @@ using namespace lh2core;
 //  +-----------------------------------------------------------------------------+
 void RenderCore::Init()
 {
-	cout << "BVH size: " << sizeof(BVH) << endl;
+	cout << "BVH size: " << sizeof(IBVH) << endl;
 	cout << "Ray size: " << sizeof(Ray) << endl;
 	cout << "Pointer size: " << sizeof(int*) << endl;
 	cout << "int size: " << sizeof(int) << endl;
@@ -65,6 +65,9 @@ void RenderCore::SetGeometry( const int meshIdx, const float4* vertexData, const
 		memcpy(newMesh.triangles, triangleData, (vertexCount / 3) * sizeof(CoreTri));
 		raytracer.scene.meshes.push_back(newMesh);
 
+		cout << "Added mesh with triangle count: " << newMesh.vcount / 3 << endl;
+		raytracer.top_level_bvh.AddBVH(new BVH2(newMesh));
+		
 
 		raytracer.N += vertexCount / 3; // Total triangle count in scene, later used for BVH construction
 	}
@@ -154,15 +157,18 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge )
 {
 	if (raytracer.frameCount == 0) {
 		cout << endl;
-		DWORD trace_start = GetTickCount();
 		cout << "Total triangle count: " << raytracer.N << endl;
-		raytracer.ConstructBVH();
-		// raytracer.PrintBVH(raytracer.pool[0]); cout << endl;
 		cout << "Mesh count: " << raytracer.scene.meshes.size() << endl;
-		raytracer.frameCount++;
-		DWORD trace_time = GetTickCount() - trace_start;
-		cout << "Finished building BVH in " << trace_time / 1000.0f << " seconds." << endl;
-		cout << endl;
+
+		raytracer.top_level_bvh.Rebuild();
+
+		//DWORD trace_start = GetTickCount();
+		//raytracer.ConstructBVH();
+		//// raytracer.PrintBVH(raytracer.pool[0]); cout << endl;
+		//raytracer.frameCount++;
+		//DWORD trace_time = GetTickCount() - trace_start;
+		//cout << "Finished building BVH in " << trace_time / 1000.0f << " seconds." << endl;
+		//cout << endl;
 	}
 	screen->Clear();
 	if (converge) { raytracer.accumulator.Rebuild(screen->width, screen->height); }
