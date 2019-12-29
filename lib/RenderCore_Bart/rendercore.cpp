@@ -59,7 +59,7 @@ void RenderCore::SetGeometry( const int meshIdx, const float4* vertexData, const
 		memcpy(newMesh.triangles, triangleData, (vertexCount / 3) * sizeof(CoreTri));
 		raytracer.scene.meshes.push_back(newMesh);
 
-		raytracer.top_level_bvh.AddBVH(new BVH2(newMesh), true);
+		raytracer.top_level_bvh.AddBVH(new BVH2(newMesh));
 	}
 }
 
@@ -148,9 +148,6 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge ) {
 		cout << "Mesh count: " << raytracer.scene.meshes.size() << endl;
 
 		raytracer.top_level_bvh.Rebuild();
-		raytracer.top_level_bvh.Print(raytracer.top_level_bvh.Root());
-		cout << endl;
-
 		raytracer.frameCount++;
 
 		//DWORD trace_start = GetTickCount();

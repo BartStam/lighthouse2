@@ -270,24 +270,6 @@ bool BVH2::Partition(BVHNode& bvh, CoreTri* triangles, int* counts) {
 	delete[] left;
 	delete[] right;
 
-	// Debug, if we somehow end up with all primitives on one side of the split
-	if (bvh.count != counts[0] + counts[1]) {
-		cout << "bvh.count != counts[0] + counts[1]" << endl;
-	}
-
-	if (counts[0] == 0 || counts[1] == 0) {
-		cout << "Left count: " << counts[0] << endl;
-		cout << "Right count: " << counts[1] << endl;
-		cout << "Axis: " << best_split_plane << endl;
-		cout << "Position: " << best_split_pos << endl;
-		cout << "Min bounds: " << c_min_bound.x << ", " << c_min_bound.y << ", " << c_min_bound.z << endl;
-		cout << "Max bounds: " << c_max_bound.x << ", " << c_max_bound.y << ", " << c_max_bound.z << endl;
-		cout << "Base cost: " << base_cost - EPSILON << endl;
-		cout << "Best cost: " << best_split_cost << endl;
-		cout << "c_min_bound.z <= pos: " << ((c_min_bound.z <= best_split_pos) ? "true" : "false") << endl;
-		cout << endl;
-	}
-
 	return true;
 }
 
@@ -464,7 +446,6 @@ void BVH4::UpdateBounds() {
 }
 
 bool BVH4::Traverse(Ray& ray, const BVHNode& bvh, CoreTri& tri, float& t, int* c) {
-	cout << "traversing BVH4" << endl;
 	return false;
 }
 
@@ -526,7 +507,7 @@ void TopLevelBVH::UpdateBounds() {
 		float3 max_b = make_float3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 
 		for (int j = pool[i].first; j < pool[i].first + pool[i].count; j++) {
-			BVH* bvh = bvh_vector[bvh_indices[j]];
+			BVH* bvh = bvh_vector[indices[j]];
 
 			float3 bvh_min_bound = bvh->Root().min_bound;
 			float3 bvh_max_bound = bvh->Root().max_bound;
@@ -546,7 +527,7 @@ bool TopLevelBVH::Traverse(Ray& ray, const BVHNode& bvh, CoreTri& tri, float& t,
 
 	if (bvh.count > 0) { // If the node is a leaf
 		for (int i = bvh.first; i < bvh.first + bvh.count; i++) {
-			bvh_vector[bvh_indices[i]]->Traverse(ray, bvh_vector[bvh_indices[i]]->Root(), tri, t, c); // Naively intersect every mesh-level BVH
+			bvh_vector[indices[i]]->Traverse(ray, bvh_vector[indices[i]]->Root(), tri, t, c); // Continue traversing the mesh-level BVH
 		}
 	}
 	else { // If the node is not a leaf
@@ -598,11 +579,11 @@ void TopLevelBVH::Rebuild() {
 	N = bvh_vector.size();
 
 	delete[] pool;
-	delete[] bvh_indices;
+	delete[] indices;
 
-	bvh_indices = new int[N];
+	indices = new int[N];
 	for (int i = 0; i < N; i++) {
-		bvh_indices[i] = i;
+		indices[i] = i;
 	}
 
 	pool = new BVHNode[2 * N];
