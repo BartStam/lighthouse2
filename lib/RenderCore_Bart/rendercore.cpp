@@ -59,7 +59,7 @@ void RenderCore::SetGeometry( const int meshIdx, const float4* vertexData, const
 		memcpy(newMesh.triangles, triangleData, (vertexCount / 3) * sizeof(CoreTri));
 		raytracer.scene.meshes.push_back(newMesh);
 
-		raytracer.top_level_bvh.AddBVH(new BVH2(newMesh));
+		raytracer.top_level_bvh.AddBVH(new BVH2(&newMesh));
 	}
 }
 

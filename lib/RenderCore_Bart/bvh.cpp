@@ -70,14 +70,14 @@ bool BVH::IntersectAABB(const Ray& ray, const BVHNode& bvh, float& t) {
 	BVH2
 */
 
-BVH2::BVH2(Mesh mesh) {
-	N = mesh.vcount / 3;
+BVH2::BVH2(Mesh* m) : mesh(m) {
+	N = mesh->vcount / 3;
 
 	// Fill the triangle pointer array
 	triangle_pointers = new CoreTri[N];
 
 	for (int i = 0; i < N; i++) {
-		triangle_pointers[i] = mesh.triangles[i];
+		triangle_pointers[i] = mesh->triangles[i];
 	}
 
 	pool = new BVHNode[2 * N];
@@ -416,8 +416,8 @@ void BVH2::Print(BVHNode& bvh) {
 	BVH4
 */
 
-BVH4::BVH4(Mesh mesh) {
-	N = mesh.vcount / 3;
+BVH4::BVH4(Mesh* m) : mesh(m) {
+	N = mesh->vcount / 3;
 }
 
 BVH4::~BVH4() {

@@ -42,10 +42,11 @@ public:
 
 class BVH2 : public BVH {
 public:
-	BVH2(Mesh mesh);
+	BVH2(Mesh* mesh);
 	~BVH2();
 
 	CoreTri* triangle_pointers;
+	Mesh* mesh;
 
 	BVHNode& Root();
 	bool Partition(BVHNode& bvh, CoreTri* triangles, int* counts);
@@ -58,10 +59,11 @@ public:
 
 class BVH4 : public BVH {
 public:
-	BVH4(Mesh mesh);
+	BVH4(Mesh* mesh);
 	~BVH4();
 
 	CoreTri* triangle_pointers;
+	Mesh* mesh;
 
 	BVHNode& Root();
 	bool Partition(BVHNode& bvh, CoreTri* triangles, int* counts);
