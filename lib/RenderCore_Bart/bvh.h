@@ -26,13 +26,13 @@ public:
 	int N;						// Total amount of primitives in this BVH
 	int pool_pointer = 2;		// Pointer to the "current" BVHNode, used for construction
 	BVHNode* alignas(128) pool;	// Pool of cache aligned BVHNodes, each 32 bytes with neighbours residing next to each other
-	int* indices;				// Indices of the primitive array, triangles for mesh-level BVHs and BVHs for top-level BVH
+	int* tri_indices;			// Indices of the primitive array, triangles for mesh-level BVHs and BVHs for top-level BVH
 	
-	float SplitCost(const CoreTri* triangles, int first, int count);
 	bool IntersectAABB(const Ray& ray, const BVHNode& bvh, float& t);
 	
 	virtual BVHNode& Root() = 0;
-	virtual bool Partition(BVHNode& bvh, CoreTri* triangles, int* counts) = 0;
+	virtual float SplitCost(const int* indices, int first, int count) = 0;
+	virtual bool Partition(BVHNode& bvh, int* indices, int* counts) = 0;
 	virtual bool Subdivide(BVHNode& bvh) = 0;
 	virtual void SubdivideRecursively(BVHNode& bvh) = 0;
 	virtual void UpdateBounds() = 0;
@@ -45,11 +45,11 @@ public:
 	BVH2(Mesh* mesh);
 	~BVH2();
 
-	CoreTri* triangle_pointers;
-	Mesh* mesh;
+	Mesh* mesh;	// Meshes are owned by the rendercore
 
 	BVHNode& Root();
-	bool Partition(BVHNode& bvh, CoreTri* triangles, int* counts);
+	float SplitCost(const int* indices, int first, int count);
+	bool Partition(BVHNode& bvh, int* indices, int* counts);
 	bool Subdivide(BVHNode& bvh);
 	void SubdivideRecursively(BVHNode& bvh);
 	void UpdateBounds();
@@ -62,11 +62,11 @@ public:
 	BVH4(Mesh* mesh);
 	~BVH4();
 
-	CoreTri* triangle_pointers;
-	Mesh* mesh;
+	Mesh* mesh; // Meshes are owned by the rendercore
 
 	BVHNode& Root();
-	bool Partition(BVHNode& bvh, CoreTri* triangles, int* counts);
+	float SplitCost(const int* indices, int first, int count);
+	bool Partition(BVHNode& bvh, int* indices, int* counts);
 	bool Subdivide(BVHNode& bvh);
 	void SubdivideRecursively(BVHNode& bvh);
 	void UpdateBounds();
@@ -82,7 +82,8 @@ public:
 	vector<BVH*> bvh_vector;	// Stores pointers to all mesh-level BVHs in no particular order
 	
 	BVHNode& Root();
-	bool Partition(BVHNode& bvh, CoreTri* triangles, int* counts);
+	float SplitCost(const int* indices, int first, int count);
+	bool Partition(BVHNode& bvh, int* indices, int* counts);
 	bool Subdivide(BVHNode& bvh);
 	void SubdivideRecursively(BVHNode& bvh);
 	void UpdateBounds();

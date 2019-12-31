@@ -156,11 +156,11 @@ float3 RayTracer::Illumination(float3 color, float3 O) {
 	return clamp(color * light_color, 0, 1);
 }
 
-Scene::~Scene()
-{
+Scene::~Scene() {
 	for (auto mat : matList) delete mat;
 	for (auto pointLight : pointLights) delete pointLight;
 	for (auto areaLight : areaLights) delete areaLight;
+	for (auto mesh : meshes) delete mesh;
 }
 
 RayTracer::~RayTracer() {

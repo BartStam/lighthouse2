@@ -9,26 +9,6 @@ BVH::~BVH() {
 	
 }
 
-float BVH::SplitCost(const CoreTri* triangles, int first, int count) {
-	float3 min_b = make_float3(0, 0, 0);
-	float3 max_b = make_float3(0, 0, 0);
-
-	// Calculate AABB bounds
-	for (int i = first; i < first + count; i++) {
-		const CoreTri& tri = triangles[i];
-		float3 tri_min_bound = fminf(fminf(tri.vertex0, tri.vertex1), tri.vertex2);
-		float3 tri_max_bound = fmaxf(fmaxf(tri.vertex0, tri.vertex1), tri.vertex2);
-
-		min_b = fminf(min_b, tri_min_bound);
-		max_b = fmaxf(max_b, tri_max_bound);
-	}
-
-	float3 dims = max_b - min_b; // Dimensions of the AABB
-	float area = 2 * dims.x * dims.y + 2 * dims.x * dims.z + 2 * dims.y * dims.z; // AABB surface area
-
-	return count * area;
-}
-
 bool BVH::IntersectAABB(const Ray& ray, const BVHNode& bvh, float& t) {
 	// Taken from: https://gamedev.stackexchange.com/a/18459
 
@@ -74,10 +54,10 @@ BVH2::BVH2(Mesh* m) : mesh(m) {
 	N = mesh->vcount / 3;
 
 	// Fill the triangle pointer array
-	triangle_pointers = new CoreTri[N];
+	tri_indices = new int[N];
 
 	for (int i = 0; i < N; i++) {
-		triangle_pointers[i] = mesh->triangles[i];
+		tri_indices[i] = i;
 	}
 
 	pool = new BVHNode[2 * N];
@@ -92,20 +72,40 @@ BVH2::BVH2(Mesh* m) : mesh(m) {
 
 BVH2::~BVH2() {
 	delete[] pool;
-	delete[] triangle_pointers;
+	delete[] tri_indices;
 }
 
 BVHNode& BVH2::Root() {
 	return pool[0];
 }
 
-bool BVH2::Partition(BVHNode& bvh, CoreTri* triangles, int* counts) {
+float BVH2::SplitCost(const int* indices, int first, int count) {
+	float3 min_b = make_float3(FLT_MAX, FLT_MAX, FLT_MAX);
+	float3 max_b = make_float3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+
+	// Calculate AABB bounds
+	for (int i = first; i < first + count; i++) {
+		const CoreTri& tri = mesh->triangles[indices[i]];
+		float3 tri_min_bound = fminf(fminf(tri.vertex0, tri.vertex1), tri.vertex2);
+		float3 tri_max_bound = fmaxf(fmaxf(tri.vertex0, tri.vertex1), tri.vertex2);
+
+		min_b = fminf(min_b, tri_min_bound);
+		max_b = fmaxf(max_b, tri_max_bound);
+	}
+
+	float3 dims = max_b - min_b; // Dimensions of the AABB
+	float area = 2 * dims.x * dims.y + 2 * dims.x * dims.z + 2 * dims.y * dims.z; // AABB surface area
+
+	return count * area;
+}
+
+bool BVH2::Partition(BVHNode& bvh, int* indices, int* counts) {
 	int bin_count = 8; // Must be larger than 1
 
-	CoreTri* left = new CoreTri[bvh.count];
-	CoreTri* right = new CoreTri[bvh.count];
+	int* left = new int[bvh.count];
+	int* right = new int[bvh.count];
 
-	float base_cost = SplitCost(triangle_pointers, bvh.first, bvh.count);	// Cost of current BVH before splitting, according to SAH heuristic
+	float base_cost = SplitCost(tri_indices, bvh.first, bvh.count);	// Cost of current BVH before splitting, according to SAH heuristic
 	float3 c_min_bound = make_float3(FLT_MAX, FLT_MAX, FLT_MAX);			// Triangle centroids AABB min bound
 	float3 c_max_bound = make_float3(-FLT_MAX, -FLT_MAX, -FLT_MAX);			// Triangle centroids AABB max bound
 
@@ -115,7 +115,7 @@ bool BVH2::Partition(BVHNode& bvh, CoreTri* triangles, int* counts) {
 
 	// Calculate the centroid AABB
 	for (int i = bvh.first; i < bvh.first + bvh.count; i++) {
-		CoreTri& tri = triangle_pointers[i];
+		CoreTri& tri = mesh->triangles[tri_indices[i]];
 		float3 center = (tri.vertex0 + tri.vertex1 + tri.vertex2) / 3.0f;
 
 		c_min_bound = fminf(c_min_bound, center);
@@ -132,14 +132,14 @@ bool BVH2::Partition(BVHNode& bvh, CoreTri* triangles, int* counts) {
 			counts[1] = 0; // Right counts
 
 			for (int j = bvh.first; j < bvh.first + bvh.count; j++) {
-				CoreTri& tri = triangle_pointers[j];
+				CoreTri& tri = mesh->triangles[tri_indices[j]];
 				float3 tri_center = (tri.vertex0 + tri.vertex1 + tri.vertex2) / 3.0f;
 
 				if (tri_center.x <= pos) {
-					left[counts[0]++] = tri;
+					left[counts[0]++] = tri_indices[j];
 				}
 				else {
-					right[counts[1]++] = tri;
+					right[counts[1]++] = tri_indices[j];
 				}
 			}
 
@@ -162,14 +162,14 @@ bool BVH2::Partition(BVHNode& bvh, CoreTri* triangles, int* counts) {
 			counts[1] = 0; // Right counts
 
 			for (int j = bvh.first; j < bvh.first + bvh.count; j++) {
-				CoreTri& tri = triangle_pointers[j];
+				CoreTri& tri = mesh->triangles[tri_indices[j]];
 				float3 tri_center = (tri.vertex0 + tri.vertex1 + tri.vertex2) / 3.0f;
 
 				if (tri_center.y <= pos) {
-					left[counts[0]++] = tri;
+					left[counts[0]++] = tri_indices[j];
 				}
 				else {
-					right[counts[1]++] = tri;
+					right[counts[1]++] = tri_indices[j];
 				}
 			}
 
@@ -192,14 +192,14 @@ bool BVH2::Partition(BVHNode& bvh, CoreTri* triangles, int* counts) {
 			counts[1] = 0; // Right counts
 
 			for (int j = bvh.first; j < bvh.first + bvh.count; j++) {
-				CoreTri& tri = triangle_pointers[j];
+				CoreTri& tri = mesh->triangles[tri_indices[j]];
 				float3 tri_center = (tri.vertex0 + tri.vertex1 + tri.vertex2) / 3.0f;
 
 				if (tri_center.z <= pos) {
-					left[counts[0]++] = tri;
+					left[counts[0]++] = tri_indices[j];
 				}
 				else {
-					right[counts[1]++] = tri;
+					right[counts[1]++] = tri_indices[j];
 				}
 			}
 
@@ -224,47 +224,47 @@ bool BVH2::Partition(BVHNode& bvh, CoreTri* triangles, int* counts) {
 	counts[1] = 0; // Right counts
 
 	for (int i = bvh.first; i < bvh.first + bvh.count; i++) {
-		CoreTri& tri = triangle_pointers[i];
+		CoreTri& tri = mesh->triangles[tri_indices[i]];
 		float3 center = (tri.vertex0 + tri.vertex1 + tri.vertex2) / 3.0f;
 
 		// X split
 		if (best_split_plane == 'X') {
 			if (center.x <= best_split_pos) {
-				left[counts[0]++] = tri;
+				left[counts[0]++] = tri_indices[i];
 			}
 			else {
-				right[counts[1]++] = tri;
+				right[counts[1]++] = tri_indices[i];
 			}
 		}
 
 		// Y split
 		if (best_split_plane == 'Y') {
 			if (center.y <= best_split_pos) {
-				left[counts[0]++] = tri;
+				left[counts[0]++] = tri_indices[i];
 			}
 			else {
-				right[counts[1]++] = tri;
+				right[counts[1]++] = tri_indices[i];
 			}
 		}
 
 		// Z split
 		if (best_split_plane == 'Z') {
 			if (center.z <= best_split_pos) {
-				left[counts[0]++] = tri;
+				left[counts[0]++] = tri_indices[i];
 			}
 			else {
-				right[counts[1]++] = tri;
+				right[counts[1]++] = tri_indices[i];
 			}
 		}
 	}
 
 	// Merge left and right into one triangle array
 	for (int i = 0; i < counts[0]; i++) {
-		triangles[i] = left[i];
+		indices[i] = left[i];
 	}
 
 	for (int i = 0; i < counts[1]; i++) {
-		triangles[counts[0] + i] = right[i];
+		indices[counts[0] + i] = right[i];
 	}
 
 	delete[] left;
@@ -276,14 +276,14 @@ bool BVH2::Partition(BVHNode& bvh, CoreTri* triangles, int* counts) {
 bool BVH2::Subdivide(BVHNode& bvh) {
 	if (bvh.count < 4) { return false; } // Leaves have at least 2 primitives in them
 
-	CoreTri* triangles = new CoreTri[bvh.count];
+	int* indices = new int[bvh.count];
 	int counts[2] = {0};
 
 	// If there is value in splitting
-	if (Partition(bvh, triangles, counts)) {
-		// Update triangle pointer array
+	if (Partition(bvh, indices, counts)) {
+		// Update indices
 		for (int i = 0; i < bvh.count; i++) {
-			triangle_pointers[bvh.first + i] = triangles[i];
+			tri_indices[bvh.first + i] = indices[i];
 		}
 
 		// Split the BVH in two
@@ -299,12 +299,12 @@ bool BVH2::Subdivide(BVHNode& bvh) {
 		bvh.count = 0;				// This node is not a leaf anymore
 		bvh.first = pool_pointer;	// Point to its left child
 
-		delete[] triangles;
+		delete[] indices;
 
 		return true;
 	}
 
-	delete[] triangles;
+	delete[] indices;
 
 	return false; // We did not split
 }
@@ -345,7 +345,7 @@ void BVH2::UpdateBounds() {
 		float3 max_b = make_float3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 
 		for (int j = pool[i].first; j < pool[i].first + pool[i].count; j++) {
-			CoreTri& tri = triangle_pointers[j];
+			CoreTri& tri = mesh->triangles[tri_indices[j]];
 
 			float3 tri_min_bound = fminf(fminf(tri.vertex0, tri.vertex1), tri.vertex2);
 			float3 tri_max_bound = fmaxf(fmaxf(tri.vertex0, tri.vertex1), tri.vertex2);
@@ -366,9 +366,12 @@ bool BVH2::Traverse(Ray& ray, const BVHNode& bvh, CoreTri& tri, float& t, int* c
 
 	if (bvh.count > 0) { // If the node is a leaf
 		for (int i = bvh.first; i < bvh.first + bvh.count; i++) {
-			if (ray.IntersectTriangle(triangle_pointers[i], found_t) && found_t < t) {
+			//cout << "Intersecting triangle at index: " << tri_indices[i] << endl;
+			//cout << "Mesh total triangle count: " << (*mesh).vcount / 3 << endl;
+			//cout << "Triangle vertex0.x position: " << (*mesh).triangles[tri_indices[i]].vertex0.x << endl;
+			if (ray.IntersectTriangle((*mesh).triangles[tri_indices[i]], found_t) && found_t < t) {
 				t = found_t;
-				tri = triangle_pointers[i];
+				tri = mesh->triangles[tri_indices[i]];
 			}
 		}
 	}
@@ -422,14 +425,18 @@ BVH4::BVH4(Mesh* m) : mesh(m) {
 
 BVH4::~BVH4() {
 	delete[] pool;
-	delete[] triangle_pointers;
+	delete[] tri_indices;
 }
 
 BVHNode& BVH4::Root() {
 	return pool[0];
 }
 
-bool BVH4::Partition(BVHNode& bvh, CoreTri* triangles, int* counts) {
+float BVH4::SplitCost(const int* indices, int first, int count) {
+	return 0.0f;
+}
+
+bool BVH4::Partition(BVHNode& bvh, int* indices, int* counts) {
 	return false;
 }
 
@@ -462,23 +469,78 @@ TopLevelBVH::TopLevelBVH() {
 }
 
 TopLevelBVH::~TopLevelBVH() {
-	for (BVH* bvh : bvh_vector) { delete bvh; }
+	for (auto bvh : bvh_vector) { delete bvh; }
 }
 
 BVHNode& TopLevelBVH::Root() {
 	return pool[0];
 }
 
-bool TopLevelBVH::Partition(BVHNode& bvh, CoreTri* triangles, int* counts) {
+float TopLevelBVH::SplitCost(const int* indices, int first, int count) {
+	float3 min_b = make_float3(FLT_MAX, FLT_MAX, FLT_MAX);
+	float3 max_b = make_float3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+
+	// Calculate AABB bounds
+	for (int i = first; i < first + count; i++) {
+		BVHNode& bvh_root = bvh_vector[indices[i]]->Root();
+		min_b = fminf(min_b, bvh_root.min_bound);
+		max_b = fmaxf(max_b, bvh_root.max_bound);
+	}
+
+	float3 dims = max_b - min_b; // Dimensions of the AABB
+	float area = 2 * dims.x * dims.y + 2 * dims.x * dims.z + 2 * dims.y * dims.z; // AABB surface area
+
+	return count * area;
+}
+
+bool TopLevelBVH::Partition(BVHNode& bvh, int* indices, int* counts) {
 	return false;
 }
 
 bool TopLevelBVH::Subdivide(BVHNode& bvh) {
-	return false;
+	if (bvh.count < 4) { return false; } // Leaves have at least 2 mesh-level BVHs in them
+
+	int* indices = new int[bvh.count];
+	int counts[2] = { 0 };
+
+	// If there is value in splitting
+	if (Partition(bvh, indices, counts)) {
+		// Update indices
+		for (int i = 0; i < bvh.count; i++) {
+			tri_indices[bvh.first + i] = indices[i];
+		}
+
+		// Split the BVH in two
+		BVHNode& left = pool[pool_pointer];
+		BVHNode& right = pool[pool_pointer + 1];
+
+		left.first = bvh.first;
+		left.count = counts[0];
+
+		right.first = bvh.first + counts[0];
+		right.count = counts[1];
+
+		bvh.count = 0;				// This node is not a leaf anymore
+		bvh.first = pool_pointer;	// Point to its left child
+
+		delete[] indices;
+
+		return true;
+	}
+
+	delete[] indices;
+
+	return false; // We did not split
 }
 
 void TopLevelBVH::SubdivideRecursively(BVHNode& bvh) {
+	if (Subdivide(bvh)) {
+		BVHNode& left = pool[pool_pointer++];
+		BVHNode& right = pool[pool_pointer++];
 
+		SubdivideRecursively(left);
+		SubdivideRecursively(right);
+	}
 }
 
 void TopLevelBVH::UpdateBounds() {
@@ -507,7 +569,7 @@ void TopLevelBVH::UpdateBounds() {
 		float3 max_b = make_float3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 
 		for (int j = pool[i].first; j < pool[i].first + pool[i].count; j++) {
-			BVH* bvh = bvh_vector[indices[j]];
+			BVH* bvh = bvh_vector[tri_indices[j]];
 
 			float3 bvh_min_bound = bvh->Root().min_bound;
 			float3 bvh_max_bound = bvh->Root().max_bound;
@@ -527,7 +589,7 @@ bool TopLevelBVH::Traverse(Ray& ray, const BVHNode& bvh, CoreTri& tri, float& t,
 
 	if (bvh.count > 0) { // If the node is a leaf
 		for (int i = bvh.first; i < bvh.first + bvh.count; i++) {
-			bvh_vector[indices[i]]->Traverse(ray, bvh_vector[indices[i]]->Root(), tri, t, c); // Continue traversing the mesh-level BVH
+			bvh_vector[tri_indices[i]]->Traverse(ray, bvh_vector[tri_indices[i]]->Root(), tri, t, c); // Continue traversing the mesh-level BVH
 		}
 	}
 	else { // If the node is not a leaf
@@ -579,11 +641,11 @@ void TopLevelBVH::Rebuild() {
 	N = bvh_vector.size();
 
 	delete[] pool;
-	delete[] indices;
+	delete[] tri_indices;
 
-	indices = new int[N];
+	tri_indices = new int[N];
 	for (int i = 0; i < N; i++) {
-		indices[i] = i;
+		tri_indices[i] = i;
 	}
 
 	pool = new BVHNode[2 * N];

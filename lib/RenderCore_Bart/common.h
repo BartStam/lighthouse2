@@ -48,8 +48,7 @@ namespace lh2core
 		}
 	};
 
-	class Mesh {
-	public:
+	struct Mesh {
 		float4* vertices = 0;
 		int vcount = 0;
 		CoreTri* triangles = 0;

@@ -28,7 +28,7 @@ public:
 	vector<Material*> matList;
 	vector<AreaLight*> areaLights;
 	vector<PointLight*> pointLights;
-	vector<Mesh> meshes;
+	vector<Mesh*> meshes;
 };
 
 class RayTracer {
