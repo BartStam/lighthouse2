@@ -36,7 +36,7 @@ public:
 	virtual bool Subdivide(BVHNode& bvh) = 0;
 	virtual void SubdivideRecursively(BVHNode& bvh) = 0;
 	virtual void UpdateBounds() = 0;
-	virtual bool Traverse(Ray& ray, const BVHNode& bvh, CoreTri& tri, float& t, int* c = nullptr) = 0;
+	virtual bool Traverse(Ray& ray, CoreTri& tri, float& t, int pool_index = 0, int* c = nullptr) = 0;
 	virtual void Print(BVHNode& bvh) = 0;
 };
 
@@ -52,7 +52,7 @@ public:
 	bool Subdivide(BVHNode& bvh);
 	void SubdivideRecursively(BVHNode& bvh);
 	void UpdateBounds();
-	bool Traverse(Ray& ray, const BVHNode& bvh, CoreTri& tri, float& t, int* c = nullptr);
+	bool Traverse(Ray& ray, CoreTri& tri, float& t, int pool_index = 0, int* c = nullptr);
 	void Print(BVHNode& bvh);
 };
 
@@ -68,7 +68,7 @@ public:
 	bool Subdivide(BVHNode& bvh);
 	void SubdivideRecursively(BVHNode& bvh);
 	void UpdateBounds();
-	bool Traverse(Ray& ray, const BVHNode& bvh, CoreTri& tri, float& t, int* c = nullptr);
+	bool Traverse(Ray& ray, CoreTri& tri, float& t, int pool_index = 0, int* c = nullptr);
 	void Print(BVHNode& bvh);
 };
 
@@ -84,7 +84,7 @@ public:
 	bool Subdivide(BVHNode& bvh);
 	void SubdivideRecursively(BVHNode& bvh);
 	void UpdateBounds();
-	bool Traverse(Ray& ray, const BVHNode& bvh, CoreTri& tri, float& t, int* c = nullptr);
+	bool Traverse(Ray& ray, CoreTri& tri, float& t, int pool_index = 0, int* c = nullptr);
 	void Print(BVHNode& bvh);
 	void AddBVH(BVH* bvh, bool rebuild = false);
 	void Rebuild();

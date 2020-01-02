@@ -30,7 +30,7 @@ float3 RayTracer::Color(float3 O, float3 D, uint depth, bool outside) {
 	CoreTri triangle;
 
 	// The ray hit the skydome, we don't do lighting
-	if (!top_level_bvh.Traverse(ray, top_level_bvh.Root(), triangle, t)) {
+	if (!top_level_bvh.Traverse(ray, triangle, t)) {
 		float u = 1 + atan2(ray.D.x, -ray.D.z) * INVPI;
 		float v = acos(ray.D.y) * INVPI;
 
@@ -101,7 +101,7 @@ float3 RayTracer::ColorDebugBVH(float3 O, float3 D) {
 	float t = FLT_MAX;
 	int c = 0;
 
-	if (top_level_bvh.Traverse(ray, top_level_bvh.Root(), triangle, t, &c)) {
+	if (top_level_bvh.Traverse(ray, triangle, t, 0, &c)) {
 		// return make_float3(1, 1, 1);
 	}
 
@@ -125,7 +125,7 @@ float3 RayTracer::Illumination(float3 color, float3 O) {
 		float t = FLT_MAX;
 		CoreTri triangle;
 
-		top_level_bvh.Traverse(shadow_ray, top_level_bvh.Root(), triangle, t);
+		top_level_bvh.Traverse(shadow_ray, triangle, t);
 		if (t_light <= t) {
 			light_color += scene.pointLights[i]->radiance / (t_light * t_light);
 		}
@@ -146,7 +146,7 @@ float3 RayTracer::Illumination(float3 color, float3 O) {
 		float t = FLT_MAX;
 		CoreTri triangle;
 
-		top_level_bvh.Traverse(shadow_ray, top_level_bvh.Root(), triangle, t);
+		top_level_bvh.Traverse(shadow_ray, triangle, t);
 
 		if (distance <= t) { // If the shadow ray hit the light
 			light_color += L / (p * N);

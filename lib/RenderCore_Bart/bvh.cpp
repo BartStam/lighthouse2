@@ -354,8 +354,10 @@ void BVH2::UpdateBounds() {
 	}
 }
 
-bool BVH2::Traverse(Ray& ray, const BVHNode& bvh, CoreTri& tri, float& t, int* c) {
+bool BVH2::Traverse(Ray& ray, CoreTri& tri, float& t, int pool_index, int* c) {
 	if (c) { (*c)++; } // If we are doing BVH debugging, increment the count of BVH intersections
+	
+	BVHNode& bvh = pool[pool_index];
 
 	float initial_t = t;
 	float found_t = t;
@@ -379,20 +381,20 @@ bool BVH2::Traverse(Ray& ray, const BVHNode& bvh, CoreTri& tri, float& t, int* c
 		if (IntersectAABB(ray, pool[bvh.first], t_left)) {
 			if (IntersectAABB(ray, pool[bvh.first + 1], t_right)) {
 				if (t_left < t_right) { // Traverse the closest child first
-					Traverse(ray, pool[bvh.first], tri, t, c);
-					Traverse(ray, pool[bvh.first + 1], tri, t, c);
+					Traverse(ray, tri, t, bvh.first, c);
+					Traverse(ray, tri, t, bvh.first + 1, c);
 				}
 				else {
-					Traverse(ray, pool[bvh.first + 1], tri, t, c);
-					Traverse(ray, pool[bvh.first], tri, t, c);
+					Traverse(ray, tri, t, bvh.first + 1, c);
+					Traverse(ray, tri, t, bvh.first, c);
 				}
 			}
 			else {
-				Traverse(ray, pool[bvh.first], tri, t, c);
+				Traverse(ray, tri, t, bvh.first, c);
 			}
 		}
 		else if (IntersectAABB(ray, pool[bvh.first + 1], t_right)) {
-			Traverse(ray, pool[bvh.first + 1], tri, t, c);
+			Traverse(ray, tri, t, bvh.first + 1, c);
 		}
 	}
 
@@ -444,7 +446,7 @@ void BVH4::UpdateBounds() {
 
 }
 
-bool BVH4::Traverse(Ray& ray, const BVHNode& bvh, CoreTri& tri, float& t, int* c) {
+bool BVH4::Traverse(Ray& ray, CoreTri& tri, float& t, int pool_index, int* c) {
 	return false;
 }
 
@@ -570,14 +572,16 @@ void TopLevelBVH::UpdateBounds() {
 	}
 }
 
-bool TopLevelBVH::Traverse(Ray& ray, const BVHNode& bvh, CoreTri& tri, float& t, int* c) {
+bool TopLevelBVH::Traverse(Ray& ray, CoreTri& tri, float& t, int pool_index, int* c) {
 	if (c) { (*c)++; } // If we are doing BVH debugging, increment the count of BVH intersections
+
+	BVHNode& bvh = pool[pool_index];
 
 	float initial_t = t;
 
 	if (bvh.count > 0) { // If the node is a leaf
 		for (int i = bvh.first; i < bvh.first + bvh.count; i++) {
-			bvh_vector[tri_indices[i]]->Traverse(ray, bvh_vector[tri_indices[i]]->Root(), tri, t, c); // Continue traversing the mesh-level BVH
+			bvh_vector[tri_indices[i]]->Traverse(ray, tri, t, 0, c); // Continue traversing the mesh-level BVH
 		}
 	}
 	else { // If the node is not a leaf
@@ -588,20 +592,20 @@ bool TopLevelBVH::Traverse(Ray& ray, const BVHNode& bvh, CoreTri& tri, float& t,
 		if (IntersectAABB(ray, pool[bvh.first], t_left)) {
 			if (IntersectAABB(ray, pool[bvh.first + 1], t_right)) {
 				if (t_left < t_right) { // Traverse the closest child first
-					Traverse(ray, pool[bvh.first], tri, t, c);
-					Traverse(ray, pool[bvh.first + 1], tri, t, c);
+					Traverse(ray, tri, t, bvh.first, c);
+					Traverse(ray, tri, t, bvh.first + 1, c);
 				}
 				else {
-					Traverse(ray, pool[bvh.first + 1], tri, t, c);
-					Traverse(ray, pool[bvh.first], tri, t, c);
+					Traverse(ray, tri, t, bvh.first + 1, c);
+					Traverse(ray, tri, t, bvh.first, c);
 				}
 			}
 			else {
-				Traverse(ray, pool[bvh.first], tri, t, c);
+				Traverse(ray, tri, t, bvh.first, c);
 			}
 		}
 		else if (IntersectAABB(ray, pool[bvh.first + 1], t_right)) {
-			Traverse(ray, pool[bvh.first + 1], tri, t, c);
+			Traverse(ray, tri, t, bvh.first + 1, c);
 		}
 	}
 
