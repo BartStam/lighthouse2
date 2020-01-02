@@ -58,8 +58,11 @@ void RenderCore::SetGeometry( const int meshIdx, const float4* vertexData, const
 		memcpy(mesh->triangles, triangleData, (vertexCount / 3) * sizeof(CoreTri));
 
 		raytracer.scene.meshes.push_back(mesh);
+		raytracer.N += triangleCount;
 
+		DWORD trace_start = GetTickCount();
 		raytracer.top_level_bvh.AddBVH(new BVH2(mesh));
+		coreStats.bvhBuildTime += GetTickCount() - trace_start;
 	}
 }
 
@@ -71,7 +74,6 @@ void RenderCore::SetTextures(const CoreTexDesc* tex, const int textureCount) {
 }
 
 void RenderCore::SetMaterials(CoreMaterial* mat, const int materialCount) {
-	cout << "SetMaterials" << endl;
 	for (int i = 0; i < materialCount; i++)
 	{
 		Material* m;
@@ -114,7 +116,6 @@ void RenderCore::SetLights(const CoreLightTri* areaLights, const int areaLightCo
 		float A = areaLights[i].area;
 		float3 rad = areaLights[i].radiance;
 		raytracer.scene.areaLights.push_back(l = new AreaLight(v0, v1, v2, N, c, A, rad));
-		cout << "Light " << i << " area: " << A << endl;
 	}
 
 	// Add point lights to scene
@@ -145,9 +146,14 @@ void RenderCore::SetSkyData(const float3* pixels, const uint width, const uint h
 void RenderCore::Render( const ViewPyramid& view, const Convergence converge ) {
 	if (raytracer.frameCount == 0) {
 		cout << endl;
-		cout << "Mesh count: " << raytracer.scene.meshes.size() << endl;
+		cout << "Mesh count:     " << raytracer.scene.meshes.size() << endl;
+		cout << "Triangle count: " << raytracer.N << endl;
 
+		DWORD trace_start = GetTickCount();
 		raytracer.top_level_bvh.Rebuild();
+		coreStats.bvhBuildTime += GetTickCount() - trace_start;
+		cout << "BVH build time: " << coreStats.bvhBuildTime / 1000.0f << " seconds\n" << endl;
+
 		raytracer.frameCount++;
 
 		//DWORD trace_start = GetTickCount();

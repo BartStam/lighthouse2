@@ -254,7 +254,7 @@ bool BVH2::Partition(BVHNode& bvh, int* indices, int* counts) {
 		}
 	}
 
-	// Merge left and right into one triangle array
+	// Merge left and right into one indices array
 	for (int i = 0; i < counts[0]; i++) {
 		indices[i] = left[i];
 	}
@@ -364,9 +364,6 @@ bool BVH2::Traverse(Ray& ray, CoreTri& tri, float& t, int pool_index, int* c) {
 
 	if (bvh.count > 0) { // If the node is a leaf
 		for (int i = bvh.first; i < bvh.first + bvh.count; i++) {
-			//cout << "Intersecting triangle at index: " << tri_indices[i] << endl;
-			//cout << "Mesh total triangle count: " << (*mesh).vcount / 3 << endl;
-			//cout << "Triangle vertex0.x position: " << (*mesh).triangles[tri_indices[i]].vertex0.x << endl;
 			if (ray.IntersectTriangle((*mesh).triangles[tri_indices[i]], found_t) && found_t < t) {
 				t = found_t;
 				tri = mesh->triangles[tri_indices[i]];
@@ -472,7 +469,7 @@ float TopLevelBVH::SplitCost(const int* indices, int first, int count) {
 
 	// Calculate AABB bounds
 	for (int i = first; i < first + count; i++) {
-		BVHNode& bvh_root = bvh_vector[indices[i]]->Root();
+		const BVHNode& bvh_root = bvh_vector[indices[i]]->Root();
 		min_b = fminf(min_b, bvh_root.min_bound);
 		max_b = fmaxf(max_b, bvh_root.max_bound);
 	}
@@ -484,7 +481,177 @@ float TopLevelBVH::SplitCost(const int* indices, int first, int count) {
 }
 
 bool TopLevelBVH::Partition(BVHNode& bvh, int* indices, int* counts) {
-	return false;
+	int bin_count = 8; // Must be larger than 1
+
+	int* left = new int[bvh.count];
+	int* right = new int[bvh.count];
+
+	float base_cost = SplitCost(tri_indices, bvh.first, bvh.count);	// Cost of current BVH before splitting, according to SAH heuristic
+	float3 c_min_bound = make_float3(FLT_MAX, FLT_MAX, FLT_MAX);			// Triangle centroids AABB min bound
+	float3 c_max_bound = make_float3(-FLT_MAX, -FLT_MAX, -FLT_MAX);			// Triangle centroids AABB max bound
+
+	float best_split_cost = FLT_MAX;
+	float best_split_pos;
+	char best_split_plane;
+
+	// Calculate the centroid AABB
+	for (int i = bvh.first; i < bvh.first + bvh.count; i++) {
+		BVH* bvh_ptr = bvh_vector[tri_indices[i]];
+		float3 center = bvh_ptr->Root().min_bound + 0.5 * (bvh_ptr->Root().max_bound - bvh_ptr->Root().min_bound);
+
+		c_min_bound = fminf(c_min_bound, center);
+		c_max_bound = fmaxf(c_max_bound, center);
+	}
+
+	// X split
+	if (c_min_bound.x != c_max_bound.x) { // If all mesh-level BVHs have the same X position, don't split over X axis
+		float interval = (c_max_bound.x - c_min_bound.x) / bin_count;
+		for (int i = 0; i < bin_count; i++) {
+			float pos = c_min_bound.x + i * interval;
+
+			counts[0] = 0; // Left count
+			counts[1] = 0; // Right counts
+
+			for (int j = bvh.first; j < bvh.first + bvh.count; j++) {
+				BVH* bvh_ptr = bvh_vector[tri_indices[j]];
+				float3 center = bvh_ptr->Root().min_bound + 0.5 * (bvh_ptr->Root().max_bound - bvh_ptr->Root().min_bound);
+
+				if (center.x <= pos) {
+					left[counts[0]++] = tri_indices[j];
+				}
+				else {
+					right[counts[1]++] = tri_indices[j];
+				}
+			}
+
+			float split_cost = SplitCost(left, 0, counts[0]) + SplitCost(right, 0, counts[1]);
+			if (split_cost + EPSILON < best_split_cost) {
+				best_split_cost = split_cost;
+				best_split_plane = 'X';
+				best_split_pos = pos;
+			}
+		}
+	}
+
+	// Y split
+	if (c_min_bound.y != c_max_bound.y) {
+		float interval = (c_max_bound.y - c_min_bound.y) / bin_count;
+		for (int i = 0; i < bin_count; i++) {
+			float pos = c_min_bound.y + i * interval;
+
+			counts[0] = 0; // Left count
+			counts[1] = 0; // Right counts
+
+			for (int j = bvh.first; j < bvh.first + bvh.count; j++) {
+				BVH* bvh_ptr = bvh_vector[tri_indices[j]];
+				float3 center = bvh_ptr->Root().min_bound + 0.5 * (bvh_ptr->Root().max_bound - bvh_ptr->Root().min_bound);
+
+				if (center.y <= pos) {
+					left[counts[0]++] = tri_indices[j];
+				}
+				else {
+					right[counts[1]++] = tri_indices[j];
+				}
+			}
+
+			float split_cost = SplitCost(left, 0, counts[0]) + SplitCost(right, 0, counts[1]);
+			if (split_cost + EPSILON < best_split_cost) {
+				best_split_cost = split_cost;
+				best_split_plane = 'Y';
+				best_split_pos = pos;
+			}
+		}
+	}
+
+	// Z split
+	if (c_min_bound.z != c_max_bound.z) {
+		float interval = (c_max_bound.z - c_min_bound.z) / bin_count;
+		for (int i = 0; i < bin_count; i++) {
+			float pos = c_min_bound.z + i * interval;
+
+			counts[0] = 0; // Left count
+			counts[1] = 0; // Right counts
+
+			for (int j = bvh.first; j < bvh.first + bvh.count; j++) {
+				BVH* bvh_ptr = bvh_vector[tri_indices[j]];
+				float3 center = bvh_ptr->Root().min_bound + 0.5 * (bvh_ptr->Root().max_bound - bvh_ptr->Root().min_bound);
+
+				if (center.z <= pos) {
+					left[counts[0]++] = tri_indices[j];
+				}
+				else {
+					right[counts[1]++] = tri_indices[j];
+				}
+			}
+
+			float split_cost = SplitCost(left, 0, counts[0]) + SplitCost(right, 0, counts[1]);
+			if (split_cost + EPSILON < best_split_cost) {
+				best_split_cost = split_cost;
+				best_split_plane = 'Z';
+				best_split_pos = pos;
+			}
+		}
+	}
+
+	// If there is no value in splitting, don't split
+	if (base_cost - EPSILON < best_split_cost) {
+		delete[] left;
+		delete[] right;
+		return false;
+	}
+
+	// Define the best splits
+	counts[0] = 0; // Left count
+	counts[1] = 0; // Right counts
+
+	for (int i = bvh.first; i < bvh.first + bvh.count; i++) {
+		BVH* bvh_ptr = bvh_vector[tri_indices[i]];
+		float3 center = bvh_ptr->Root().min_bound + 0.5 * (bvh_ptr->Root().max_bound - bvh_ptr->Root().min_bound);
+
+		// X split
+		if (best_split_plane == 'X') {
+			if (center.x <= best_split_pos) {
+				left[counts[0]++] = tri_indices[i];
+			}
+			else {
+				right[counts[1]++] = tri_indices[i];
+			}
+		}
+
+		// Y split
+		if (best_split_plane == 'Y') {
+			if (center.y <= best_split_pos) {
+				left[counts[0]++] = tri_indices[i];
+			}
+			else {
+				right[counts[1]++] = tri_indices[i];
+			}
+		}
+
+		// Z split
+		if (best_split_plane == 'Z') {
+			if (center.z <= best_split_pos) {
+				left[counts[0]++] = tri_indices[i];
+			}
+			else {
+				right[counts[1]++] = tri_indices[i];
+			}
+		}
+	}
+
+	// Merge left and right into one indices array
+	for (int i = 0; i < counts[0]; i++) {
+		indices[i] = left[i];
+	}
+
+	for (int i = 0; i < counts[1]; i++) {
+		indices[counts[0] + i] = right[i];
+	}
+
+	delete[] left;
+	delete[] right;
+
+	return true;
 }
 
 bool TopLevelBVH::Subdivide(BVHNode& bvh) {
@@ -576,12 +743,17 @@ bool TopLevelBVH::Traverse(Ray& ray, CoreTri& tri, float& t, int pool_index, int
 	if (c) { (*c)++; } // If we are doing BVH debugging, increment the count of BVH intersections
 
 	BVHNode& bvh = pool[pool_index];
-
 	float initial_t = t;
 
 	if (bvh.count > 0) { // If the node is a leaf
 		for (int i = bvh.first; i < bvh.first + bvh.count; i++) {
-			bvh_vector[tri_indices[i]]->Traverse(ray, tri, t, 0, c); // Continue traversing the mesh-level BVH
+			float t_aabb = FLT_MAX;
+			
+			// TODO: traverse children in order of distance
+
+			if (IntersectAABB(ray, bvh_vector[tri_indices[i]]->Root(), t_aabb) && t_aabb < t) {
+				bvh_vector[tri_indices[i]]->Traverse(ray, tri, t, 0, c); // Continue traversing the mesh-level BVH
+			}
 		}
 	}
 	else { // If the node is not a leaf
@@ -589,8 +761,8 @@ bool TopLevelBVH::Traverse(Ray& ray, CoreTri& tri, float& t, int pool_index, int
 		float t_right = FLT_MAX;
 
 		// Only traverse children that are actually intersected
-		if (IntersectAABB(ray, pool[bvh.first], t_left)) {
-			if (IntersectAABB(ray, pool[bvh.first + 1], t_right)) {
+		if (IntersectAABB(ray, pool[bvh.first], t_left) && t_left < t) {
+			if (IntersectAABB(ray, pool[bvh.first + 1], t_right) && t_right < t) {
 				if (t_left < t_right) { // Traverse the closest child first
 					Traverse(ray, tri, t, bvh.first, c);
 					Traverse(ray, tri, t, bvh.first + 1, c);
@@ -604,7 +776,7 @@ bool TopLevelBVH::Traverse(Ray& ray, CoreTri& tri, float& t, int pool_index, int
 				Traverse(ray, tri, t, bvh.first, c);
 			}
 		}
-		else if (IntersectAABB(ray, pool[bvh.first + 1], t_right)) {
+		else if (IntersectAABB(ray, pool[bvh.first + 1], t_right) && t_right < t) {
 			Traverse(ray, tri, t, bvh.first + 1, c);
 		}
 	}
@@ -646,5 +818,6 @@ void TopLevelBVH::Rebuild() {
 	root.first = 0;
 	root.count = N;
 
+	SubdivideRecursively(root);
 	UpdateBounds();
 }

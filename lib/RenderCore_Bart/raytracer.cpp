@@ -99,7 +99,7 @@ float3 RayTracer::ColorDebugBVH(float3 O, float3 D) {
 	Ray ray = Ray(O, D);
 	CoreTri triangle;
 	float t = FLT_MAX;
-	int c = 0;
+	int c = -1;
 
 	if (top_level_bvh.Traverse(ray, triangle, t, 0, &c)) {
 		// return make_float3(1, 1, 1);
@@ -107,7 +107,7 @@ float3 RayTracer::ColorDebugBVH(float3 O, float3 D) {
 
 	if (c == 0) { return make_float3(0, 0, 0); } // No BVH intersection, black
 
-	float delta = 0.004f;
+	float delta = 0.006f;
 	color += make_float3(c * delta, c * -delta, 0);
 
 	return clamp(color, 0, 1);
