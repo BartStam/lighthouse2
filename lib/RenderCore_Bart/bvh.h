@@ -29,8 +29,8 @@ public:
 	int* tri_indices;			// Indices of the primitive array, triangles for mesh-level BVHs and BVHs for top-level BVH
 	
 	bool IntersectAABB(const Ray& ray, const BVHNode& bvh, float& t);
-	
-	virtual BVHNode& Root() = 0;
+	virtual BVHNode& Root() { return pool[0]; };
+
 	virtual float SplitCost(const int* indices, int first, int count) = 0;
 	virtual bool Partition(BVHNode& bvh, int* indices, int* counts) = 0;
 	virtual bool Subdivide(BVHNode& bvh) = 0;
@@ -47,7 +47,6 @@ public:
 
 	Mesh* mesh;	// Meshes are owned by the rendercore
 
-	BVHNode& Root();
 	float SplitCost(const int* indices, int first, int count);
 	bool Partition(BVHNode& bvh, int* indices, int* counts);
 	bool Subdivide(BVHNode& bvh);
@@ -64,7 +63,6 @@ public:
 
 	Mesh* mesh; // Meshes are owned by the rendercore
 
-	BVHNode& Root();
 	float SplitCost(const int* indices, int first, int count);
 	bool Partition(BVHNode& bvh, int* indices, int* counts);
 	bool Subdivide(BVHNode& bvh);
@@ -79,9 +77,8 @@ public:
 	TopLevelBVH();
 	~TopLevelBVH();
 
-	vector<BVH*> bvh_vector;	// Stores pointers to all mesh-level BVHs in no particular order
+	vector<BVH*> bvh_vector; // Stores pointers to all mesh-level BVHs in no particular order
 	
-	BVHNode& Root();
 	float SplitCost(const int* indices, int first, int count);
 	bool Partition(BVHNode& bvh, int* indices, int* counts);
 	bool Subdivide(BVHNode& bvh);

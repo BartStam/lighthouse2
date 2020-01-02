@@ -75,10 +75,6 @@ BVH2::~BVH2() {
 	delete[] tri_indices;
 }
 
-BVHNode& BVH2::Root() {
-	return pool[0];
-}
-
 float BVH2::SplitCost(const int* indices, int first, int count) {
 	float3 min_b = make_float3(FLT_MAX, FLT_MAX, FLT_MAX);
 	float3 max_b = make_float3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
@@ -428,10 +424,6 @@ BVH4::~BVH4() {
 	delete[] tri_indices;
 }
 
-BVHNode& BVH4::Root() {
-	return pool[0];
-}
-
 float BVH4::SplitCost(const int* indices, int first, int count) {
 	return 0.0f;
 }
@@ -470,10 +462,6 @@ TopLevelBVH::TopLevelBVH() {
 
 TopLevelBVH::~TopLevelBVH() {
 	for (auto bvh : bvh_vector) { delete bvh; }
-}
-
-BVHNode& TopLevelBVH::Root() {
-	return pool[0];
 }
 
 float TopLevelBVH::SplitCost(const int* indices, int first, int count) {
