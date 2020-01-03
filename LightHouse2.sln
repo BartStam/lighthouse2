@@ -40,6 +40,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rendercore_bart", "lib\Rend
 		{7940AFAE-A1F7-440C-823C-239F2C3BB023} = {7940AFAE-A1F7-440C-823C-239F2C3BB023}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rendercore_softrasterizer", "lib\RenderCore_SoftRasterizer\rendercore_softrasterizer.vcxproj", "{07247B19-33CB-4A06-A828-424ED7BC1796}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -92,6 +94,12 @@ Global
 		{22533E4F-5B79-485F-AD9C-153E70942CB4}.Release|x64.ActiveCfg = Release|x64
 		{22533E4F-5B79-485F-AD9C-153E70942CB4}.Release|x64.Build.0 = Release|x64
 		{22533E4F-5B79-485F-AD9C-153E70942CB4}.Release|x86.ActiveCfg = Release|x64
+		{07247B19-33CB-4A06-A828-424ED7BC1796}.Debug|x64.ActiveCfg = Debug|x64
+		{07247B19-33CB-4A06-A828-424ED7BC1796}.Debug|x64.Build.0 = Debug|x64
+		{07247B19-33CB-4A06-A828-424ED7BC1796}.Debug|x86.ActiveCfg = Debug|x64
+		{07247B19-33CB-4A06-A828-424ED7BC1796}.Release|x64.ActiveCfg = Release|x64
+		{07247B19-33CB-4A06-A828-424ED7BC1796}.Release|x64.Build.0 = Release|x64
+		{07247B19-33CB-4A06-A828-424ED7BC1796}.Release|x86.ActiveCfg = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -101,6 +109,7 @@ Global
 		{E2498414-99B6-43B5-A36E-E69273AF5927} = {CE339C88-1A68-48FF-B969-D3D1CFED807D}
 		{D754CC3F-4A2E-4942-A8D8-326E476833DF} = {CE339C88-1A68-48FF-B969-D3D1CFED807D}
 		{22533E4F-5B79-485F-AD9C-153E70942CB4} = {24024FCF-C61F-4202-B224-31E446620333}
+		{07247B19-33CB-4A06-A828-424ED7BC1796} = {24024FCF-C61F-4202-B224-31E446620333}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7799D7AC-6A26-44C6-B345-CA1364BA60F1}

@@ -67,6 +67,7 @@ void RenderCore::SetGeometry( const int meshIdx, const float4* vertexData, const
 }
 
 void RenderCore::SetInstance(const int instanceIdx, const int meshIdx, const mat4& matrix) {
+	
 }
 
 void RenderCore::SetTextures(const CoreTexDesc* tex, const int textureCount) {

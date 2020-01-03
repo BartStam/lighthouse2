@@ -746,24 +746,12 @@ bool TopLevelBVH::Traverse(Ray& ray, CoreTri& tri, float& t, int pool_index, int
 	float initial_t = t;
 
 	if (bvh.count > 0) { // If the node is a leaf
-		vector<tuple<float, int>> traversal_order;
-
-		// Fill the traversal order vector with all intersected mesh-level BVHs
 		for (int i = bvh.first; i < bvh.first + bvh.count; i++) {
 			float t_aabb = FLT_MAX;
 
-			if (IntersectAABB(ray, bvh_vector[tri_indices[i]]->Root(), t_aabb)) {
-				traversal_order.push_back(tuple<float, int>(t_aabb, tri_indices[i]));
+			if (IntersectAABB(ray, bvh_vector[tri_indices[i]]->Root(), t_aabb) && t_aabb < t) {
+				bvh_vector[tri_indices[i]]->Traverse(ray, tri, t, 0, c); // Continue traversing the mesh-level BVH
 			}
-		}
-
-		// Sort the traversal order vector by intersection distance
-		sort(traversal_order.begin(), traversal_order.end());
-
-		// Traverse the mesh-level BVHs in order of intersection distance
-		for (int i = 0; i < traversal_order.size(); i++) {
-			if (get<0>(traversal_order[i]) >= t) { break; }
-			bvh_vector[get<1>(traversal_order[i])]->Traverse(ray, tri, t, 0, c);
 		}
 	}
 	else { // If the node is not a leaf
