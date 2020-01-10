@@ -817,6 +817,6 @@ void TopLevelBVH::Rebuild() {
 	root.first = 0;
 	root.count = N;
 
-	//SubdivideRecursively(root);
+	SubdivideRecursively(root);
 	UpdateBounds();
 }

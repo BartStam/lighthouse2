@@ -78,7 +78,6 @@ void RenderCore::SetInstance(const int instanceIdx, const int meshIdx, const mat
 	if (instanceIdx >= raytracer.scene.instances.size()) { // New instance
 		Instance* instance = new Instance(raytracer.scene.meshes[meshIdx], matrix);
 		raytracer.scene.instances.push_back(instance);
-		delete instance;
 	}
 	else { // Existing instance
 		raytracer.scene.instances[instanceIdx]->mesh = raytracer.scene.meshes[meshIdx];
@@ -221,7 +220,7 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge ) {
 	}
 
 	DWORD trace_time = GetTickCount() - trace_start;
-	// cout << "\rRender time: " << setw(4) << std::setfill(' ') << trace_time / 1000.0f << "s per frame." << std::flush;
+	cout << "\rRender time: " << setw(4) << std::setfill(' ') << trace_time / 1000.0f << "s per frame." << std::flush;
 
 	// copy pixel buffer to OpenGL render target texture
 	glBindTexture(GL_TEXTURE_2D, targetTextureID);

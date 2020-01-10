@@ -160,6 +160,7 @@ Scene::~Scene() {
 	for (auto mat : matList) delete mat;
 	for (auto pointLight : pointLights) delete pointLight;
 	for (auto areaLight : areaLights) delete areaLight;
+	for (auto instance : instances) delete instance;
 	for (auto mesh : meshes) delete mesh;
 }
 

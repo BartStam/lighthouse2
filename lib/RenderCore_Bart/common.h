@@ -48,6 +48,11 @@ struct Ray {
 };
 
 struct Mesh {
+	~Mesh() {
+		delete[] vertices;
+		delete[] triangles;
+	}
+
 	float4* vertices = 0;
 	int vcount = 0;
 	CoreTri* triangles = 0;
