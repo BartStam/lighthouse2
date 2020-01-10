@@ -53,6 +53,16 @@ struct Mesh {
 	CoreTri* triangles = 0;
 };
 
+struct Instance {
+	Instance(Mesh* m, mat4 t) : mesh(m), transform(t) {};
+
+	Mesh* mesh;
+	mat4 transform;
+
+	void SetPosition(float3& pos) {	transform[3] = pos.x, transform[7] = pos.y, transform[11] = pos.z; }
+	float3 GetPosition() { return make_float3(transform[3], transform[7], transform[11]); }
+};
+
 struct Triangle {
 	Triangle(const float3 v0, const float3 v1, const float3 v2, float3 N, float3 c, float A)
 		: vertex0(v0), vertex1(v1), vertex2(v2), normal(N), center(c), area(A) {

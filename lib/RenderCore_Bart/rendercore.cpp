@@ -67,7 +67,23 @@ void RenderCore::SetGeometry( const int meshIdx, const float4* vertexData, const
 }
 
 void RenderCore::SetInstance(const int instanceIdx, const int meshIdx, const mat4& matrix) {
-	
+	// End of instance stream, resize instance vector if instances were removed
+	if (meshIdx == -1) {
+		if (raytracer.scene.instances.size() > instanceIdx) {
+			raytracer.scene.instances.resize(instanceIdx);
+		}
+		return;
+	}
+
+	if (instanceIdx >= raytracer.scene.instances.size()) { // New instance
+		Instance* instance = new Instance(raytracer.scene.meshes[meshIdx], matrix);
+		raytracer.scene.instances.push_back(instance);
+		delete instance;
+	}
+	else { // Existing instance
+		raytracer.scene.instances[instanceIdx]->mesh = raytracer.scene.meshes[meshIdx];
+		raytracer.scene.instances[instanceIdx]->transform = matrix;
+	}
 }
 
 void RenderCore::SetTextures(const CoreTexDesc* tex, const int textureCount) {
@@ -75,11 +91,15 @@ void RenderCore::SetTextures(const CoreTexDesc* tex, const int textureCount) {
 }
 
 void RenderCore::SetMaterials(CoreMaterial* mat, const int materialCount) {
-	for (int i = 0; i < materialCount; i++)
-	{
-		Material* m;
-		if (i < raytracer.scene.matList.size()) m = raytracer.scene.matList[i];
-		else raytracer.scene.matList.push_back(m = new Material());
+	Material* m;
+
+	for (int i = 0; i < materialCount; i++) {
+		if (i < raytracer.scene.matList.size()) {
+			m = raytracer.scene.matList[i];
+		}
+		else {
+			raytracer.scene.matList.push_back(m = new Material());
+		}
 		
 		int texID = mat[i].color.textureID;
 		if (texID == -1) {
@@ -165,6 +185,10 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge ) {
 		//cout << "Finished building BVH in " << trace_time / 1000.0f << " seconds." << endl;
 		//cout << endl;
 	}
+	else {
+		// raytracer.top_level_bvh.Rebuild();
+	}
+
 	screen->Clear();
 	if (converge) { raytracer.accumulator.Rebuild(screen->width, screen->height); }
 
@@ -197,7 +221,7 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge ) {
 	}
 
 	DWORD trace_time = GetTickCount() - trace_start;
-	cout << "\rRender time: " << setw(4) << std::setfill(' ') << trace_time / 1000.0f << "s per frame." << std::flush;
+	// cout << "\rRender time: " << setw(4) << std::setfill(' ') << trace_time / 1000.0f << "s per frame." << std::flush;
 
 	// copy pixel buffer to OpenGL render target texture
 	glBindTexture(GL_TEXTURE_2D, targetTextureID);

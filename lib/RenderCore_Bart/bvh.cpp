@@ -800,6 +800,7 @@ void TopLevelBVH::AddBVH(BVH* bvh, bool rebuild) {
 }
 
 void TopLevelBVH::Rebuild() {
+	cout << "Rebuild" << endl;
 	N = bvh_vector.size();
 
 	delete[] pool;
@@ -816,6 +817,6 @@ void TopLevelBVH::Rebuild() {
 	root.first = 0;
 	root.count = N;
 
-	SubdivideRecursively(root);
+	//SubdivideRecursively(root);
 	UpdateBounds();
 }

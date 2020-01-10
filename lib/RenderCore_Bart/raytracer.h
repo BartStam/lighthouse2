@@ -29,6 +29,7 @@ public:
 	vector<AreaLight*> areaLights;
 	vector<PointLight*> pointLights;
 	vector<Mesh*> meshes;
+	vector<Instance*> instances;
 };
 
 class RayTracer {
