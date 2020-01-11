@@ -42,6 +42,7 @@ public:
 	Accumulator accumulator;
 	int frameCount = 0;
 	int N;																// Total number of triangles in the scene
+	int D = 8;															// Maximum ray recursion depth
 
 	float3 Color(float3 O, float3 D, uint depth, bool outside=true);	// Trace a ray and return its color
 	float3 ColorDebugBVH(float3 O, float3 D);							// Trace primary rays and color based on how many BVHs they intersected

@@ -800,7 +800,6 @@ void TopLevelBVH::AddBVH(BVH* bvh, bool rebuild) {
 }
 
 void TopLevelBVH::Rebuild() {
-	cout << "Rebuild" << endl;
 	N = bvh_vector.size();
 
 	delete[] pool;
@@ -813,6 +812,7 @@ void TopLevelBVH::Rebuild() {
 
 	pool = new BVHNode[2 * N];
 	BVHNode& root = pool[0];
+	pool_pointer = 2;
 
 	root.first = 0;
 	root.count = N;

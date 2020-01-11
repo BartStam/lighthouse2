@@ -164,34 +164,19 @@ void RenderCore::SetSkyData(const float3* pixels, const uint width, const uint h
 //  |  Produce one image.                                                   LH2'19|
 //  +-----------------------------------------------------------------------------+
 void RenderCore::Render( const ViewPyramid& view, const Convergence converge ) {
+	// Print some stats on the first frame
 	if (raytracer.frameCount == 0) {
 		cout << endl;
 		cout << "Mesh count:     " << raytracer.scene.meshes.size() << endl;
 		cout << "Triangle count: " << raytracer.N << endl;
-
-		DWORD trace_start = GetTickCount();
-		raytracer.top_level_bvh.Rebuild();
-		coreStats.bvhBuildTime += GetTickCount() - trace_start;
 		cout << "BVH build time: " << coreStats.bvhBuildTime / 1000.0f << " seconds\n" << endl;
-
 		raytracer.frameCount++;
-
-		//DWORD trace_start = GetTickCount();
-		//raytracer.ConstructBVH();
-		//// raytracer.PrintBVH(raytracer.pool[0]); cout << endl;
-		//raytracer.frameCount++;
-		//DWORD trace_time = GetTickCount() - trace_start;
-		//cout << "Finished building BVH in " << trace_time / 1000.0f << " seconds." << endl;
-		//cout << endl;
-	}
-	else {
-		// raytracer.top_level_bvh.Rebuild();
 	}
 
 	screen->Clear();
-	if (converge) { raytracer.accumulator.Rebuild(screen->width, screen->height); }
 
-	int depth = 8; // Maximum ray recursion depth
+	raytracer.top_level_bvh.Rebuild();												// Rebuild the top-level BVH
+	if (converge) { raytracer.accumulator.Rebuild(screen->width, screen->height); }	// Rebuild the accumulator if not converging
 
 	int nx = screen->width;
 	int ny = screen->height;
@@ -205,12 +190,12 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge ) {
 	for (int y = 0; y < ny; y++) {
 		for (int x = 0; x < nx; x++) {
 			float rx = Rand(dx), ry = Rand(dy);
-			float3 sx = (x * dx + rx) * (view.p2 - view.p1);	// Screen x
-			float3 sy = (y * dy + dy) * (view.p3 - view.p1);	// Screen y
-			float3 P = view.p1 + sx + sy;						// Point on screen
-			float3 D = P - view.pos;							// Ray direction, normalized in Ray() constructor
-			float3 c = raytracer.Color(view.pos, D, depth);		// Color vector
-			// float3 c = raytracer.ColorDebugBVH(view.pos, D); // BVH Debug mode
+			float3 sx = (x * dx + rx) * (view.p2 - view.p1);		// Screen x
+			float3 sy = (y * dy + dy) * (view.p3 - view.p1);		// Screen y
+			float3 P = view.p1 + sx + sy;							// Point on screen
+			float3 D = P - view.pos;								// Ray direction, normalized in Ray() constructor
+			float3 c = raytracer.Color(view.pos, D, raytracer.D);	// Color vector
+			// float3 c = raytracer.ColorDebugBVH(view.pos, D);		// BVH Debug mode
 			raytracer.accumulator.addPixel(x, y, c);
 
 			float3 cv = raytracer.accumulator.Pixel(x, y);
