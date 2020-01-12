@@ -40,6 +40,20 @@ float3 RayTracer::Color(float3 O, float3 D, uint depth, bool outside) {
 		return clamp(scene.skyDome[min(height * scene.skyHeight * 2 + width, scene.skyDome.size() - 1)], 0.0f, 1.0f);
 	}
 
+	float3 N = make_float3(triangle.Nx, triangle.Ny, triangle.Nz); // Already normalized
+
+	// If we hit a light
+	if (scene.matList[triangle.material]->IsLight()) {
+		// If we hit the front of the light, return its scaled color
+		if (dot(N, D) < 0) {
+			float3 c = scene.matList[triangle.material]->diffuse;
+			float scale = 1.0f / max(c.x, max(c.y, c.z));
+			return scale * c;
+		}
+		
+		return make_float3(0, 0, 0); // If we hit the back of the light, return black
+	}
+
 	float specularity = scene.matList[triangle.material]->specularity;
 	float transmission = scene.matList[triangle.material]->transmission;
 
@@ -50,8 +64,7 @@ float3 RayTracer::Color(float3 O, float3 D, uint depth, bool outside) {
 	}
 
 	float diffusion = 1.0f - specularity - transmission;
-	float3 N = make_float3(triangle.Nx, triangle.Ny, triangle.Nz); // Normalized
-
+	
 	// Transmission
 	if (transmission > 0.01f) {
 		float H1 = 1.0f, H2 = scene.matList[triangle.material]->IOR;
@@ -87,8 +100,8 @@ float3 RayTracer::Color(float3 O, float3 D, uint depth, bool outside) {
 		color += transmission * Color(ray.Point(t) - N * 2 * EPSILON, H * D + (H * cosTi - S) * N, depth - 1, !outside);
 	}
 
-	if (specularity > 0.01f) { color += specularity * Color(ray.Point(t), D - 2 * (D * N) * N, depth - 1, outside); }
-	if (diffusion > 0.01f) { color += diffusion * Illumination(scene.matList[triangle.material]->diffuse, ray.Point(t)); }
+	if (specularity > 0.01f) { color += specularity * Color(ray.Point(t) + N * 2 * EPSILON, D - 2 * (D * N) * N, depth - 1, outside); }
+	if (diffusion > 0.01f) { color += diffusion * Illumination(scene.matList[triangle.material]->diffuse, ray.Point(t) + N * 2 * EPSILON); }
 
 	return color;
 }
@@ -118,14 +131,15 @@ float3 RayTracer::Illumination(float3 color, float3 O) {
 
 	// Point lights
 	for (int i = 0; i < scene.pointLights.size(); i++) {
-		float3 direction = scene.pointLights[i]->position - O;
-		Ray shadow_ray = Ray(O, direction);
+		float3 D = scene.pointLights[i]->position - O;
+		Ray shadow_ray = Ray(O, D);
 
-		float t_light = length(fabs(direction));
+		float t_light = length(fabs(D));
 		float t = FLT_MAX;
 		CoreTri triangle;
 
 		top_level_bvh.Traverse(shadow_ray, triangle, t);
+		
 		if (t_light <= t) {
 			light_color += scene.pointLights[i]->radiance / (t_light * t_light);
 		}
@@ -133,23 +147,32 @@ float3 RayTracer::Illumination(float3 color, float3 O) {
 
 	// Monte Carlo area lighting
 	int N = 1;
+	float c = (float)scene.areaLights.size() / N;
 	for (int n = 0; n < N; n++) {
 		uint i = RandomUInt() % scene.areaLights.size();
 
-		float p = 1.0f / scene.areaLights.size();
-		float3 direction = scene.areaLights[i]->RandomPoint() - O;
-		float distance = length(fabs(direction));
+		float3 D = scene.areaLights[i]->RandomPoint() - O;
+		float r = length(fabs(D)) - EPSILON;
 
-		float3 L = scene.areaLights[i]->radiance / (distance * distance);
-		
-		Ray shadow_ray = Ray(O, direction);
+		Ray shadow_ray = Ray(O, D);
 		float t = FLT_MAX;
 		CoreTri triangle;
 
 		top_level_bvh.Traverse(shadow_ray, triangle, t);
+		float3 triN = make_float3(triangle.Nx, triangle.Ny, triangle.Nz); // Already normalized
 
-		if (distance <= t) { // If the shadow ray hit the light
-			light_color += L / (p * N);
+		D = shadow_ray.D; // D is normalized in Ray constructor, no reason to do the work twice
+		float dot_DN = dot(D, triN);
+		if (r <= t && dot_DN < 0) {
+			float A = scene.areaLights[i]->area;
+			float sr = A / (4 * PI * r * r);
+			float3 L = scene.areaLights[i]->radiance * sr;
+			float theta = dot_DN / (length(D) * length(triN));
+			float3 E = L * cos(theta);
+
+			//return make_float3(clamp(theta, 0.0f, 1.0f));
+
+			light_color += E * c;
 		}
 	}
 

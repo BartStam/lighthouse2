@@ -46,24 +46,28 @@ void RenderCore::SetTarget( GLTexture* target ) {
 //  |  Set the geometry data for a model.                                   LH2'19|
 //  +-----------------------------------------------------------------------------+
 void RenderCore::SetGeometry( const int meshIdx, const float4* vertexData, const int vertexCount, const int triangleCount, const CoreTri* triangleData, const uint* alphaFlags ) {
-	// Only add meshes that are not area lights. We leave area lights invisible for now.
-	if (triangleData->ltriIdx == -1) {
-		Mesh* mesh = new Mesh();
+	Mesh* mesh;
 
-		mesh->vertices = new float4[vertexCount];
-		mesh->vcount = vertexCount;
-		memcpy(mesh->vertices, vertexData, vertexCount * sizeof(float4));
-
-		mesh->triangles = new CoreTri[vertexCount / 3];
-		memcpy(mesh->triangles, triangleData, (vertexCount / 3) * sizeof(CoreTri));
-
-		raytracer.scene.meshes.push_back(mesh);
+	if (meshIdx >= raytracer.scene.meshes.size()) { // New mesh
+		raytracer.scene.meshes.push_back(mesh = new Mesh(vertexCount, triangleCount));
 		raytracer.N += triangleCount;
-
-		DWORD trace_start = GetTickCount();
-		raytracer.top_level_bvh.AddBVH(new BVH2(mesh));
-		coreStats.bvhBuildTime += GetTickCount() - trace_start;
 	}
+
+	mesh = raytracer.scene.meshes[meshIdx]; // If existing mesh, assume triangle count stays the same
+
+	// Copy vertex data
+	for (int i = 0; i < vertexCount; i++) {
+		mesh->vertices[i] = vertexData[i];
+	}
+
+	// Copy triangle data
+	for (int i = 0; i < triangleCount; i++) {
+		mesh->triangles[i] = triangleData[i];
+	}
+
+	DWORD trace_start = GetTickCount();
+	raytracer.top_level_bvh.AddBVH(new BVH2(mesh));
+	coreStats.bvhBuildTime += GetTickCount() - trace_start;
 }
 
 void RenderCore::SetInstance(const int instanceIdx, const int meshIdx, const mat4& matrix) {
@@ -124,27 +128,35 @@ void RenderCore::SetMaterials(CoreMaterial* mat, const int materialCount) {
 
 void RenderCore::SetLights(const CoreLightTri* areaLights, const int areaLightCount, const CorePointLight* pointLights, const int pointLightCount,
 	const CoreSpotLight* spotLights, const int spotLightCount, const CoreDirectionalLight* directionalLights, const int directionalLightCount) {
-	// Add area lights to scene
+	// Area lights
+	if (raytracer.scene.areaLights.size() > areaLightCount) { raytracer.scene.areaLights.resize(areaLightCount); }
+
 	for (int i = 0; i < areaLightCount; i++) {
-		if (raytracer.scene.areaLights.size() > i) { continue; }
-		AreaLight* l;
-		float3 v0 = areaLights[i].vertex0;
-		float3 v1 = areaLights[i].vertex1;
-		float3 v2 = areaLights[i].vertex2;
-		float3 N = areaLights[i].N;
-		float3 c = areaLights[i].centre;
-		float A = areaLights[i].area;
-		float3 rad = areaLights[i].radiance;
-		raytracer.scene.areaLights.push_back(l = new AreaLight(v0, v1, v2, N, c, A, rad));
+		AreaLight* areaLight;
+		if (i >= raytracer.scene.areaLights.size()) { raytracer.scene.areaLights.push_back(areaLight = new AreaLight()); }
+		areaLight = raytracer.scene.areaLights[i];
+		areaLight->vertex0 = areaLights[i].vertex0;
+		areaLight->vertex1 = areaLights[i].vertex1;
+		areaLight->vertex2 = areaLights[i].vertex2;
+		areaLight->normal = areaLights[i].N;
+		areaLight->center = areaLights[i].centre;
+		areaLight->area = areaLights[i].area;
+		areaLight->radiance = areaLights[i].radiance;
+
+		cout << "Area light" << endl;
+		cout << "  Area: " << areaLights[i].area << endl;
+		cout << "  Radiance: " << areaLights[i].radiance.x << ", " << areaLights[i].radiance.y << ", " << areaLights[i].radiance.z << ", " << endl;
 	}
 
-	// Add point lights to scene
+	// Point lights
+	if (raytracer.scene.pointLights.size() > pointLightCount) { raytracer.scene.pointLights.resize(pointLightCount); }
+
 	for (int i = 0; i < pointLightCount; i++) {
-		if (raytracer.scene.pointLights.size() > i) { continue; }
-		PointLight* l;
-		float3 pos = pointLights[i].position;
-		float3 rad = pointLights[i].radiance;
-		raytracer.scene.pointLights.push_back(l = new PointLight(pos, rad));
+		PointLight* pointLight;
+		if (i >= raytracer.scene.pointLights.size()) { raytracer.scene.pointLights.push_back(pointLight = new PointLight()); }
+		pointLight = raytracer.scene.pointLights[i];
+		pointLight->position = pointLights[i].position;
+		pointLight->radiance = pointLights[i].radiance;
 	}
 }
 
@@ -167,6 +179,7 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge ) {
 	// Print some stats on the first frame
 	if (raytracer.frameCount == 0) {
 		cout << endl;
+		cout << "Instance count: " << raytracer.scene.instances.size() << endl;
 		cout << "Mesh count:     " << raytracer.scene.meshes.size() << endl;
 		cout << "Triangle count: " << raytracer.N << endl;
 		cout << "BVH build time: " << coreStats.bvhBuildTime / 1000.0f << " seconds\n" << endl;

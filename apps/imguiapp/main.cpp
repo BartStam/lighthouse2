@@ -50,17 +50,17 @@ void PrepareScene()
 	//renderer->AddScene("three_cubes_no_floor.gltf", "data/cubes/", mat4::Scale(1.0f) * mat4::Translate(0, 0, 0));
 	//materialFile = string("data/cubes/three_cubes_materials.xml");
 
-	int lightMat1 = renderer->AddMaterial(make_float3(80.0f, 80.0f, 80.0f));
-	int lightQuad1 = renderer->AddQuad(make_float3(0.5, -1, 0.5), make_float3(-5.0f, 20.0f, -5.0f), 1.0f, 2.0f, lightMat1);
+	int lightMat1 = renderer->AddMaterial(make_float3(200.0f, 200.0f, 200.0f));
+	int lightQuad1 = renderer->AddQuad(make_float3(0.0f, -1.0f, 0.0f), make_float3(0.0f, 20.0f, -12.0f), 2.0f, 2.0f, lightMat1);
 	int lightInst1 = renderer->AddInstance(lightQuad1);
 
-	int lightMat2 = renderer->AddMaterial(make_float3(2.0f, 2.0f, 8.0f));
-	int lightQuad2 = renderer->AddQuad(make_float3(-0.5, -1, -0.2), make_float3(12.0f, 30.0f, 12.0f), 20.0f, 20.0f, lightMat2);
-	int lightInst2 = renderer->AddInstance(lightQuad2);
+	//int lightMat2 = renderer->AddMaterial(make_float3(2.0f, 2.0f, 8.0f));
+	//int lightQuad2 = renderer->AddQuad(make_float3(-0.5, -1, -0.2), make_float3(12.0f, 30.0f, 12.0f), 20.0f, 20.0f, lightMat2);
+	//int lightInst2 = renderer->AddInstance(lightQuad2);
 
-	int lightMat3 = renderer->AddMaterial(make_float3(6.0f, 2.0f, 2.0f));
-	int lightQuad3 = renderer->AddQuad(make_float3(0.5, -1, 0.2), make_float3(-4.0f, 30.0f, -12.0f), 20.0f, 20.0f, lightMat3);
-	int lightInst3 = renderer->AddInstance(lightQuad3);
+	//int lightMat3 = renderer->AddMaterial(make_float3(6.0f, 2.0f, 2.0f));
+	//int lightQuad3 = renderer->AddQuad(make_float3(0.5, -1, 0.2), make_float3(-4.0f, 30.0f, -12.0f), 20.0f, 20.0f, lightMat3);
+	//int lightInst3 = renderer->AddInstance(lightQuad3);
 
 	animPaused = true;
 

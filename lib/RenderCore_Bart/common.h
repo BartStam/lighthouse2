@@ -48,6 +48,11 @@ struct Ray {
 };
 
 struct Mesh {
+	Mesh(int vertex_count, int triangle_count) : vcount(vertex_count) {
+		vertices = new float4[vertex_count];
+		triangles = new CoreTri[triangle_count];
+	}
+
 	~Mesh() {
 		delete[] vertices;
 		delete[] triangles;
@@ -69,10 +74,6 @@ struct Instance {
 };
 
 struct Triangle {
-	Triangle(const float3 v0, const float3 v1, const float3 v2, float3 N, float3 c, float A)
-		: vertex0(v0), vertex1(v1), vertex2(v2), normal(N), center(c), area(A) {
-	}
-
 	float3 vertex0;
 	float3 vertex1;
 	float3 vertex2;
@@ -89,22 +90,16 @@ struct Material {
 	float specularity = 0;
 	float transmission = 0;
 	float IOR = 1.0f;
+
+	bool IsLight() { return diffuse.x > 1 || diffuse.y > 1 || diffuse.z > 1; }
 };
 
 struct PointLight {
-	PointLight(const float3 pos, const float3 rad)
-		: position(pos), radiance(rad) {
-	}
-
 	float3 position;
 	float3 radiance;
 };
 
 struct AreaLight : public Triangle {
-	AreaLight(const float3 v0, const float3 v1, const float3 v2, float3 N, float3 c, float A, float3 rad)
-		: Triangle(v0, v1, v2, N, c, A), radiance(rad) {
-	}
-
 	float3 radiance;
 };
 }

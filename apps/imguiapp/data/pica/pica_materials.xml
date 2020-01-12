@@ -1,5 +1,5 @@
 <materials>
-    <material_count>31</material_count>
+    <material_count>29</material_count>
     <material_0>
         <name>Plastic_Wall_Only</name>
         <origin>data/pica/scene.gltf</origin>
