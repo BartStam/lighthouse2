@@ -188,7 +188,7 @@ Scene::~Scene() {
 }
 
 RayTracer::~RayTracer() {
-	
+	for (auto bvh : mesh_bvh_vector) delete bvh;
 }
 
 // -----------------------------------------------------------

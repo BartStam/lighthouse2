@@ -47,13 +47,16 @@ void RenderCore::SetTarget( GLTexture* target ) {
 //  +-----------------------------------------------------------------------------+
 void RenderCore::SetGeometry( const int meshIdx, const float4* vertexData, const int vertexCount, const int triangleCount, const CoreTri* triangleData, const uint* alphaFlags ) {
 	Mesh* mesh;
+	BVH* bvh;
 
 	if (meshIdx >= raytracer.scene.meshes.size()) { // New mesh
 		raytracer.scene.meshes.push_back(mesh = new Mesh(vertexCount, triangleCount));
+		raytracer.mesh_bvh_vector.push_back(bvh = new BVH2(mesh));
 		raytracer.N += triangleCount;
 	}
 
 	mesh = raytracer.scene.meshes[meshIdx]; // If existing mesh, assume triangle count stays the same
+	bvh = raytracer.mesh_bvh_vector[meshIdx];
 
 	// Copy vertex data
 	for (int i = 0; i < vertexCount; i++) {
@@ -65,8 +68,9 @@ void RenderCore::SetGeometry( const int meshIdx, const float4* vertexData, const
 		mesh->triangles[i] = triangleData[i];
 	}
 
+	// (Re)build the BVH. It is added to the top-level BVH in SetInstance() if required.
 	DWORD trace_start = GetTickCount();
-	raytracer.top_level_bvh.AddBVH(new BVH2(mesh));
+	raytracer.mesh_bvh_vector[meshIdx]->Rebuild();
 	coreStats.bvhBuildTime += GetTickCount() - trace_start;
 }
 
@@ -75,6 +79,7 @@ void RenderCore::SetInstance(const int instanceIdx, const int meshIdx, const mat
 	if (meshIdx == -1) {
 		if (raytracer.scene.instances.size() > instanceIdx) {
 			raytracer.scene.instances.resize(instanceIdx);
+			raytracer.mesh_bvh_vector.resize(instanceIdx);
 		}
 		return;
 	}
@@ -82,6 +87,7 @@ void RenderCore::SetInstance(const int instanceIdx, const int meshIdx, const mat
 	if (instanceIdx >= raytracer.scene.instances.size()) { // New instance
 		Instance* instance = new Instance(raytracer.scene.meshes[meshIdx], matrix);
 		raytracer.scene.instances.push_back(instance);
+		raytracer.top_level_bvh.AddBVH(raytracer.mesh_bvh_vector[meshIdx]);
 	}
 	else { // Existing instance
 		raytracer.scene.instances[instanceIdx]->mesh = raytracer.scene.meshes[meshIdx];
@@ -142,10 +148,6 @@ void RenderCore::SetLights(const CoreLightTri* areaLights, const int areaLightCo
 		areaLight->center = areaLights[i].centre;
 		areaLight->area = areaLights[i].area;
 		areaLight->radiance = areaLights[i].radiance;
-
-		cout << "Area light" << endl;
-		cout << "  Area: " << areaLights[i].area << endl;
-		cout << "  Radiance: " << areaLights[i].radiance.x << ", " << areaLights[i].radiance.y << ", " << areaLights[i].radiance.z << ", " << endl;
 	}
 
 	// Point lights
@@ -177,13 +179,13 @@ void RenderCore::SetSkyData(const float3* pixels, const uint width, const uint h
 //  +-----------------------------------------------------------------------------+
 void RenderCore::Render( const ViewPyramid& view, const Convergence converge ) {
 	// Print some stats on the first frame
-	if (raytracer.frameCount == 0) {
+	if (raytracer.print_stats) {
 		cout << endl;
 		cout << "Instance count: " << raytracer.scene.instances.size() << endl;
 		cout << "Mesh count:     " << raytracer.scene.meshes.size() << endl;
 		cout << "Triangle count: " << raytracer.N << endl;
 		cout << "BVH build time: " << coreStats.bvhBuildTime / 1000.0f << " seconds\n" << endl;
-		raytracer.frameCount++;
+		raytracer.print_stats = false;
 	}
 
 	screen->Clear();

@@ -52,27 +52,30 @@ bool BVH::IntersectAABB(const Ray& ray, const BVHNode& bvh, float& t) {
 
 BVH2::BVH2(Mesh* m) : mesh(m) {
 	N = mesh->vcount / 3;
+}
 
-	// Fill the triangle pointer array
-	tri_indices = new int[N];
+BVH2::~BVH2() {
+	delete[] pool;
+	delete[] tri_indices;
+}
 
+void BVH2::Rebuild() {
+	if (pool_pointer != -1) { delete[] tri_indices; } // Only clean up if this is not the first time we build the BVH
+
+	tri_indices = new int[N]; // Assume triangle count does not change
 	for (int i = 0; i < N; i++) {
 		tri_indices[i] = i;
 	}
 
 	pool = new BVHNode[2 * N];
 	BVHNode& root = pool[0];
-	
+	pool_pointer = 2;
+
 	root.first = 0;
 	root.count = N;
 
 	SubdivideRecursively(root);
 	UpdateBounds();
-}
-
-BVH2::~BVH2() {
-	delete[] pool;
-	delete[] tri_indices;
 }
 
 float BVH2::SplitCost(const int* indices, int first, int count) {
@@ -423,6 +426,10 @@ BVH4::~BVH4() {
 	delete[] tri_indices;
 }
 
+void BVH4::Rebuild() {
+
+}
+
 float BVH4::SplitCost(const int* indices, int first, int count) {
 	return 0.0f;
 }
@@ -461,6 +468,31 @@ TopLevelBVH::TopLevelBVH() {
 
 TopLevelBVH::~TopLevelBVH() {
 	for (auto bvh : bvh_vector) { delete bvh; }
+}
+
+void TopLevelBVH::Rebuild() {
+	N = bvh_vector.size();
+
+	// Only clean up if this is not the first time we build the BVH
+	if (pool_pointer != -1) {
+		delete[] pool;
+		delete[] tri_indices;
+	}
+
+	tri_indices = new int[N];
+	for (int i = 0; i < N; i++) {
+		tri_indices[i] = i;
+	}
+
+	pool = new BVHNode[2 * N];
+	BVHNode& root = pool[0];
+	pool_pointer = 2;
+
+	root.first = 0;
+	root.count = N;
+
+	SubdivideRecursively(root);
+	UpdateBounds();
 }
 
 float TopLevelBVH::SplitCost(const int* indices, int first, int count) {
@@ -794,29 +826,6 @@ void TopLevelBVH::Print(BVHNode& bvh) {
 	}
 }
 
-void TopLevelBVH::AddBVH(BVH* bvh, bool rebuild) {
+void TopLevelBVH::AddBVH(BVH* bvh) {
 	bvh_vector.push_back(bvh);
-	if (rebuild) { Rebuild(); }
-}
-
-void TopLevelBVH::Rebuild() {
-	N = bvh_vector.size();
-
-	delete[] pool;
-	delete[] tri_indices;
-
-	tri_indices = new int[N];
-	for (int i = 0; i < N; i++) {
-		tri_indices[i] = i;
-	}
-
-	pool = new BVHNode[2 * N];
-	BVHNode& root = pool[0];
-	pool_pointer = 2;
-
-	root.first = 0;
-	root.count = N;
-
-	SubdivideRecursively(root);
-	UpdateBounds();
 }

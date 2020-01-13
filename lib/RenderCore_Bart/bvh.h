@@ -23,13 +23,14 @@ public:
 	BVH() = default;
 	~BVH();
 
+	virtual void Rebuild() = 0;
 	virtual bool Traverse(Ray& ray, CoreTri& tri, float& t, int pool_index = 0, int* c = nullptr) = 0;
 	virtual void Print(BVHNode& bvh) = 0;
 	const BVHNode& Root() { return pool[0]; }
 
 protected:
 	int N;																	// Total amount of primitives in this BVH
-	int pool_pointer = 2;													// Pointer to the "current" BVHNode, used for construction
+	int pool_pointer = -1;													// Pointer to the "current" BVHNode, used for construction. -1 indicates the BVH is not yet built.
 	alignas(128) BVHNode* pool;												// Pool of cache aligned BVHNodes, each 32 bytes with neighbours residing next to each other
 	int* tri_indices;														// Indices of the primitive array, triangles for mesh-level BVHs and BVHs for top-level BVH
 	
@@ -47,6 +48,7 @@ public:
 	BVH2(Mesh* mesh);
 	~BVH2();
 
+	void Rebuild();
 	bool Traverse(Ray& ray, CoreTri& tri, float& t, int pool_index = 0, int* c = nullptr);
 	void Print(BVHNode& bvh);
 
@@ -65,6 +67,7 @@ public:
 	BVH4(Mesh* mesh);
 	~BVH4();
 
+	void Rebuild();
 	bool Traverse(Ray& ray, CoreTri& tri, float& t, int pool_index = 0, int* c = nullptr);
 	void Print(BVHNode& bvh);
 
@@ -83,13 +86,13 @@ public:
 	TopLevelBVH();
 	~TopLevelBVH();
 
-	void AddBVH(BVH* bvh, bool rebuild = false);
+	void AddBVH(BVH* bvh);
 	void Rebuild();
 	bool Traverse(Ray& ray, CoreTri& tri, float& t, int pool_index = 0, int* c = nullptr);
 	void Print(BVHNode& bvh);
 
 private:
-	vector<BVH*> bvh_vector; // Stores pointers to all mesh-level BVHs in no particular order
+	vector<BVH*> bvh_vector;
 	
 	float SplitCost(const int* indices, int first, int count);
 	bool Partition(BVHNode& bvh, int* indices, int* counts);

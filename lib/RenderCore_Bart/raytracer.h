@@ -36,17 +36,19 @@ class RayTracer {
 public:
 	RayTracer() = default;
 	~RayTracer();
-	
-	static Scene scene;
-	TopLevelBVH top_level_bvh;
-	Accumulator accumulator;
-	int frameCount = 0;
+
+	bool print_stats = true;											// If this is set to true, print some stats on the next frame
 	int N;																// Total number of triangles in the scene
 	int D = 8;															// Maximum ray recursion depth
-
-	float3 Color(float3 O, float3 D, uint depth, bool outside=true);	// Trace a ray and return its color
+	TopLevelBVH top_level_bvh;
+	vector<BVH*> mesh_bvh_vector;										// Stores BVHs belonging to meshes. Guaranteed same count/indices as scene.meshes vector.
+	Accumulator accumulator;
+	
+	float3 Color(float3 O, float3 D, uint depth, bool outside = true);	// Trace a ray and return its color
 	float3 ColorDebugBVH(float3 O, float3 D);							// Trace primary rays and color based on how many BVHs they intersected
 	float3 Illumination(float3 color, float3 O);						// Given a color at a location, scale it based on visible lighting
+
+	static Scene scene;
 };
 
 } // namespace lh2core
