@@ -41,7 +41,6 @@ public:
 	int N;																// Total number of triangles in the scene
 	int D = 8;															// Maximum ray recursion depth
 	TopLevelBVH top_level_bvh;
-	vector<BVH*> mesh_bvh_vector;										// Stores BVHs belonging to meshes. Guaranteed same count/indices as scene.meshes vector.
 	Accumulator accumulator;
 	
 	float3 Color(float3 O, float3 D, uint depth, bool outside = true);	// Trace a ray and return its color

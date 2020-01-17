@@ -3,6 +3,8 @@
 
 namespace lh2core
 {
+class BVH; // Forward declaration for use in Mesh
+
 struct Ray {
 	Ray(const float3& o, const float3 d, float ior = 1.0f)
 		: O(o), D(normalize(d)), IOR(ior) {
@@ -56,17 +58,19 @@ struct Mesh {
 	~Mesh() {
 		delete[] vertices;
 		delete[] triangles;
+		delete bvh;
 	}
 
-	float4* vertices = 0;
+	float4* vertices = nullptr;
 	int vcount = 0;
-	CoreTri* triangles = 0;
+	CoreTri* triangles = nullptr;
+	BVH* bvh = nullptr;
 };
 
 struct Instance {
 	Instance(Mesh* m, mat4 t) : mesh(m), transform(t) {};
 
-	Mesh* mesh;
+	Mesh* mesh = nullptr;
 	mat4 transform;
 
 	void SetPosition(float3& pos) {	transform[3] = pos.x, transform[7] = pos.y, transform[11] = pos.z; }

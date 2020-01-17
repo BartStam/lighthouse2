@@ -163,7 +163,7 @@ float3 RayTracer::Illumination(float3 color, float3 O) {
 
 		D = shadow_ray.D; // D is normalized in Ray constructor, no reason to do the work twice
 		float dot_DN = dot(D, triN);
-		if (r <= t && dot_DN < 0) {
+		if (r <= t && dot_DN < 0) { // If we hit the front of the light
 			float A = scene.areaLights[i]->area;
 			float sr = A / (4 * PI * r * r);
 			float3 L = scene.areaLights[i]->radiance * sr;
@@ -188,7 +188,7 @@ Scene::~Scene() {
 }
 
 RayTracer::~RayTracer() {
-	for (auto bvh : mesh_bvh_vector) delete bvh;
+	
 }
 
 // -----------------------------------------------------------

@@ -21,7 +21,7 @@ struct BVHNode {		// 32 bytes
 class BVH {
 public:
 	BVH() = default;
-	~BVH();
+	virtual ~BVH() {};
 
 	virtual void Rebuild() = 0;
 	virtual bool Traverse(Ray& ray, CoreTri& tri, float& t, int pool_index = 0, int* c = nullptr) = 0;
@@ -31,7 +31,7 @@ public:
 protected:
 	int N;																	// Total amount of primitives in this BVH
 	int pool_pointer = -1;													// Pointer to the "current" BVHNode, used for construction. -1 indicates the BVH is not yet built.
-	alignas(128) BVHNode* pool;												// Pool of cache aligned BVHNodes, each 32 bytes with neighbours residing next to each other
+	alignas(128) BVHNode* pool = nullptr;									// Pool of cache aligned BVHNodes, each 32 bytes with neighbours residing next to each other
 	int* tri_indices;														// Indices of the primitive array, triangles for mesh-level BVHs and BVHs for top-level BVH
 	
 	bool IntersectAABB(const Ray& ray, const BVHNode& bvh, float& t);		// Returns whether a ray intersects a BVHNode AABB, and at what distance along the ray (t)
@@ -53,7 +53,7 @@ public:
 	void Print(BVHNode& bvh);
 
 private:
-	Mesh* mesh;	// Meshes are owned by the rendercore
+	Mesh* mesh = nullptr; // Meshes are owned by the rendercore
 
 	float SplitCost(const int* indices, int first, int count);
 	bool Partition(BVHNode& bvh, int* indices, int* counts);
@@ -72,7 +72,7 @@ public:
 	void Print(BVHNode& bvh);
 
 private:
-	Mesh* mesh; // Meshes are owned by the rendercore
+	Mesh* mesh = nullptr; // Meshes are owned by the rendercore
 
 	float SplitCost(const int* indices, int first, int count);
 	bool Partition(BVHNode& bvh, int* indices, int* counts);
@@ -86,13 +86,13 @@ public:
 	TopLevelBVH();
 	~TopLevelBVH();
 
-	void AddBVH(BVH* bvh);
+	void AddInstance(Instance* instance);
 	void Rebuild();
 	bool Traverse(Ray& ray, CoreTri& tri, float& t, int pool_index = 0, int* c = nullptr);
 	void Print(BVHNode& bvh);
 
 private:
-	vector<BVH*> bvh_vector;
+	vector<Instance*> instance_vector;
 	
 	float SplitCost(const int* indices, int first, int count);
 	bool Partition(BVHNode& bvh, int* indices, int* counts);

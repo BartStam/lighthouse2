@@ -5,10 +5,6 @@
 	BVH
 */
 
-BVH::~BVH() {
-	
-}
-
 bool BVH::IntersectAABB(const Ray& ray, const BVHNode& bvh, float& t) {
 	// Taken from: https://gamedev.stackexchange.com/a/18459
 
@@ -467,11 +463,11 @@ TopLevelBVH::TopLevelBVH() {
 }
 
 TopLevelBVH::~TopLevelBVH() {
-	for (auto bvh : bvh_vector) { delete bvh; }
+	
 }
 
 void TopLevelBVH::Rebuild() {
-	N = bvh_vector.size();
+	N = instance_vector.size();
 
 	// Only clean up if this is not the first time we build the BVH
 	if (pool_pointer != -1) {
@@ -501,7 +497,7 @@ float TopLevelBVH::SplitCost(const int* indices, int first, int count) {
 
 	// Calculate AABB bounds
 	for (int i = first; i < first + count; i++) {
-		const BVHNode& bvh_root = bvh_vector[indices[i]]->Root();
+		const BVHNode& bvh_root = instance_vector[indices[i]]->mesh->bvh->Root();
 		min_b = fminf(min_b, bvh_root.min_bound);
 		max_b = fmaxf(max_b, bvh_root.max_bound);
 	}
@@ -519,8 +515,8 @@ bool TopLevelBVH::Partition(BVHNode& bvh, int* indices, int* counts) {
 	int* right = new int[bvh.count];
 
 	float base_cost = SplitCost(tri_indices, bvh.first, bvh.count);	// Cost of current BVH before splitting, according to SAH heuristic
-	float3 c_min_bound = make_float3(FLT_MAX, FLT_MAX, FLT_MAX);			// Triangle centroids AABB min bound
-	float3 c_max_bound = make_float3(-FLT_MAX, -FLT_MAX, -FLT_MAX);			// Triangle centroids AABB max bound
+	float3 c_min_bound = make_float3(FLT_MAX, FLT_MAX, FLT_MAX);	// Triangle centroids AABB min bound
+	float3 c_max_bound = make_float3(-FLT_MAX, -FLT_MAX, -FLT_MAX);	// Triangle centroids AABB max bound
 
 	float best_split_cost = FLT_MAX;
 	float best_split_pos;
@@ -528,8 +524,9 @@ bool TopLevelBVH::Partition(BVHNode& bvh, int* indices, int* counts) {
 
 	// Calculate the centroid AABB
 	for (int i = bvh.first; i < bvh.first + bvh.count; i++) {
-		BVH* bvh_ptr = bvh_vector[tri_indices[i]];
-		float3 center = bvh_ptr->Root().min_bound + 0.5 * (bvh_ptr->Root().max_bound - bvh_ptr->Root().min_bound);
+		BVH* bvh_ptr = instance_vector[tri_indices[i]]->mesh->bvh;
+		float3 instance_pos = instance_vector[tri_indices[i]]->GetPosition();
+		float3 center = instance_pos + bvh_ptr->Root().min_bound + 0.5 * (bvh_ptr->Root().max_bound - bvh_ptr->Root().min_bound);
 
 		c_min_bound = fminf(c_min_bound, center);
 		c_max_bound = fmaxf(c_max_bound, center);
@@ -545,8 +542,9 @@ bool TopLevelBVH::Partition(BVHNode& bvh, int* indices, int* counts) {
 			counts[1] = 0; // Right counts
 
 			for (int j = bvh.first; j < bvh.first + bvh.count; j++) {
-				BVH* bvh_ptr = bvh_vector[tri_indices[j]];
-				float3 center = bvh_ptr->Root().min_bound + 0.5 * (bvh_ptr->Root().max_bound - bvh_ptr->Root().min_bound);
+				BVH* bvh_ptr = instance_vector[tri_indices[j]]->mesh->bvh;
+				float3 instance_pos = instance_vector[tri_indices[i]]->GetPosition();
+				float3 center = instance_pos + bvh_ptr->Root().min_bound + 0.5 * (bvh_ptr->Root().max_bound - bvh_ptr->Root().min_bound);
 
 				if (center.x <= pos) {
 					left[counts[0]++] = tri_indices[j];
@@ -575,8 +573,9 @@ bool TopLevelBVH::Partition(BVHNode& bvh, int* indices, int* counts) {
 			counts[1] = 0; // Right counts
 
 			for (int j = bvh.first; j < bvh.first + bvh.count; j++) {
-				BVH* bvh_ptr = bvh_vector[tri_indices[j]];
-				float3 center = bvh_ptr->Root().min_bound + 0.5 * (bvh_ptr->Root().max_bound - bvh_ptr->Root().min_bound);
+				BVH* bvh_ptr = instance_vector[tri_indices[j]]->mesh->bvh;
+				float3 instance_pos = instance_vector[tri_indices[i]]->GetPosition();
+				float3 center = instance_pos + bvh_ptr->Root().min_bound + 0.5 * (bvh_ptr->Root().max_bound - bvh_ptr->Root().min_bound);
 
 				if (center.y <= pos) {
 					left[counts[0]++] = tri_indices[j];
@@ -605,8 +604,9 @@ bool TopLevelBVH::Partition(BVHNode& bvh, int* indices, int* counts) {
 			counts[1] = 0; // Right counts
 
 			for (int j = bvh.first; j < bvh.first + bvh.count; j++) {
-				BVH* bvh_ptr = bvh_vector[tri_indices[j]];
-				float3 center = bvh_ptr->Root().min_bound + 0.5 * (bvh_ptr->Root().max_bound - bvh_ptr->Root().min_bound);
+				BVH* bvh_ptr = instance_vector[tri_indices[j]]->mesh->bvh;
+				float3 instance_pos = instance_vector[tri_indices[i]]->GetPosition();
+				float3 center = instance_pos + bvh_ptr->Root().min_bound + 0.5 * (bvh_ptr->Root().max_bound - bvh_ptr->Root().min_bound);
 
 				if (center.z <= pos) {
 					left[counts[0]++] = tri_indices[j];
@@ -637,8 +637,9 @@ bool TopLevelBVH::Partition(BVHNode& bvh, int* indices, int* counts) {
 	counts[1] = 0; // Right counts
 
 	for (int i = bvh.first; i < bvh.first + bvh.count; i++) {
-		BVH* bvh_ptr = bvh_vector[tri_indices[i]];
-		float3 center = bvh_ptr->Root().min_bound + 0.5 * (bvh_ptr->Root().max_bound - bvh_ptr->Root().min_bound);
+		BVH* bvh_ptr = instance_vector[tri_indices[i]]->mesh->bvh;
+		float3 instance_pos = instance_vector[tri_indices[i]]->GetPosition();
+		float3 center = instance_pos + bvh_ptr->Root().min_bound + 0.5 * (bvh_ptr->Root().max_bound - bvh_ptr->Root().min_bound);
 
 		// X split
 		if (best_split_plane == 'X') {
@@ -758,10 +759,11 @@ void TopLevelBVH::UpdateBounds() {
 		float3 max_b = make_float3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 
 		for (int j = pool[i].first; j < pool[i].first + pool[i].count; j++) {
-			BVH* bvh = bvh_vector[tri_indices[j]];
+			BVH* bvh = instance_vector[tri_indices[j]]->mesh->bvh;
+			float3 pos = instance_vector[tri_indices[j]]->GetPosition();
 
-			float3 bvh_min_bound = bvh->Root().min_bound;
-			float3 bvh_max_bound = bvh->Root().max_bound;
+			float3 bvh_min_bound = pos + bvh->Root().min_bound;
+			float3 bvh_max_bound = pos + bvh->Root().max_bound;
 
 			min_b = fminf(min_b, bvh_min_bound);
 			max_b = fmaxf(max_b, bvh_max_bound);
@@ -775,14 +777,17 @@ bool TopLevelBVH::Traverse(Ray& ray, CoreTri& tri, float& t, int pool_index, int
 	if (c) { (*c)++; } // If we are doing BVH debugging, increment the count of BVH intersections
 
 	BVHNode& bvh = pool[pool_index];
+	
 	float initial_t = t;
 
 	if (bvh.count > 0) { // If the node is a leaf
 		for (int i = bvh.first; i < bvh.first + bvh.count; i++) {
 			float t_aabb = FLT_MAX;
+			Ray transformed_ray = ray;
+			transformed_ray.O -= instance_vector[tri_indices[i]]->GetPosition();
 
-			if (IntersectAABB(ray, bvh_vector[tri_indices[i]]->Root(), t_aabb) && t_aabb < t) {
-				bvh_vector[tri_indices[i]]->Traverse(ray, tri, t, 0, c); // Continue traversing the mesh-level BVH
+			if (IntersectAABB(transformed_ray, instance_vector[tri_indices[i]]->mesh->bvh->Root(), t_aabb) && t_aabb < t) {
+				instance_vector[tri_indices[i]]->mesh->bvh->Traverse(transformed_ray, tri, t, 0, c); // Continue traversing the mesh-level BVH
 			}
 		}
 	}
@@ -826,6 +831,6 @@ void TopLevelBVH::Print(BVHNode& bvh) {
 	}
 }
 
-void TopLevelBVH::AddBVH(BVH* bvh) {
-	bvh_vector.push_back(bvh);
+void TopLevelBVH::AddInstance(Instance* instance) {
+	instance_vector.push_back(instance);
 }
