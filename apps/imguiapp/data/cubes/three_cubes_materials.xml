@@ -29,7 +29,7 @@
         <absorption b="1e-32" g="1e-32" r="1e-32"/>
         <metallic>0.60000002</metallic>
         <subsurface>1e-32</subsurface>
-        <specular>1e-32</specular>
+        <specular>0.60000002</specular>
         <roughness>0</roughness>
         <specularTint>1e-32</specularTint>
         <anisotropic>1e-32</anisotropic>
@@ -45,7 +45,7 @@
         <origin>data/cubes/three_cubes_no_floor.gltf</origin>
         <id>2</id>
         <flags>5</flags>
-        <color b="0.80000007" g="0.22946854" r="0.029768813"/>
+        <color b="0.80000007" g="0.80000007" r="0.80000007"/>
         <absorption b="1e-32" g="1e-32" r="1e-32"/>
         <metallic>0</metallic>
         <subsurface>1e-32</subsurface>
@@ -60,4 +60,24 @@
         <transmission>1e-32</transmission>
         <eta>1e-32</eta>
     </material_2>
+    <material_3>
+        <name>Material.002</name>
+        <origin>data/cubes/three_cubes.gltf</origin>
+        <id>3</id>
+        <flags>5</flags>
+        <color b="0.80000007" g="0.22946854" r="0.029768813"/>
+        <absorption b="1e-32" g="1e-32" r="1e-32"/>
+        <metallic>0</metallic>
+        <subsurface>1e-32</subsurface>
+        <specular>1e-32</specular>
+        <roughness>0.80000001</roughness>
+        <specularTint>1e-32</specularTint>
+        <anisotropic>1e-32</anisotropic>
+        <sheen>1e-32</sheen>
+        <sheenTint>1e-32</sheenTint>
+        <clearcoat>1e-32</clearcoat>
+        <clearcoatGloss>1e-32</clearcoatGloss>
+        <transmission>0.80000001</transmission>
+        <eta>1.52</eta>
+    </material_3>
 </materials>

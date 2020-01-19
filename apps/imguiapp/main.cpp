@@ -40,15 +40,11 @@ static CoreStats coreStats;
 //  +-----------------------------------------------------------------------------+
 void PrepareScene()
 {
-	// Scene
-	//renderer->AddScene("bvh_test_scene.gltf", "data/bvh_test_scene/", mat4::Scale(1.0f) * mat4::Translate(0, 0, 0));
-	//materialFile = string("data/bvh_test_scene/bvh_test_scene_materials.xml");
+	//renderer->AddScene("scene.gltf", "data/pica/", mat4::Scale(1.0f) * mat4::Translate(0, 0, 0));
+	//materialFile = string("data/pica/pica_materials.xml");
 
-	renderer->AddScene("scene.gltf", "data/pica/", mat4::Scale(1.0f) * mat4::Translate(0, 0, 0));
-	materialFile = string("data/pica/pica_materials.xml");
-
-	//renderer->AddScene("three_cubes_no_floor.gltf", "data/cubes/", mat4::Scale(1.0f) * mat4::Translate(0, 0, 0));
-	//materialFile = string("data/cubes/three_cubes_materials.xml");
+	renderer->AddScene("three_cubes.gltf", "data/cubes/", mat4::Scale(1.0f) * mat4::Translate(0, 0, 0));
+	materialFile = string("data/cubes/three_cubes_materials.xml");
 
 	int lightMat1 = renderer->AddMaterial(make_float3(300.0f, 300.0f, 300.0f));
 	int lightQuad1 = renderer->AddQuad(make_float3(0.0f, -1.0f, 0.0f), make_float3(0.0f, 20.0f, -12.0f), 2.0f, 2.0f, lightMat1);

@@ -38,8 +38,8 @@ public:
 	~RayTracer();
 
 	bool print_stats = true;											// If this is set to true, print some stats on the next frame
-	int N;																// Total number of triangles in the scene
-	int D = 8;															// Maximum ray recursion depth
+	int triangle_count;													// Total number of triangles in the scene
+	int DEPTH = 8;														// Maximum ray recursion depth
 	TopLevelBVH top_level_bvh;
 	Accumulator accumulator;
 	

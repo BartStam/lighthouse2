@@ -45,7 +45,7 @@ float3 RayTracer::Color(float3 O, float3 D, uint depth, bool outside) {
 	// If we hit a light
 	if (scene.matList[triangle.material]->IsLight()) {
 		// If we hit the front of the light, return its scaled color
-		if (dot(N, D) < 0) {
+		if (dot(N, ray.D) < 0) {
 			float3 c = scene.matList[triangle.material]->diffuse;
 			float scale = 1.0f / max(c.x, max(c.y, c.z));
 			return scale * c;
@@ -74,12 +74,15 @@ float3 RayTracer::Color(float3 O, float3 D, uint depth, bool outside) {
 			N = -N;			// Invert the normal
 		}
 
-		float cosTi = dot(-D, N);
+		float cosTi = dot(-ray.D, N);
+
 		float sin2Tt = (H1 / H2) * (H1 / H2) * (1.0f - (cosTi * cosTi));
 
 		// Calculate using Schlick's approximation
 		float fresnel;
 		float R0 = ((H1 - H2) / (H1 + H2)) * ((H1 - H2) / (H1 + H2));
+
+
 		if (H1 > H2 && sin2Tt > 1.0f) { // If there is TIR
 			fresnel = 1.0f;
 
@@ -97,10 +100,10 @@ float3 RayTracer::Color(float3 O, float3 D, uint depth, bool outside) {
 		float H = H1 / H2;
 		float S = sqrt(1 - sin2Tt);
 
-		color += transmission * Color(ray.Point(t) - N * 2 * EPSILON, H * D + (H * cosTi - S) * N, depth - 1, !outside);
+		color += transmission * Color(ray.Point(t) - N * 2 * EPSILON, H * ray.D + (H * cosTi - S) * N, depth - 1, !outside);
 	}
 
-	if (specularity > 0.01f) { color += specularity * Color(ray.Point(t) + N * 2 * EPSILON, D - 2 * (D * N) * N, depth - 1, outside); }
+	if (specularity > 0.01f) { color += specularity * Color(ray.Point(t) + N * 2 * EPSILON, ray.D - 2 * (ray.D * N) * N, depth - 1, outside); }
 	if (diffusion > 0.01f) { color += diffusion * Illumination(scene.matList[triangle.material]->diffuse, ray.Point(t) + N * 2 * EPSILON); }
 
 	return color;

@@ -327,7 +327,7 @@ void BVH2::Print(BVHNode& bvh) {
 }
 
 /*
-	BVH4
+	BVH4 (not yet implemented)
 */
 
 BVH4::BVH4(Mesh* m) : mesh(m) {

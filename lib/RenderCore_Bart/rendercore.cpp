@@ -51,7 +51,7 @@ void RenderCore::SetGeometry( const int meshIdx, const float4* vertexData, const
 	if (meshIdx >= raytracer.scene.meshes.size()) { // New mesh
 		raytracer.scene.meshes.push_back(mesh = new Mesh(vertexCount, triangleCount));
 		mesh->bvh = new BVH2(mesh);
-		raytracer.N += triangleCount;
+		raytracer.triangle_count += triangleCount;
 	}
 
 	mesh = raytracer.scene.meshes[meshIdx]; // If existing mesh, assume triangle count stays the same
@@ -117,11 +117,11 @@ void RenderCore::SetMaterials(CoreMaterial* mat, const int materialCount) {
 			m->transmission = mat[i].transmission.value;
 			m->IOR = mat[i].eta.value;
 
-			//cout << "  Material " << i << endl;
-			//cout << "    Color:        " << r << ", " << g << ", " << b << endl;
-			//cout << "    Specularity:  " << m->specularity << endl;
-			//cout << "    Transmission: " << m->transmission << endl;
-			//cout << "    IOR:          " << m->IOR << endl;
+			cout << "  Material " << i << endl;
+			cout << "    Color:        " << r << ", " << g << ", " << b << endl;
+			cout << "    Specularity:  " << m->specularity << endl;
+			cout << "    Transmission: " << m->transmission << endl;
+			cout << "    IOR:          " << m->IOR << endl;
 		}
 		else {
 			// TODO: textures
@@ -180,7 +180,7 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge ) {
 		cout << endl;
 		cout << "Instance count: " << raytracer.scene.instances.size() << endl;
 		cout << "Mesh count:     " << raytracer.scene.meshes.size() << endl;
-		cout << "Triangle count: " << raytracer.N << endl;
+		cout << "Triangle count: " << raytracer.triangle_count << endl;
 		cout << "Area light count: " << raytracer.scene.areaLights.size() << endl;
 		cout << "BVH build time: " << coreStats.bvhBuildTime / 1000.0f << " seconds\n" << endl;
 		raytracer.print_stats = false;
@@ -203,12 +203,12 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge ) {
 	for (int y = 0; y < ny; y++) {
 		for (int x = 0; x < nx; x++) {
 			float rx = Rand(dx), ry = Rand(dy);
-			float3 sx = (x * dx + rx) * (view.p2 - view.p1);		// Screen x
-			float3 sy = (y * dy + dy) * (view.p3 - view.p1);		// Screen y
-			float3 P = view.p1 + sx + sy;							// Point on screen
-			float3 D = P - view.pos;								// Ray direction, normalized in Ray() constructor
-			float3 c = raytracer.Color(view.pos, D, raytracer.D);	// Color vector
-			// float3 c = raytracer.ColorDebugBVH(view.pos, D);		// BVH Debug mode
+			float3 sx = (x * dx + rx) * (view.p2 - view.p1);			// Screen x
+			float3 sy = (y * dy + dy) * (view.p3 - view.p1);			// Screen y
+			float3 P = view.p1 + sx + sy;								// Point on screen
+			float3 D = P - view.pos;									// Ray direction, normalized in Ray() constructor
+			float3 c = raytracer.Color(view.pos, D, raytracer.DEPTH);	// Color vector
+			// float3 c = raytracer.ColorDebugBVH(view.pos, D);			// BVH Debug mode
 			raytracer.accumulator.addPixel(x, y, c);
 
 			float3 cv = raytracer.accumulator.Pixel(x, y);
