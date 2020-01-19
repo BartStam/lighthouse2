@@ -101,12 +101,12 @@ bool BVH2::Partition(BVHNode& bvh, int* indices, int* counts) {
 	int* right = new int[bvh.count];
 
 	float base_cost = SplitCost(tri_indices, bvh.first, bvh.count);	// Cost of current BVH before splitting, according to SAH heuristic
-	float3 c_min_bound = make_float3(FLT_MAX, FLT_MAX, FLT_MAX);			// Triangle centroids AABB min bound
-	float3 c_max_bound = make_float3(-FLT_MAX, -FLT_MAX, -FLT_MAX);			// Triangle centroids AABB max bound
+	float3 c_min_bound = make_float3(FLT_MAX, FLT_MAX, FLT_MAX);	// Triangle centroids AABB min bound
+	float3 c_max_bound = make_float3(-FLT_MAX, -FLT_MAX, -FLT_MAX);	// Triangle centroids AABB max bound
 
 	float best_split_cost = FLT_MAX;
 	float best_split_pos;
-	char best_split_plane;
+	int best_split_plane;
 
 	// Calculate the centroid AABB
 	for (int i = bvh.first; i < bvh.first + bvh.count; i++) {
@@ -117,94 +117,34 @@ bool BVH2::Partition(BVHNode& bvh, int* indices, int* counts) {
 		c_max_bound = fmaxf(c_max_bound, center);
 	}
 
-	// X split
-	if (c_min_bound.x != c_max_bound.x) { // If all primitives have the same X position, don't split over X axis
-		float interval = (c_max_bound.x - c_min_bound.x) / bin_count;
-		for (int i = 0; i < bin_count; i++) {
-			float pos = c_min_bound.x + i * interval;
+	for (int i = 0; i < 3; i++) { // X, Y, Z
+		if (c_min_bound.get(i) == c_max_bound.get(i)) { continue; } // If all primitives have the same position on this plane, don't split
+			float interval = (c_max_bound.get(i) - c_min_bound.get(i)) / bin_count;
+			for (int j = 0; j < bin_count; j++) {
+				float pos = c_min_bound.get(i) + j * interval;
 
-			counts[0] = 0; // Left count
-			counts[1] = 0; // Right counts
+				counts[0] = 0; // Left count
+				counts[1] = 0; // Right counts
 
-			for (int j = bvh.first; j < bvh.first + bvh.count; j++) {
-				CoreTri& tri = mesh->triangles[tri_indices[j]];
-				float3 tri_center = (tri.vertex0 + tri.vertex1 + tri.vertex2) / 3.0f;
+				for (int k = bvh.first; k < bvh.first + bvh.count; k++) {
+					CoreTri& tri = mesh->triangles[tri_indices[k]];
+					float3 tri_center = (tri.vertex0 + tri.vertex1 + tri.vertex2) / 3.0f;
 
-				if (tri_center.x <= pos) {
-					left[counts[0]++] = tri_indices[j];
+					if (tri_center.get(i) <= pos) {
+						left[counts[0]++] = tri_indices[k];
+					}
+					else {
+						right[counts[1]++] = tri_indices[k];
+					}
 				}
-				else {
-					right[counts[1]++] = tri_indices[j];
-				}
-			}
 
-			float split_cost = SplitCost(left, 0, counts[0]) + SplitCost(right, 0, counts[1]);
-			if (split_cost + EPSILON < best_split_cost) {
-				best_split_cost = split_cost;
-				best_split_plane = 'X';
-				best_split_pos = pos;
-			}
-		}
-	}
-
-	// Y split
-	if (c_min_bound.y != c_max_bound.y) {
-		float interval = (c_max_bound.y - c_min_bound.y) / bin_count;
-		for (int i = 0; i < bin_count; i++) {
-			float pos = c_min_bound.y + i * interval;
-
-			counts[0] = 0; // Left count
-			counts[1] = 0; // Right counts
-
-			for (int j = bvh.first; j < bvh.first + bvh.count; j++) {
-				CoreTri& tri = mesh->triangles[tri_indices[j]];
-				float3 tri_center = (tri.vertex0 + tri.vertex1 + tri.vertex2) / 3.0f;
-
-				if (tri_center.y <= pos) {
-					left[counts[0]++] = tri_indices[j];
-				}
-				else {
-					right[counts[1]++] = tri_indices[j];
+				float split_cost = SplitCost(left, 0, counts[0]) + SplitCost(right, 0, counts[1]);
+				if (split_cost + EPSILON < best_split_cost) {
+					best_split_cost = split_cost;
+					best_split_plane = i;
+					best_split_pos = pos;
 				}
 			}
-
-			float split_cost = SplitCost(left, 0, counts[0]) + SplitCost(right, 0, counts[1]);
-			if (split_cost + EPSILON < best_split_cost) {
-				best_split_cost = split_cost;
-				best_split_plane = 'Y';
-				best_split_pos = pos;
-			}
-		}
-	}
-
-	// Z split
-	if (c_min_bound.z != c_max_bound.z) {
-		float interval = (c_max_bound.z - c_min_bound.z) / bin_count;
-		for (int i = 0; i < bin_count; i++) {
-			float pos = c_min_bound.z + i * interval;
-
-			counts[0] = 0; // Left count
-			counts[1] = 0; // Right counts
-
-			for (int j = bvh.first; j < bvh.first + bvh.count; j++) {
-				CoreTri& tri = mesh->triangles[tri_indices[j]];
-				float3 tri_center = (tri.vertex0 + tri.vertex1 + tri.vertex2) / 3.0f;
-
-				if (tri_center.z <= pos) {
-					left[counts[0]++] = tri_indices[j];
-				}
-				else {
-					right[counts[1]++] = tri_indices[j];
-				}
-			}
-
-			float split_cost = SplitCost(left, 0, counts[0]) + SplitCost(right, 0, counts[1]);
-			if (split_cost + EPSILON < best_split_cost) {
-				best_split_cost = split_cost;
-				best_split_plane = 'Z';
-				best_split_pos = pos;
-			}
-		}
 	}
 
 	// If there is no value in splitting, don't split
@@ -214,7 +154,7 @@ bool BVH2::Partition(BVHNode& bvh, int* indices, int* counts) {
 		return false;
 	}
 
-	// Define the best splits
+	// Perform the split
 	counts[0] = 0; // Left count
 	counts[1] = 0; // Right counts
 
@@ -222,34 +162,11 @@ bool BVH2::Partition(BVHNode& bvh, int* indices, int* counts) {
 		CoreTri& tri = mesh->triangles[tri_indices[i]];
 		float3 center = (tri.vertex0 + tri.vertex1 + tri.vertex2) / 3.0f;
 
-		// X split
-		if (best_split_plane == 'X') {
-			if (center.x <= best_split_pos) {
-				left[counts[0]++] = tri_indices[i];
-			}
-			else {
-				right[counts[1]++] = tri_indices[i];
-			}
+		if (center.get(best_split_plane) <= best_split_pos) {
+			left[counts[0]++] = tri_indices[i];
 		}
-
-		// Y split
-		if (best_split_plane == 'Y') {
-			if (center.y <= best_split_pos) {
-				left[counts[0]++] = tri_indices[i];
-			}
-			else {
-				right[counts[1]++] = tri_indices[i];
-			}
-		}
-
-		// Z split
-		if (best_split_plane == 'Z') {
-			if (center.z <= best_split_pos) {
-				left[counts[0]++] = tri_indices[i];
-			}
-			else {
-				right[counts[1]++] = tri_indices[i];
-			}
+		else {
+			right[counts[1]++] = tri_indices[i];
 		}
 	}
 
@@ -520,7 +437,7 @@ bool TopLevelBVH::Partition(BVHNode& bvh, int* indices, int* counts) {
 
 	float best_split_cost = FLT_MAX;
 	float best_split_pos;
-	char best_split_plane;
+	int best_split_plane;
 
 	// Calculate the centroid AABB
 	for (int i = bvh.first; i < bvh.first + bvh.count; i++) {
@@ -532,94 +449,35 @@ bool TopLevelBVH::Partition(BVHNode& bvh, int* indices, int* counts) {
 		c_max_bound = fmaxf(c_max_bound, center);
 	}
 
-	// X split
-	if (c_min_bound.x != c_max_bound.x) { // If all mesh-level BVHs have the same X position, don't split over X axis
-		float interval = (c_max_bound.x - c_min_bound.x) / bin_count;
-		for (int i = 0; i < bin_count; i++) {
-			float pos = c_min_bound.x + i * interval;
+	// Search for the best split using binning
+	for (int i = 0; i < 3; i++) { // X, Y, Z
+		if (c_min_bound.get(i) == c_max_bound.get(i)) { continue; } // If all primitives have the same position on this plane, don't split
+
+		float interval = (c_max_bound.get(i) - c_min_bound.get(i)) / bin_count;
+
+		for (int j = 0; j < bin_count; j++) {
+			float pos = c_min_bound.get(i) + j * interval;
 
 			counts[0] = 0; // Left count
 			counts[1] = 0; // Right counts
 
-			for (int j = bvh.first; j < bvh.first + bvh.count; j++) {
-				BVH* bvh_ptr = instance_vector[tri_indices[j]]->mesh->bvh;
-				float3 instance_pos = instance_vector[tri_indices[i]]->GetPosition();
+			for (int k = bvh.first; k < bvh.first + bvh.count; k++) {
+				BVH* bvh_ptr = instance_vector[tri_indices[k]]->mesh->bvh;
+				float3 instance_pos = instance_vector[tri_indices[k]]->GetPosition();
 				float3 center = instance_pos + bvh_ptr->Root().min_bound + 0.5 * (bvh_ptr->Root().max_bound - bvh_ptr->Root().min_bound);
 
-				if (center.x <= pos) {
-					left[counts[0]++] = tri_indices[j];
+				if (center.get(i) <= pos) {
+					left[counts[0]++] = tri_indices[k];
 				}
 				else {
-					right[counts[1]++] = tri_indices[j];
+					right[counts[1]++] = tri_indices[k];
 				}
 			}
 
 			float split_cost = SplitCost(left, 0, counts[0]) + SplitCost(right, 0, counts[1]);
 			if (split_cost + EPSILON < best_split_cost) {
 				best_split_cost = split_cost;
-				best_split_plane = 'X';
-				best_split_pos = pos;
-			}
-		}
-	}
-
-	// Y split
-	if (c_min_bound.y != c_max_bound.y) {
-		float interval = (c_max_bound.y - c_min_bound.y) / bin_count;
-		for (int i = 0; i < bin_count; i++) {
-			float pos = c_min_bound.y + i * interval;
-
-			counts[0] = 0; // Left count
-			counts[1] = 0; // Right counts
-
-			for (int j = bvh.first; j < bvh.first + bvh.count; j++) {
-				BVH* bvh_ptr = instance_vector[tri_indices[j]]->mesh->bvh;
-				float3 instance_pos = instance_vector[tri_indices[i]]->GetPosition();
-				float3 center = instance_pos + bvh_ptr->Root().min_bound + 0.5 * (bvh_ptr->Root().max_bound - bvh_ptr->Root().min_bound);
-
-				if (center.y <= pos) {
-					left[counts[0]++] = tri_indices[j];
-				}
-				else {
-					right[counts[1]++] = tri_indices[j];
-				}
-			}
-
-			float split_cost = SplitCost(left, 0, counts[0]) + SplitCost(right, 0, counts[1]);
-			if (split_cost + EPSILON < best_split_cost) {
-				best_split_cost = split_cost;
-				best_split_plane = 'Y';
-				best_split_pos = pos;
-			}
-		}
-	}
-
-	// Z split
-	if (c_min_bound.z != c_max_bound.z) {
-		float interval = (c_max_bound.z - c_min_bound.z) / bin_count;
-		for (int i = 0; i < bin_count; i++) {
-			float pos = c_min_bound.z + i * interval;
-
-			counts[0] = 0; // Left count
-			counts[1] = 0; // Right counts
-
-			for (int j = bvh.first; j < bvh.first + bvh.count; j++) {
-				BVH* bvh_ptr = instance_vector[tri_indices[j]]->mesh->bvh;
-				float3 instance_pos = instance_vector[tri_indices[i]]->GetPosition();
-				float3 center = instance_pos + bvh_ptr->Root().min_bound + 0.5 * (bvh_ptr->Root().max_bound - bvh_ptr->Root().min_bound);
-
-				if (center.z <= pos) {
-					left[counts[0]++] = tri_indices[j];
-				}
-				else {
-					right[counts[1]++] = tri_indices[j];
-				}
-			}
-
-			float split_cost = SplitCost(left, 0, counts[0]) + SplitCost(right, 0, counts[1]);
-			if (split_cost + EPSILON < best_split_cost) {
-				best_split_cost = split_cost;
-				best_split_plane = 'Z';
+				best_split_plane = i;
 				best_split_pos = pos;
 			}
 		}
@@ -632,7 +490,7 @@ bool TopLevelBVH::Partition(BVHNode& bvh, int* indices, int* counts) {
 		return false;
 	}
 
-	// Define the best splits
+	// Perform the split
 	counts[0] = 0; // Left count
 	counts[1] = 0; // Right counts
 
@@ -641,34 +499,11 @@ bool TopLevelBVH::Partition(BVHNode& bvh, int* indices, int* counts) {
 		float3 instance_pos = instance_vector[tri_indices[i]]->GetPosition();
 		float3 center = instance_pos + bvh_ptr->Root().min_bound + 0.5 * (bvh_ptr->Root().max_bound - bvh_ptr->Root().min_bound);
 
-		// X split
-		if (best_split_plane == 'X') {
-			if (center.x <= best_split_pos) {
-				left[counts[0]++] = tri_indices[i];
-			}
-			else {
-				right[counts[1]++] = tri_indices[i];
-			}
+		if (center.get(best_split_plane) <= best_split_pos) {
+			left[counts[0]++] = tri_indices[i];
 		}
-
-		// Y split
-		if (best_split_plane == 'Y') {
-			if (center.y <= best_split_pos) {
-				left[counts[0]++] = tri_indices[i];
-			}
-			else {
-				right[counts[1]++] = tri_indices[i];
-			}
-		}
-
-		// Z split
-		if (best_split_plane == 'Z') {
-			if (center.z <= best_split_pos) {
-				left[counts[0]++] = tri_indices[i];
-			}
-			else {
-				right[counts[1]++] = tri_indices[i];
-			}
+		else {
+			right[counts[1]++] = tri_indices[i];
 		}
 	}
 

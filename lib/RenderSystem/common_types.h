@@ -61,7 +61,17 @@ struct ALIGN( 8 ) uint2 { uint x, y; };
 struct ALIGN( 8 ) float2 { float x, y; };
 struct int3 { int x, y, z; };
 struct uint3 { uint x, y, z; };
-struct float3 { float x, y, z; };
+struct float3 {
+	float x, y, z;
+	float get(int i) {
+		switch (i) {
+		case 0: return x;
+		case 1: return y;
+		case 2: return z;
+		default: throw "float3 index out of range";
+		}
+	}
+};
 struct ALIGN( 16 ) int4 { int x, y, z, w; };
 struct ALIGN( 16 ) uint4 { uint x, y, z, w; };
 struct ALIGN( 16 ) float4 { float x, y, z, w; };
