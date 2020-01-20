@@ -14,7 +14,10 @@ struct Ray {
 	float3 D;
 	float IOR;
 
+	const float4 O4() {	return make_float4(O, 1.0f); }
+	const float4 D4() { return make_float4(D, 0.0f); }
 	const float3 Point(float t) { return O + t * D; }
+
 	bool IntersectTriangle(const CoreTri& triangle, float& t) {
 		float3 vertex0 = triangle.vertex0;
 		float3 vertex1 = triangle.vertex1;

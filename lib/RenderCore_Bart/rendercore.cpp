@@ -117,11 +117,11 @@ void RenderCore::SetMaterials(CoreMaterial* mat, const int materialCount) {
 			m->transmission = mat[i].transmission.value;
 			m->IOR = mat[i].eta.value;
 
-			cout << "  Material " << i << endl;
-			cout << "    Color:        " << r << ", " << g << ", " << b << endl;
-			cout << "    Specularity:  " << m->specularity << endl;
-			cout << "    Transmission: " << m->transmission << endl;
-			cout << "    IOR:          " << m->IOR << endl;
+			//cout << "  Material " << i << endl;
+			//cout << "    Color:        " << r << ", " << g << ", " << b << endl;
+			//cout << "    Specularity:  " << m->specularity << endl;
+			//cout << "    Transmission: " << m->transmission << endl;
+			//cout << "    IOR:          " << m->IOR << endl;
 		}
 		else {
 			// TODO: textures
@@ -208,7 +208,7 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge ) {
 			float3 P = view.p1 + sx + sy;								// Point on screen
 			float3 D = P - view.pos;									// Ray direction, normalized in Ray() constructor
 			float3 c = raytracer.Color(view.pos, D, raytracer.DEPTH);	// Color vector
-			// float3 c = raytracer.ColorDebugBVH(view.pos, D);			// BVH Debug mode
+			//float3 c = raytracer.ColorDebugBVH(view.pos, D, 0.01f);		// BVH Debug mode
 			raytracer.accumulator.addPixel(x, y, c);
 
 			float3 cv = raytracer.accumulator.Pixel(x, y);
@@ -218,7 +218,7 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge ) {
 	}
 
 	DWORD trace_time = GetTickCount() - trace_start;
-	cout << "\rRender time: " << setw(4) << std::setfill(' ') << trace_time / 1000.0f << "s per frame." << std::flush;
+	// cout << "\rRender time: " << setw(4) << std::setfill(' ') << trace_time / 1000.0f << "s per frame." << std::flush;
 
 	// copy pixel buffer to OpenGL render target texture
 	glBindTexture(GL_TEXTURE_2D, targetTextureID);

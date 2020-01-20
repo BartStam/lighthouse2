@@ -109,7 +109,7 @@ float3 RayTracer::Color(float3 O, float3 D, uint depth, bool outside) {
 	return color;
 }
 
-float3 RayTracer::ColorDebugBVH(float3 O, float3 D) {
+float3 RayTracer::ColorDebugBVH(float3 O, float3 D, float delta) {
 	float3 color = make_float3(0, 1.0f, 0);
 
 	Ray ray = Ray(O, D);
@@ -123,7 +123,6 @@ float3 RayTracer::ColorDebugBVH(float3 O, float3 D) {
 
 	if (c == 0) { return make_float3(0, 0, 0); } // No BVH intersection, black
 
-	float delta = 0.006f;
 	color += make_float3(c * delta, c * -delta, 0);
 
 	return clamp(color, 0, 1);
