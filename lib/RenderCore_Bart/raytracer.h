@@ -11,7 +11,7 @@ public:
 	void addPixel(int x, int y, float4 pixel) { frame[y * w + x] += pixel; }
 private:
 	int w; // Screen width
-	vector<float4> frame;
+	vector<float4> frame; // Format: (r, g, b, c) where c is the number of frames this pixel was sampled
 };
 
 class Scene {
@@ -36,7 +36,7 @@ public:
 	~RayTracer();
 
 	int DEPTH = 8;														// Maximum ray recursion depth
-	float P_RENDER = 1.0f / 8;
+	float P_SAMPLE = 1.0f / 8;
 
 	bool print_stats = true;											// If this is set to true, print some stats on the next frame
 	int triangle_count;													// Total number of triangles in the scene

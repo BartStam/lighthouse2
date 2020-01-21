@@ -200,7 +200,7 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge ) {
 	DWORD trace_start = GetTickCount();
 	for (int y = 0; y < ny; y++) {
 		for (int x = 0; x < nx; x++) {
-			if (RandomFloat() < raytracer.P_RENDER) {
+			if (RandomFloat() < raytracer.P_SAMPLE) {
 				float rx = Rand(dx), ry = Rand(dy);
 				float3 sx = (x * dx + rx) * (view.p2 - view.p1);			// Screen x
 				float3 sy = (y * dy + dy) * (view.p3 - view.p1);			// Screen y
