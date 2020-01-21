@@ -7,13 +7,11 @@ class Accumulator {
 public:
 	Accumulator() = default;
 	void Rebuild(int width, int height);
-	float3 Pixel(int x, int y) { return frame[y * w + x] / frame_count; }
-	void addPixel(int x, int y, float3 pixel) { frame[y * w + x] += pixel; }
-	void Increment() { frame_count++; }
+	float3 Pixel(int x, int y) { return frame[y * w + x].w > 0 ? make_float3(frame[y * w + x] / frame[y * w + x].w) : make_float3(0); }
+	void addPixel(int x, int y, float4 pixel) { frame[y * w + x] += pixel; }
 private:
-	int w; // screen width
-	int frame_count;
-	vector<float3> frame;
+	int w; // Screen width
+	vector<float4> frame;
 };
 
 class Scene {
@@ -37,9 +35,11 @@ public:
 	RayTracer() = default;
 	~RayTracer();
 
+	int DEPTH = 8;														// Maximum ray recursion depth
+	float P_RENDER = 1.0f / 8;
+
 	bool print_stats = true;											// If this is set to true, print some stats on the next frame
 	int triangle_count;													// Total number of triangles in the scene
-	int DEPTH = 8;														// Maximum ray recursion depth
 	TopLevelBVH top_level_bvh;
 	Accumulator accumulator;
 	

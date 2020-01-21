@@ -10,8 +10,7 @@ uint ScaleColor(uint c, int scale)
 
 void Accumulator::Rebuild(int width, int height) {
 	frame.clear();
-	frame.resize(width * height, make_float3(0, 0, 0));
-	frame_count = 0;
+	frame.resize(width * height, make_float4(0));
 	w = width;
 }
 

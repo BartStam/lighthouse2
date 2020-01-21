@@ -197,19 +197,19 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge ) {
 	float dx = 1.0f / (nx - 1);
 	float dy = 1.0f / (ny - 1);
 
-	raytracer.accumulator.Increment();
-
 	DWORD trace_start = GetTickCount();
 	for (int y = 0; y < ny; y++) {
 		for (int x = 0; x < nx; x++) {
-			float rx = Rand(dx), ry = Rand(dy);
-			float3 sx = (x * dx + rx) * (view.p2 - view.p1);			// Screen x
-			float3 sy = (y * dy + dy) * (view.p3 - view.p1);			// Screen y
-			float3 P = view.p1 + sx + sy;								// Point on screen
-			float3 D = P - view.pos;									// Ray direction, normalized in Ray() constructor
-			float3 c = raytracer.Color(view.pos, D, raytracer.DEPTH);	// Color vector
-			//float3 c = raytracer.ColorDebugBVH(view.pos, D, 0.01f);		// BVH Debug mode
-			raytracer.accumulator.addPixel(x, y, c);
+			if (RandomFloat() < raytracer.P_RENDER) {
+				float rx = Rand(dx), ry = Rand(dy);
+				float3 sx = (x * dx + rx) * (view.p2 - view.p1);			// Screen x
+				float3 sy = (y * dy + dy) * (view.p3 - view.p1);			// Screen y
+				float3 P = view.p1 + sx + sy;								// Point on screen
+				float3 D = P - view.pos;									// Ray direction, normalized in Ray() constructor
+				float3 c = raytracer.Color(view.pos, D, raytracer.DEPTH);	// Color vector
+				//float3 c = raytracer.ColorDebugBVH(view.pos, D, 0.01f);		// BVH Debug mode
+				raytracer.accumulator.addPixel(x, y, make_float4(c, 1));
+			}
 
 			float3 cv = raytracer.accumulator.Pixel(x, y);
 			uint color = ((int)(cv.z * 255.0f) << 16) + ((int)(cv.y * 255.0f) << 8) + (int)(cv.x * 255.0f);
@@ -218,7 +218,7 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge ) {
 	}
 
 	DWORD trace_time = GetTickCount() - trace_start;
-	// cout << "\rRender time: " << setw(4) << std::setfill(' ') << trace_time / 1000.0f << "s per frame." << std::flush;
+	cout << "\rRender time: " << setw(4) << std::setfill(' ') << trace_time / 1000.0f << "s per frame." << std::flush;
 
 	// copy pixel buffer to OpenGL render target texture
 	glBindTexture(GL_TEXTURE_2D, targetTextureID);
