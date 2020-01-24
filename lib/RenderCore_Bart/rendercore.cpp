@@ -176,14 +176,13 @@ void RenderCore::SetSkyData(const float3* pixels, const uint width, const uint h
 //  +-----------------------------------------------------------------------------+
 void RenderCore::Render( const ViewPyramid& view, const Convergence converge ) {
 	// Print some stats on the first frame
-	if (raytracer.print_stats) {
+	if (raytracer.frame_count == 0) {
 		cout << endl;
 		cout << "Instance count: " << raytracer.scene.instances.size() << endl;
 		cout << "Mesh count:     " << raytracer.scene.meshes.size() << endl;
 		cout << "Triangle count: " << raytracer.triangle_count << endl;
 		cout << "Area light count: " << raytracer.scene.areaLights.size() << endl;
 		cout << "BVH build time: " << coreStats.bvhBuildTime / 1000.0f << " seconds\n" << endl;
-		raytracer.print_stats = false;
 	}
 
 	screen->Clear();
@@ -200,7 +199,9 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge ) {
 	DWORD trace_start = GetTickCount();
 	for (int y = 0; y < ny; y++) {
 		for (int x = 0; x < nx; x++) {
-			if (RandomFloat() < raytracer.P_SAMPLE) {
+			// Sample primary rays in batches
+			// Guarantees that after P_SAMPLE number of frames, each pixel is sampled at least once
+			if ((y * nx + x + raytracer.frame_count) % raytracer.P_SAMPLE == 0) {
 				float rx = Rand(dx), ry = Rand(dy);
 				float3 sx = (x * dx + rx) * (view.p2 - view.p1);			// Screen x
 				float3 sy = (y * dy + dy) * (view.p3 - view.p1);			// Screen y
@@ -223,6 +224,8 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge ) {
 	// copy pixel buffer to OpenGL render target texture
 	glBindTexture(GL_TEXTURE_2D, targetTextureID);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, screen->width, screen->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, screen->pixels);
+
+	raytracer.frame_count++;
 }
 
 //  +-----------------------------------------------------------------------------+

@@ -36,9 +36,9 @@ public:
 	~RayTracer();
 
 	int DEPTH = 8;														// Maximum ray recursion depth
-	float P_SAMPLE = 1.0f / 8;
+	int P_SAMPLE = 8;													// INVERSE probability of sampling a primary ray per frame
+	int frame_count = 0;
 
-	bool print_stats = true;											// If this is set to true, print some stats on the next frame
 	int triangle_count;													// Total number of triangles in the scene
 	TopLevelBVH top_level_bvh;
 	Accumulator accumulator;
