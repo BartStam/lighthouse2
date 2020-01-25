@@ -50,9 +50,9 @@ void PrepareScene()
 	//materialFile = string("data/cubes/three_cubes_materials.xml");
 
 	int lightMat1 = renderer->AddMaterial(make_float3(300.0f, 300.0f, 300.0f));
-	int lightQuad1 = renderer->AddQuad(make_float3(0.0f, -1.0f, 0.0f), make_float3(0.0f, 20.0f, -12.0f), 2.0f, 2.0f, lightMat1);
-	int lightInst1 = renderer->AddInstance(lightQuad1, mat4::Translate(-16.0f, 0, 0));
-	int lightInst2 = renderer->AddInstance(lightQuad1, mat4::Scale(2.0f));
+	int lightQuad1 = renderer->AddQuad(make_float3(0.0f, -1.0f, 0.0f), make_float3(0), 2.0f, 2.0f, lightMat1);
+	int lightInst1 = renderer->AddInstance(lightQuad1, mat4::Translate(-16.0f, 20.0f, -12.0f));
+	int lightInst2 = renderer->AddInstance(lightQuad1, mat4::Translate(8.0f, 20.0f, -12.0f) * mat4::RotateX(1.0f) * mat4::Scale(2.0f));
 
 	//int lightMat2 = renderer->AddMaterial(make_float3(2.0f, 2.0f, 8.0f));
 	//int lightQuad2 = renderer->AddQuad(make_float3(-0.5, -1, -0.2), make_float3(12.0f, 30.0f, 12.0f), 20.0f, 20.0f, lightMat2);

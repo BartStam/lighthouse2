@@ -1,5 +1,4 @@
 #include "core_settings.h"
-#include <iostream>
 
 /*
 	BVH
@@ -441,9 +440,8 @@ bool TopLevelBVH::Partition(BVHNode& bvh, int* indices, int* counts) {
 
 	// Calculate the centroid AABB
 	for (int i = bvh.first; i < bvh.first + bvh.count; i++) {
-		BVH* bvh_ptr = instance_vector[tri_indices[i]]->mesh->bvh;
-		mat4 transform = instance_vector[tri_indices[i]]->transform;
-		float3 center = make_float3(transform * make_float4(bvh_ptr->Root().min_bound + 0.5 * (bvh_ptr->Root().max_bound - bvh_ptr->Root().min_bound), 1));
+		float3 center = instance_vector[tri_indices[i]]->mesh->aabb_center;
+		center = instance_vector[tri_indices[i]]->transform.TransformPoint(center);
 
 		c_min_bound = fminf(c_min_bound, center);
 		c_max_bound = fmaxf(c_max_bound, center);
@@ -462,9 +460,8 @@ bool TopLevelBVH::Partition(BVHNode& bvh, int* indices, int* counts) {
 			counts[1] = 0; // Right counts
 
 			for (int k = bvh.first; k < bvh.first + bvh.count; k++) {
-				BVH* bvh_ptr = instance_vector[tri_indices[k]]->mesh->bvh;
-				mat4 transform = instance_vector[tri_indices[k]]->transform;
-				float3 center = make_float3(transform * make_float4(bvh_ptr->Root().min_bound + 0.5 * (bvh_ptr->Root().max_bound - bvh_ptr->Root().min_bound), 1));
+				float3 center = instance_vector[tri_indices[k]]->mesh->aabb_center;
+				center = instance_vector[tri_indices[k]]->transform.TransformPoint(center);
 
 				if (center.get(i) <= pos) {
 					left[counts[0]++] = tri_indices[k];
@@ -495,9 +492,8 @@ bool TopLevelBVH::Partition(BVHNode& bvh, int* indices, int* counts) {
 	counts[1] = 0; // Right counts
 
 	for (int i = bvh.first; i < bvh.first + bvh.count; i++) {
-		BVH* bvh_ptr = instance_vector[tri_indices[i]]->mesh->bvh;
-		mat4 transform = instance_vector[tri_indices[i]]->transform;
-		float3 center = make_float3(transform * make_float4(bvh_ptr->Root().min_bound + 0.5 * (bvh_ptr->Root().max_bound - bvh_ptr->Root().min_bound), 1));
+		float3 center = instance_vector[tri_indices[i]]->mesh->aabb_center;
+		center = instance_vector[tri_indices[i]]->transform.TransformPoint(center);
 
 		if (center.get(best_split_plane) <= best_split_pos) {
 			left[counts[0]++] = tri_indices[i];
@@ -523,7 +519,7 @@ bool TopLevelBVH::Partition(BVHNode& bvh, int* indices, int* counts) {
 }
 
 bool TopLevelBVH::Subdivide(BVHNode& bvh) {
-	if (bvh.count < 4) { return false; } // Leaves have at least 2 mesh-level BVHs in them
+	if (bvh.count < 4) { return false; } // Leaves have at least 2 instance-level BVHs in them
 
 	int* indices = new int[bvh.count];
 	int counts[2] = { 0 };
@@ -589,19 +585,20 @@ void TopLevelBVH::UpdateBounds() {
 			continue;
 		}
 
-		// Leaf, calculate AABB from mesh-level BVHs
+		// Leaf, calculate AABB from instance-level BVHs
 		float3 min_b = make_float3(FLT_MAX, FLT_MAX, FLT_MAX);
 		float3 max_b = make_float3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 
 		for (int j = pool[i].first; j < pool[i].first + pool[i].count; j++) {
-			BVH* bvh = instance_vector[tri_indices[j]]->mesh->bvh;
-			mat4 transform = instance_vector[tri_indices[j]]->transform;
+			float3 mesh_minb = instance_vector[tri_indices[j]]->mesh->min_bound;
+			float3 mesh_maxb = instance_vector[tri_indices[j]]->mesh->max_bound;
 
-			float3 bvh_min_bound = make_float3(transform * make_float4(bvh->Root().min_bound, 1));
-			float3 bvh_max_bound = make_float3(transform * make_float4(bvh->Root().max_bound, 1));
+			// Transform the mesh AABB bounds according to the instance transform
+			mesh_minb = instance_vector[tri_indices[j]]->transform.TransformPoint(mesh_minb);
+			mesh_maxb = instance_vector[tri_indices[j]]->transform.TransformPoint(mesh_maxb);
 
-			min_b = fminf(min_b, bvh_min_bound);
-			max_b = fmaxf(max_b, bvh_max_bound);
+			min_b = fminf(min_b, mesh_minb);
+			max_b = fmaxf(max_b, mesh_maxb);
 		}
 
 		pool[i].min_bound = min_b; pool[i].max_bound = max_b;
@@ -618,12 +615,15 @@ bool TopLevelBVH::Traverse(Ray& ray, CoreTri& tri, float& t, int pool_index, int
 	if (bvh.count > 0) { // If the node is a leaf
 		for (int i = bvh.first; i < bvh.first + bvh.count; i++) {
 			float t_aabb = FLT_MAX;
+
+			// We're entering an instance-level BVH, so we transform the ray by the inverse of its local transform
 			Ray transformed_ray = ray;
-			transformed_ray.O = make_float3(instance_vector[tri_indices[i]]->transform.Inverted() * make_float4(ray.O, 1));
-			transformed_ray.D = make_float3(instance_vector[tri_indices[i]]->transform.Inverted() * make_float4(ray.D));
+			mat4 inv_transform = instance_vector[tri_indices[i]]->transform.Inverted();
+			transformed_ray.O = inv_transform.TransformPoint(transformed_ray.O);
+			transformed_ray.D = normalize(inv_transform.TransformVector(transformed_ray.D));
 
 			if (IntersectAABB(transformed_ray, instance_vector[tri_indices[i]]->mesh->bvh->Root(), t_aabb) && t_aabb < t) {
-				instance_vector[tri_indices[i]]->mesh->bvh->Traverse(transformed_ray, tri, t, 0, c); // Continue traversing the mesh-level BVH
+				instance_vector[tri_indices[i]]->mesh->bvh->Traverse(transformed_ray, tri, t, 0, c); // Continue traversing the instance-level BVH
 			}
 		}
 	}

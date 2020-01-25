@@ -30,6 +30,8 @@
 
 using namespace lighthouse2;
 
+#include <iostream>
+
 #include "core_api_base.h"
 #include "core_api.h"
 #include "common.h"

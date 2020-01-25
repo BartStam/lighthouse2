@@ -32,7 +32,7 @@ protected:
 	int N;																	// Total amount of primitives in this BVH
 	int pool_pointer = -1;													// Pointer to the "current" BVHNode, used for construction. -1 indicates the BVH is not yet built.
 	alignas(128) BVHNode* pool = nullptr;									// Pool of cache aligned BVHNodes, each 32 bytes with neighbours residing next to each other
-	int* tri_indices;														// Indices of the primitive array, triangles for mesh-level BVHs and BVHs for top-level BVH
+	int* tri_indices;														// Indices of the primitive array, triangles for instance-level BVHs and BVHs for top-level BVH
 	
 	bool IntersectAABB(const Ray& ray, const BVHNode& bvh, float& t);		// Returns whether a ray intersects a BVHNode AABB, and at what distance along the ray (t)
 

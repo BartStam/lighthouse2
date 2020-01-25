@@ -14,7 +14,6 @@
 */
 
 #include "core_settings.h"
-#include <iostream>
 #include <iomanip>
 
 using namespace lh2core;
@@ -55,11 +54,15 @@ void RenderCore::SetGeometry( const int meshIdx, const float4* vertexData, const
 	}
 
 	mesh = raytracer.scene.meshes[meshIdx]; // If existing mesh, assume triangle count stays the same
-
-	// Copy vertex data
+	
+	// Set the AABB (axis-aligned bounding box) bounds, and AABB center. These are used in BVH construction and traversal.
+	float3 bmin = make_float3(1e34f), bmax = -bmin;
 	for (int i = 0; i < vertexCount; i++) {
-		mesh->vertices[i] = vertexData[i];
+		bmin.x = min(bmin.x, vertexData[i].x), bmin.y = min(bmin.y, vertexData[i].y), bmin.z = min(bmin.z, vertexData[i].z);
+		bmax.x = max(bmax.x, vertexData[i].x), bmax.y = max(bmax.y, vertexData[i].y), bmax.z = max(bmax.z, vertexData[i].z);
 	}
+	mesh->min_bound = bmin; mesh->max_bound = bmax;
+	mesh->aabb_center = bmin + 0.5 * (bmax - bmin);
 
 	// Copy triangle data
 	for (int i = 0; i < triangleCount; i++) {
@@ -97,6 +100,7 @@ void RenderCore::SetTextures(const CoreTexDesc* tex, const int textureCount) {
 }
 
 void RenderCore::SetMaterials(CoreMaterial* mat, const int materialCount) {
+	cout << "SetMaterials" << endl;
 	Material* m;
 
 	for (int i = 0; i < materialCount; i++) {
@@ -113,9 +117,9 @@ void RenderCore::SetMaterials(CoreMaterial* mat, const int materialCount) {
 			float g = mat[i].color.value.y;
 			float b = mat[i].color.value.z;
 			m->diffuse = make_float3(r, g, b);
-			m->specularity = mat[i].specular.value;
-			m->transmission = mat[i].transmission.value;
-			m->IOR = mat[i].eta.value;
+			m->specularity = mat[i].reflection.value;
+			m->transmission = mat[i].refraction.value;
+			m->IOR = mat[i].ior.value;
 
 			//cout << "  Material " << i << endl;
 			//cout << "    Color:        " << r << ", " << g << ", " << b << endl;
@@ -135,6 +139,9 @@ void RenderCore::SetLights(const CoreLightTri* areaLights, const int areaLightCo
 	if (raytracer.scene.areaLights.size() > areaLightCount) { raytracer.scene.areaLights.resize(areaLightCount); }
 
 	for (int i = 0; i < areaLightCount; i++) {
+		cout << "Area light " << i << endl;
+		cout << "  Center: " << areaLights[i].centre.x << ", " << areaLights[i].centre.y << ", " << areaLights[i].centre.z << endl;
+
 		AreaLight* areaLight;
 		if (i >= raytracer.scene.areaLights.size()) { raytracer.scene.areaLights.push_back(areaLight = new AreaLight()); }
 		areaLight = raytracer.scene.areaLights[i];

@@ -1,5 +1,4 @@
 #include "core_settings.h"
-#include <iostream>
 
 uint ScaleColor(uint c, int scale)
 {
@@ -50,7 +49,7 @@ float3 RayTracer::Color(float3 O, float3 D, uint depth, bool outside) {
 			return scale * c;
 		}
 		
-		return make_float3(0, 0, 0); // If we hit the back of the light, return black
+		return make_float3(0); // If we hit the back of the light, return black
 	}
 
 	float specularity = scene.matList[triangle.material]->specularity;

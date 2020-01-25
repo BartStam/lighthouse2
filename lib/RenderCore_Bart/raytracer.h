@@ -10,8 +10,8 @@ public:
 	float3 Pixel(int x, int y) { return frame[y * w + x].w > 0 ? make_float3(frame[y * w + x] / frame[y * w + x].w) : make_float3(0); }
 	void addPixel(int x, int y, float4 pixel) { frame[y * w + x] += pixel; }
 private:
-	int w; // Screen width
-	vector<float4> frame; // Format: (r, g, b, c) where c is the number of frames this pixel was sampled
+	int w;					// Screen width
+	vector<float4> frame;	// Format: (r, g, b, c) where c is the number of frames this pixel was sampled
 };
 
 class Scene {
