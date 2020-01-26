@@ -139,9 +139,6 @@ void RenderCore::SetLights(const CoreLightTri* areaLights, const int areaLightCo
 	if (raytracer.scene.areaLights.size() > areaLightCount) { raytracer.scene.areaLights.resize(areaLightCount); }
 
 	for (int i = 0; i < areaLightCount; i++) {
-		cout << "Area light " << i << endl;
-		cout << "  Center: " << areaLights[i].centre.x << ", " << areaLights[i].centre.y << ", " << areaLights[i].centre.z << endl;
-
 		AreaLight* areaLight;
 		if (i >= raytracer.scene.areaLights.size()) { raytracer.scene.areaLights.push_back(areaLight = new AreaLight()); }
 		areaLight = raytracer.scene.areaLights[i];

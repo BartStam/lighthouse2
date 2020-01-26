@@ -24,11 +24,12 @@ float3 RayTracer::Color(float3 O, float3 D, uint depth, bool outside) {
 	if (depth <= 0) { return color; }
 
 	Ray ray = Ray(O, D);
+	int material;
+	float3 N;
 	float t = FLT_MAX;
-	CoreTri triangle;
 
 	// The ray hit the skydome, we don't do lighting
-	if (!top_level_bvh.Traverse(ray, triangle, t)) {
+	if (!top_level_bvh.Traverse(ray, material, N, t)) {
 		float u = 1 + atan2(ray.D.x, -ray.D.z) * INVPI;
 		float v = acos(ray.D.y) * INVPI;
 
@@ -38,13 +39,11 @@ float3 RayTracer::Color(float3 O, float3 D, uint depth, bool outside) {
 		return clamp(scene.skyDome[min(height * scene.skyHeight * 2 + width, scene.skyDome.size() - 1)], 0.0f, 1.0f);
 	}
 
-	float3 N = make_float3(triangle.Nx, triangle.Ny, triangle.Nz); // Already normalized
-
 	// If we hit a light
-	if (scene.matList[triangle.material]->IsLight()) {
+	if (scene.matList[material]->IsLight()) {
 		// If we hit the front of the light, return its scaled color
 		if (dot(N, ray.D) < 0) {
-			float3 c = scene.matList[triangle.material]->diffuse;
+			float3 c = scene.matList[material]->diffuse;
 			float scale = 1.0f / max(c.x, max(c.y, c.z));
 			return scale * c;
 		}
@@ -52,8 +51,8 @@ float3 RayTracer::Color(float3 O, float3 D, uint depth, bool outside) {
 		return make_float3(0); // If we hit the back of the light, return black
 	}
 
-	float specularity = scene.matList[triangle.material]->specularity;
-	float transmission = scene.matList[triangle.material]->transmission;
+	float specularity = scene.matList[material]->specularity;
+	float transmission = scene.matList[material]->transmission;
 
 	// Normalize specularity and transmission if they sum > 1
 	if (specularity + transmission > 1) {
@@ -65,7 +64,7 @@ float3 RayTracer::Color(float3 O, float3 D, uint depth, bool outside) {
 	
 	// Transmission
 	if (transmission > 0.01f) {
-		float H1 = 1.0f, H2 = scene.matList[triangle.material]->IOR;
+		float H1 = 1.0f, H2 = scene.matList[material]->IOR;
 
 		if (!outside) {		// If the ray is exiting a transmissive material
 			swap(H1, H2);	// Swap the IOR
@@ -102,7 +101,7 @@ float3 RayTracer::Color(float3 O, float3 D, uint depth, bool outside) {
 	}
 
 	if (specularity > 0.01f) { color += specularity * Color(ray.Point(t) + N * 2 * EPSILON, ray.D - 2 * (ray.D * N) * N, depth - 1, outside); }
-	if (diffusion > 0.01f) { color += diffusion * Illumination(scene.matList[triangle.material]->diffuse, ray.Point(t) + N * 2 * EPSILON); }
+	if (diffusion > 0.01f) { color += diffusion * Illumination(scene.matList[material]->diffuse, ray.Point(t) + N * 2 * EPSILON); }
 
 	return color;
 }
@@ -111,11 +110,12 @@ float3 RayTracer::ColorDebugBVH(float3 O, float3 D, float delta) {
 	float3 color = make_float3(0, 1.0f, 0);
 
 	Ray ray = Ray(O, D);
-	CoreTri triangle;
+	int material;
+	float3 N;
 	float t = FLT_MAX;
 	int c = -1;
 
-	if (top_level_bvh.Traverse(ray, triangle, t, 0, &c)) {
+	if (top_level_bvh.Traverse(ray, material, N, t, 0, &c)) {
 		// return make_float3(1, 1, 1);
 	}
 
@@ -135,10 +135,11 @@ float3 RayTracer::Illumination(float3 color, float3 O) {
 		Ray shadow_ray = Ray(O, D);
 
 		float t_light = length(fabs(D));
+		int material;
+		float3 N;
 		float t = FLT_MAX;
-		CoreTri triangle;
 
-		top_level_bvh.Traverse(shadow_ray, triangle, t);
+		top_level_bvh.Traverse(shadow_ray, material, N, t);
 		
 		if (t_light <= t) {
 			light_color += scene.pointLights[i]->radiance / (t_light * t_light);
@@ -155,11 +156,11 @@ float3 RayTracer::Illumination(float3 color, float3 O) {
 		float r = length(fabs(D)) - EPSILON;
 
 		Ray shadow_ray = Ray(O, D);
+		int material;
+		float3 triN;
 		float t = FLT_MAX;
-		CoreTri triangle;
 
-		top_level_bvh.Traverse(shadow_ray, triangle, t);
-		float3 triN = make_float3(triangle.Nx, triangle.Ny, triangle.Nz); // Already normalized
+		top_level_bvh.Traverse(shadow_ray, material, triN, t);
 
 		D = shadow_ray.D; // D is normalized in Ray constructor, no reason to do the work twice
 		float dot_DN = dot(D, triN);

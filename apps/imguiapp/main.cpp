@@ -43,7 +43,7 @@ void PrepareScene()
 	renderer->AddScene("scene.gltf", "data/pica/", mat4::Scale(1.0f) * mat4::Translate(0, 0, 0));
 	materialFile = string("data/pica/pica_materials.xml");
 
-	//renderer->AddScene("CesiumMan.glb", "data/", mat4::Scale(1.0f) * mat4::Translate(0, 0, 0));
+	//renderer->AddScene("CesiumMan.glb", "data/", mat4::Scale(10.0f));
 	//materialFile = string("data/cesium_materials.xml");
 
 	//renderer->AddScene("three_cubes.gltf", "data/cubes/", mat4::Scale(1.0f) * mat4::Translate(0, 0, 0));
@@ -51,8 +51,8 @@ void PrepareScene()
 
 	int lightMat1 = renderer->AddMaterial(make_float3(300.0f, 300.0f, 300.0f));
 	int lightQuad1 = renderer->AddQuad(make_float3(0.0f, -1.0f, 0.0f), make_float3(0), 2.0f, 2.0f, lightMat1);
-	int lightInst1 = renderer->AddInstance(lightQuad1, mat4::Translate(-16.0f, 20.0f, -12.0f));
-	int lightInst2 = renderer->AddInstance(lightQuad1, mat4::Translate(8.0f, 20.0f, -12.0f) * mat4::RotateX(1.0f) * mat4::Scale(2.0f));
+	int lightInst1 = renderer->AddInstance(lightQuad1, mat4::Translate(-12.0f, 20.0f, -12.0f));
+	int lightInst2 = renderer->AddInstance(lightQuad1, mat4::Translate(12.0f, 20.0f, -12.0f));
 
 	//int lightMat2 = renderer->AddMaterial(make_float3(2.0f, 2.0f, 8.0f));
 	//int lightQuad2 = renderer->AddQuad(make_float3(-0.5, -1, -0.2), make_float3(12.0f, 30.0f, 12.0f), 20.0f, 20.0f, lightMat2);

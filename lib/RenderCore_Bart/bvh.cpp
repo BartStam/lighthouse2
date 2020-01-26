@@ -269,7 +269,7 @@ void BVH2::UpdateBounds() {
 	}
 }
 
-bool BVH2::Traverse(Ray& ray, CoreTri& tri, float& t, int pool_index, int* c) {
+bool BVH2::Traverse(Ray& ray, int& material, float3& N, float& t, int pool_index, int* c) {
 	if (c) { (*c)++; } // If we are doing BVH debugging, increment the count of BVH intersections
 	
 	BVHNode& bvh = pool[pool_index];
@@ -281,7 +281,9 @@ bool BVH2::Traverse(Ray& ray, CoreTri& tri, float& t, int pool_index, int* c) {
 		for (int i = bvh.first; i < bvh.first + bvh.count; i++) {
 			if (ray.IntersectTriangle((*mesh).triangles[tri_indices[i]], found_t) && found_t < t) {
 				t = found_t;
-				tri = mesh->triangles[tri_indices[i]];
+				CoreTri& tri = mesh->triangles[tri_indices[i]];
+				material = tri.material;
+				N = make_float3(tri.Nx, tri.Ny, tri.Nz);
 			}
 		}
 	}
@@ -293,20 +295,20 @@ bool BVH2::Traverse(Ray& ray, CoreTri& tri, float& t, int pool_index, int* c) {
 		if (IntersectAABB(ray, pool[bvh.first], t_left)) {
 			if (IntersectAABB(ray, pool[bvh.first + 1], t_right)) {
 				if (t_left < t_right) { // Traverse the closest child first
-					Traverse(ray, tri, t, bvh.first, c);
-					Traverse(ray, tri, t, bvh.first + 1, c);
+					Traverse(ray, material, N, t, bvh.first, c);
+					Traverse(ray, material, N, t, bvh.first + 1, c);
 				}
 				else {
-					Traverse(ray, tri, t, bvh.first + 1, c);
-					Traverse(ray, tri, t, bvh.first, c);
+					Traverse(ray, material, N, t, bvh.first + 1, c);
+					Traverse(ray, material, N, t, bvh.first, c);
 				}
 			}
 			else {
-				Traverse(ray, tri, t, bvh.first, c);
+				Traverse(ray, material, N, t, bvh.first, c);
 			}
 		}
 		else if (IntersectAABB(ray, pool[bvh.first + 1], t_right)) {
-			Traverse(ray, tri, t, bvh.first + 1, c);
+			Traverse(ray, material, N, t, bvh.first + 1, c);
 		}
 	}
 
@@ -362,7 +364,7 @@ void BVH4::UpdateBounds() {
 
 }
 
-bool BVH4::Traverse(Ray& ray, CoreTri& tri, float& t, int pool_index, int* c) {
+bool BVH4::Traverse(Ray& ray, int& material, float3& N, float& t, int pool_index, int* c) {
 	return false;
 }
 
@@ -605,12 +607,13 @@ void TopLevelBVH::UpdateBounds() {
 	}
 }
 
-bool TopLevelBVH::Traverse(Ray& ray, CoreTri& tri, float& t, int pool_index, int* c) {
+bool TopLevelBVH::Traverse(Ray& ray, int& material, float3& N, float& t, int pool_index, int* c) {
 	if (c) { (*c)++; } // If we are doing BVH debugging, increment the count of BVH intersections
 
 	BVHNode& bvh = pool[pool_index];
 	
 	float initial_t = t;
+	float found_t = t;
 
 	if (bvh.count > 0) { // If the node is a leaf
 		for (int i = bvh.first; i < bvh.first + bvh.count; i++) {
@@ -623,7 +626,13 @@ bool TopLevelBVH::Traverse(Ray& ray, CoreTri& tri, float& t, int pool_index, int
 			transformed_ray.D = normalize(inv_transform.TransformVector(transformed_ray.D));
 
 			if (IntersectAABB(transformed_ray, instance_vector[tri_indices[i]]->mesh->bvh->Root(), t_aabb) && t_aabb < t) {
-				instance_vector[tri_indices[i]]->mesh->bvh->Traverse(transformed_ray, tri, t, 0, c); // Continue traversing the instance-level BVH
+				instance_vector[tri_indices[i]]->mesh->bvh->Traverse(transformed_ray, material, N, t, 0, c); // Continue traversing the instance-level BVH
+
+				// If we find a closer intersection than what we previously found
+				if (t < found_t) {
+					found_t = t;
+					N = normalize(instance_vector[tri_indices[i]]->transform.TransformVector(N)); // Make sure we return the transformed normal (in case of rotation)
+				}
 			}
 		}
 	}
@@ -635,20 +644,20 @@ bool TopLevelBVH::Traverse(Ray& ray, CoreTri& tri, float& t, int pool_index, int
 		if (IntersectAABB(ray, pool[bvh.first], t_left) && t_left < t) {
 			if (IntersectAABB(ray, pool[bvh.first + 1], t_right) && t_right < t) {
 				if (t_left < t_right) { // Traverse the closest child first
-					Traverse(ray, tri, t, bvh.first, c);
-					Traverse(ray, tri, t, bvh.first + 1, c);
+					Traverse(ray, material, N, t, bvh.first, c);
+					Traverse(ray, material, N, t, bvh.first + 1, c);
 				}
 				else {
-					Traverse(ray, tri, t, bvh.first + 1, c);
-					Traverse(ray, tri, t, bvh.first, c);
+					Traverse(ray, material, N, t, bvh.first + 1, c);
+					Traverse(ray, material, N, t, bvh.first, c);
 				}
 			}
 			else {
-				Traverse(ray, tri, t, bvh.first, c);
+				Traverse(ray, material, N, t, bvh.first, c);
 			}
 		}
 		else if (IntersectAABB(ray, pool[bvh.first + 1], t_right) && t_right < t) {
-			Traverse(ray, tri, t, bvh.first + 1, c);
+			Traverse(ray, material, N, t, bvh.first + 1, c);
 		}
 	}
 

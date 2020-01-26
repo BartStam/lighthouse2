@@ -24,7 +24,7 @@ public:
 	virtual ~BVH() {};
 
 	virtual void Rebuild() = 0;
-	virtual bool Traverse(Ray& ray, CoreTri& tri, float& t, int pool_index = 0, int* c = nullptr) = 0;
+	virtual bool Traverse(Ray& ray, int& material, float3& N, float& t, int pool_index = 0, int* c = nullptr) = 0;
 	virtual void Print(BVHNode& bvh) = 0;
 	const BVHNode& Root() { return pool[0]; }
 
@@ -49,7 +49,7 @@ public:
 	~BVH2();
 
 	void Rebuild();
-	bool Traverse(Ray& ray, CoreTri& tri, float& t, int pool_index = 0, int* c = nullptr);
+	bool Traverse(Ray& ray, int& material, float3& N, float& t, int pool_index = 0, int* c = nullptr);
 	void Print(BVHNode& bvh);
 
 private:
@@ -68,7 +68,7 @@ public:
 	~BVH4();
 
 	void Rebuild();
-	bool Traverse(Ray& ray, CoreTri& tri, float& t, int pool_index = 0, int* c = nullptr);
+	bool Traverse(Ray& ray, int& material, float3& N, float& t, int pool_index = 0, int* c = nullptr);
 	void Print(BVHNode& bvh);
 
 private:
@@ -88,7 +88,7 @@ public:
 
 	void AddInstance(Instance* instance);
 	void Rebuild();
-	bool Traverse(Ray& ray, CoreTri& tri, float& t, int pool_index = 0, int* c = nullptr);
+	bool Traverse(Ray& ray, int& material, float3& N, float& t, int pool_index = 0, int* c = nullptr);
 	void Print(BVHNode& bvh);
 
 private:
