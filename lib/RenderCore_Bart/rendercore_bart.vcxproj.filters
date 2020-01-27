@@ -7,6 +7,8 @@
     </ClCompile>
     <ClCompile Include="raytracer.cpp" />
     <ClCompile Include="bvh.cpp" />
+    <ClCompile Include="sbvh.cpp" />
+    <ClCompile Include="common.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="rendercore.h" />
@@ -17,6 +19,7 @@
     <ClInclude Include="raytracer.h" />
     <ClInclude Include="bvh.h" />
     <ClInclude Include="common.h" />
+    <ClInclude Include="sbvh.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="API">

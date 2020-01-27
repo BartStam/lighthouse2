@@ -63,7 +63,7 @@ struct int3 { int x, y, z; };
 struct uint3 { uint x, y, z; };
 struct float3 {
 	float x, y, z;
-	float get(int i) {
+	float& at(int i) {
 		switch (i) {
 		case 0: return x;
 		case 1: return y;

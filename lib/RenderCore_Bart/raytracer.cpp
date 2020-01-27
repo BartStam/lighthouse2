@@ -115,7 +115,7 @@ float3 RayTracer::ColorDebugBVH(float3 O, float3 D, float delta) {
 	float t = FLT_MAX;
 	int c = -1;
 
-	if (top_level_bvh.Traverse(ray, material, N, t, 0, &c)) {
+	if (top_level_bvh.Traverse(ray, material, N, t, &c)) {
 		// return make_float3(1, 1, 1);
 	}
 

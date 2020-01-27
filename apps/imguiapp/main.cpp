@@ -40,7 +40,7 @@ static CoreStats coreStats;
 //  +-----------------------------------------------------------------------------+
 void PrepareScene()
 {
-	renderer->AddScene("scene.gltf", "data/pica/", mat4::Scale(1.0f) * mat4::Translate(0, 0, 0));
+	renderer->AddScene("scene.gltf", "data/pica/");
 	materialFile = string("data/pica/pica_materials.xml");
 
 	//renderer->AddScene("CesiumMan.glb", "data/", mat4::Scale(10.0f));

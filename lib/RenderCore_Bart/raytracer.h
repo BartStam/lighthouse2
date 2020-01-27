@@ -40,7 +40,7 @@ public:
 	int frame_count = 0;
 
 	int triangle_count;													// Total number of triangles in the scene
-	TopLevelBVH top_level_bvh;
+	TopLevelSBVH top_level_bvh;
 	Accumulator accumulator;
 	
 	float3 Color(float3 O, float3 D, uint depth, bool outside = true);	// Trace a ray and return its color

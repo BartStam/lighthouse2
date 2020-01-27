@@ -49,7 +49,7 @@ void RenderCore::SetGeometry( const int meshIdx, const float4* vertexData, const
 
 	if (meshIdx >= raytracer.scene.meshes.size()) { // New mesh
 		raytracer.scene.meshes.push_back(mesh = new Mesh(vertexCount, triangleCount));
-		mesh->bvh = new BVH2(mesh);
+		mesh->bvh = new MeshLevelSBVH(mesh);
 		raytracer.triangle_count += triangleCount;
 	}
 
@@ -61,12 +61,15 @@ void RenderCore::SetGeometry( const int meshIdx, const float4* vertexData, const
 		bmin.x = min(bmin.x, vertexData[i].x), bmin.y = min(bmin.y, vertexData[i].y), bmin.z = min(bmin.z, vertexData[i].z);
 		bmax.x = max(bmax.x, vertexData[i].x), bmax.y = max(bmax.y, vertexData[i].y), bmax.z = max(bmax.z, vertexData[i].z);
 	}
-	mesh->min_bound = bmin; mesh->max_bound = bmax;
+	mesh->bvh->min_bound = bmin; mesh->bvh->max_bound = bmax;
 	mesh->aabb_center = bmin + 0.5 * (bmax - bmin);
 
 	// Copy triangle data
 	for (int i = 0; i < triangleCount; i++) {
 		mesh->triangles[i] = triangleData[i];
+		mesh->tri_centers[i] = (triangleData[i].vertex0 + triangleData[i].vertex1 + triangleData[i].vertex2) / 3;
+		mesh->tri_min_bounds[i] = fminf(fminf(triangleData[i].vertex0, triangleData[i].vertex1), triangleData[i].vertex2);
+		mesh->tri_max_bounds[i] = fmaxf(fmaxf(triangleData[i].vertex0, triangleData[i].vertex1), triangleData[i].vertex2);
 	}
 
 	// (Re)build the BVH. It is added to the top-level BVH in SetInstance() if required.

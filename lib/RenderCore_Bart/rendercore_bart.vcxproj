@@ -104,6 +104,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="bvh.cpp" />
+    <ClCompile Include="common.cpp" />
     <ClCompile Include="core_api.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">core_settings.h</PrecompiledHeaderFile>
@@ -117,6 +118,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">core_settings.h</PrecompiledHeaderFile>
     </ClCompile>
+    <ClCompile Include="sbvh.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="bvh.h" />
@@ -125,6 +127,7 @@
     <ClInclude Include="core_settings.h" />
     <ClInclude Include="raytracer.h" />
     <ClInclude Include="rendercore.h" />
+    <ClInclude Include="sbvh.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>
