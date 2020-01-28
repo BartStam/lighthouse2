@@ -123,15 +123,6 @@ void RenderCore::SetMaterials(CoreMaterial* mat, const int materialCount) {
 			m->specularity = mat[i].reflection.value;
 			m->transmission = mat[i].refraction.value;
 			m->IOR = mat[i].ior.value;
-
-			//cout << "  Material " << i << endl;
-			//cout << "    Color:        " << r << ", " << g << ", " << b << endl;
-			//cout << "    Specularity:  " << m->specularity << endl;
-			//cout << "    Transmission: " << m->transmission << endl;
-			//cout << "    IOR:          " << m->IOR << endl;
-		}
-		else {
-			// TODO: textures
 		}
 	}
 }
@@ -182,6 +173,8 @@ void RenderCore::SetSkyData(const float3* pixels, const uint width, const uint h
 //  |  Produce one image.                                                   LH2'19|
 //  +-----------------------------------------------------------------------------+
 void RenderCore::Render( const ViewPyramid& view, const Convergence converge ) {
+	raytracer.top_level_bvh.Rebuild();	// Rebuild the top-level BVH
+
 	// Print some stats on the first frame
 	if (raytracer.frame_count == 0) {
 		cout << endl;
@@ -189,12 +182,11 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge ) {
 		cout << "Mesh count:     " << raytracer.scene.meshes.size() << endl;
 		cout << "Triangle count: " << raytracer.triangle_count << endl;
 		cout << "Area light count: " << raytracer.scene.areaLights.size() << endl;
-		cout << "BVH build time: " << coreStats.bvhBuildTime / 1000.0f << " seconds\n" << endl;
+		cout << "BVH build time: " << coreStats.bvhBuildTime / 1000.0f << " seconds" << endl;
+		cout << "BVH cost: " << raytracer.top_level_bvh.Cost() << "\n" << endl;
 	}
 
 	screen->Clear();
-
-	raytracer.top_level_bvh.Rebuild();												// Rebuild the top-level BVH
 	if (converge) { raytracer.accumulator.Rebuild(screen->width, screen->height); }	// Rebuild the accumulator if not converging
 
 	int nx = screen->width;
@@ -215,7 +207,7 @@ void RenderCore::Render( const ViewPyramid& view, const Convergence converge ) {
 				float3 P = view.p1 + sx + sy;								// Point on screen
 				float3 D = P - view.pos;									// Ray direction, normalized in Ray() constructor
 				float3 c = raytracer.Color(view.pos, D, raytracer.DEPTH);	// Color vector
-				//float3 c = raytracer.ColorDebugBVH(view.pos, D, 0.01f);		// BVH Debug mode
+				// float3 c = raytracer.ColorDebugBVH(view.pos, D, 0.003f);		// BVH Debug mode
 				raytracer.accumulator.addPixel(x, y, make_float4(c, 1));
 			}
 
