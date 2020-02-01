@@ -52,6 +52,7 @@ typedef int BOOL; // for freeimage.h
 #pragma warning (disable : 4244 )
 
 #include <math.h>
+#include <iostream>
 
 #ifndef CUDABUILD
 
@@ -68,7 +69,9 @@ struct float3 {
 		case 0: return x;
 		case 1: return y;
 		case 2: return z;
-		default: throw "float3 index out of range";
+		default:
+			cout << "Invalid index: " << i << endl;
+			throw "float3 index out of range, used: " + i;
 		}
 	}
 };

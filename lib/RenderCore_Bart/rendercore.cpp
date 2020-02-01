@@ -55,19 +55,23 @@ void RenderCore::SetGeometry( const int meshIdx, const float4* vertexData, const
 
 	mesh = raytracer.scene.meshes[meshIdx]; // If existing mesh, assume triangle count stays the same
 	
-	// Set the AABB (axis-aligned bounding box) bounds, and AABB center. These are used in BVH construction and traversal.
-	float3 bmin = make_float3(1e34f), bmax = -bmin;
-	for (int i = 0; i < vertexCount; i++) {
-		bmin.x = min(bmin.x, vertexData[i].x), bmin.y = min(bmin.y, vertexData[i].y), bmin.z = min(bmin.z, vertexData[i].z);
-		bmax.x = max(bmax.x, vertexData[i].x), bmax.y = max(bmax.y, vertexData[i].y), bmax.z = max(bmax.z, vertexData[i].z);
-	}
-	mesh->min_bound = bmin; mesh->max_bound = bmax;
-	mesh->aabb_center = bmin + 0.5 * (bmax - bmin);
+	// Set the AABB/triangle bounds, used in BVH rebuilding/refitting
+	mesh->aabb_min_bound = make_float3(FLT_MAX);
+	mesh->aabb_max_bound = make_float3(-FLT_MAX);
 
-	// Copy triangle data
 	for (int i = 0; i < triangleCount; i++) {
 		mesh->triangles[i] = triangleData[i];
+
+		mesh->tri_centers[i] = (triangleData[i].vertex0 + triangleData[i].vertex1 + triangleData[i].vertex2) / 3.0f;
+
+		mesh->tri_min_bounds[i] = fminf(fminf(triangleData[i].vertex0, triangleData[i].vertex1), triangleData[i].vertex2);
+		mesh->tri_max_bounds[i] = fmaxf(fmaxf(triangleData[i].vertex0, triangleData[i].vertex1), triangleData[i].vertex2);
+
+		mesh->aabb_min_bound = fminf(mesh->aabb_min_bound, mesh->tri_min_bounds[i]);
+		mesh->aabb_max_bound = fmaxf(mesh->aabb_max_bound, mesh->tri_max_bounds[i]);
 	}
+
+	mesh->aabb_center = mesh->aabb_min_bound + 0.5 * (mesh->aabb_max_bound - mesh->aabb_min_bound);
 
 	// (Re)build the BVH. It is added to the top-level BVH in SetInstance() if required.
 	DWORD trace_start = GetTickCount();
@@ -92,6 +96,7 @@ void RenderCore::SetInstance(const int instanceIdx, const int meshIdx, const mat
 	else { // Existing instance
 		raytracer.scene.instances[instanceIdx]->mesh = raytracer.scene.meshes[meshIdx];
 		raytracer.scene.instances[instanceIdx]->transform = matrix;
+		raytracer.scene.instances[instanceIdx]->inv_transform = matrix.Inverted();
 	}
 }
 

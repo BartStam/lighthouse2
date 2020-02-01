@@ -37,7 +37,7 @@ protected:
 	bool IntersectAABB(const Ray& ray, const BVHNode& bvh, float& t);		// Returns whether a ray intersects a BVHNode AABB, and at what distance along the ray (t)
 
 	virtual float SplitCost(const int* indices, int first, int count) = 0;	// Defines the "cost" of a set of primitives as [aabb surface area * number of primitives]
-	virtual bool Partition(BVHNode& bvh, int* indices, int* counts) = 0;	// Partitions a set of primitives into two groups, based on the binning SAH heuristic
+	virtual bool Partition(BVHNode& bvh, int* indices, int* counts, int bins = 8) = 0;	// Partitions a set of primitives into two groups, based on the binning SAH heuristic
 	virtual bool Subdivide(BVHNode& bvh) = 0;								// Subdivides a single BVH into two, based on a greedy binning SAH heuristic
 	virtual void SubdivideRecursively(BVHNode& bvh) = 0;					// Splits a BVH recursively until there is no value in splitting anymore
 	virtual void UpdateBounds() = 0;										// Updates the AABB bounds of every BVHNode in the pool (back to front)
@@ -56,7 +56,7 @@ private:
 	Mesh* mesh = nullptr; // Meshes are owned by the rendercore
 
 	float SplitCost(const int* indices, int first, int count);
-	bool Partition(BVHNode& bvh, int* indices, int* counts);
+	bool Partition(BVHNode& bvh, int* indices, int* counts, int bins = 8);
 	bool Subdivide(BVHNode& bvh);
 	void SubdivideRecursively(BVHNode& bvh);
 	void UpdateBounds();
@@ -75,7 +75,7 @@ private:
 	Mesh* mesh = nullptr; // Meshes are owned by the rendercore
 
 	float SplitCost(const int* indices, int first, int count);
-	bool Partition(BVHNode& bvh, int* indices, int* counts);
+	bool Partition(BVHNode& bvh, int* indices, int* counts, int bins = 8);
 	bool Subdivide(BVHNode& bvh);
 	void SubdivideRecursively(BVHNode& bvh);
 	void UpdateBounds();
@@ -95,7 +95,7 @@ private:
 	vector<Instance*> instance_vector;
 	
 	float SplitCost(const int* indices, int first, int count);
-	bool Partition(BVHNode& bvh, int* indices, int* counts);
+	bool Partition(BVHNode& bvh, int* indices, int* counts, int bins = 8);
 	bool Subdivide(BVHNode& bvh);
 	void SubdivideRecursively(BVHNode& bvh);
 	void UpdateBounds();

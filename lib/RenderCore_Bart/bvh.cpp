@@ -93,41 +93,35 @@ float BVH2::SplitCost(const int* indices, int first, int count) {
 	return count * area;
 }
 
-bool BVH2::Partition(BVHNode& bvh, int* indices, int* counts) {
-	int bin_count = 8; // Must be larger than 1
-
+bool BVH2::Partition(BVHNode& bvh, int* indices, int* counts, int bins) {
 	int* left = new int[bvh.count];
 	int* right = new int[bvh.count];
 
 	float base_cost = SplitCost(tri_indices, bvh.first, bvh.count);	// Cost of current BVH before splitting, according to SAH heuristic
-	float3 c_min_bound = make_float3(FLT_MAX, FLT_MAX, FLT_MAX);	// Triangle centroids AABB min bound
-	float3 c_max_bound = make_float3(-FLT_MAX, -FLT_MAX, -FLT_MAX);	// Triangle centroids AABB max bound
-
 	float best_split_cost = FLT_MAX;
 	float best_split_pos;
 	int best_split_plane;
 
 	// Calculate the centroid AABB
-	for (int i = bvh.first; i < bvh.first + bvh.count; i++) {
-		CoreTri& tri = mesh->triangles[tri_indices[i]];
-		float3 center = (tri.vertex0 + tri.vertex1 + tri.vertex2) / 3.0f;
+	float3 c_min_bound = make_float3(FLT_MAX);
+	float3 c_max_bound = make_float3(-FLT_MAX);
 
-		c_min_bound = fminf(c_min_bound, center);
-		c_max_bound = fmaxf(c_max_bound, center);
+	for (int i = bvh.first; i < bvh.first + bvh.count; i++) {
+		c_min_bound = fminf(c_min_bound, mesh->tri_centers[tri_indices[i]]);
+		c_max_bound = fmaxf(c_max_bound, mesh->tri_centers[tri_indices[i]]);
 	}
 
 	for (int i = 0; i < 3; i++) { // X, Y, Z
 		if (c_min_bound.get(i) == c_max_bound.get(i)) { continue; } // If all primitives have the same position on this plane, don't split
-			float interval = (c_max_bound.get(i) - c_min_bound.get(i)) / bin_count;
-			for (int j = 0; j < bin_count; j++) {
+			float interval = (c_max_bound.get(i) - c_min_bound.get(i)) / bins;
+			for (int j = 0; j < bins; j++) {
 				float pos = c_min_bound.get(i) + j * interval;
 
 				counts[0] = 0; // Left count
 				counts[1] = 0; // Right counts
 
 				for (int k = bvh.first; k < bvh.first + bvh.count; k++) {
-					CoreTri& tri = mesh->triangles[tri_indices[k]];
-					float3 tri_center = (tri.vertex0 + tri.vertex1 + tri.vertex2) / 3.0f;
+					float3 tri_center = mesh->tri_centers[tri_indices[k]];
 
 					if (tri_center.get(i) <= pos) {
 						left[counts[0]++] = tri_indices[k];
@@ -158,8 +152,7 @@ bool BVH2::Partition(BVHNode& bvh, int* indices, int* counts) {
 	counts[1] = 0; // Right counts
 
 	for (int i = bvh.first; i < bvh.first + bvh.count; i++) {
-		CoreTri& tri = mesh->triangles[tri_indices[i]];
-		float3 center = (tri.vertex0 + tri.vertex1 + tri.vertex2) / 3.0f;
+		float3 center = mesh->tri_centers[tri_indices[i]];
 
 		if (center.get(best_split_plane) <= best_split_pos) {
 			left[counts[0]++] = tri_indices[i];
@@ -251,21 +244,14 @@ void BVH2::UpdateBounds() {
 			continue;
 		}
 
-		// Leaf, calculate AABB from primitives
-		float3 min_b = make_float3(FLT_MAX, FLT_MAX, FLT_MAX);
-		float3 max_b = make_float3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+		// Leaf, (re)calculate AABB from primitives
+		pool[i].min_bound = make_float3(FLT_MAX);
+		pool[i].max_bound = make_float3(-FLT_MAX);
 
 		for (int j = pool[i].first; j < pool[i].first + pool[i].count; j++) {
-			CoreTri& tri = mesh->triangles[tri_indices[j]];
-
-			float3 tri_min_bound = fminf(fminf(tri.vertex0, tri.vertex1), tri.vertex2);
-			float3 tri_max_bound = fmaxf(fmaxf(tri.vertex0, tri.vertex1), tri.vertex2);
-
-			min_b = fminf(min_b, tri_min_bound);
-			max_b = fmaxf(max_b, tri_max_bound);
+			pool[i].min_bound = fminf(pool[i].min_bound, mesh->tri_min_bounds[tri_indices[j]]);
+			pool[i].max_bound = fmaxf(pool[i].max_bound, mesh->tri_max_bounds[tri_indices[j]]);
 		}
-
-		pool[i].min_bound = min_b; pool[i].max_bound = max_b;
 	}
 }
 
@@ -348,7 +334,7 @@ float BVH4::SplitCost(const int* indices, int first, int count) {
 	return 0.0f;
 }
 
-bool BVH4::Partition(BVHNode& bvh, int* indices, int* counts) {
+bool BVH4::Partition(BVHNode& bvh, int* indices, int* counts, int bins) {
 	return false;
 }
 
@@ -426,21 +412,19 @@ float TopLevelBVH::SplitCost(const int* indices, int first, int count) {
 	return count * area;
 }
 
-bool TopLevelBVH::Partition(BVHNode& bvh, int* indices, int* counts) {
-	int bin_count = 8; // Must be larger than 1
-
+bool TopLevelBVH::Partition(BVHNode& bvh, int* indices, int* counts, int bins) {
 	int* left = new int[bvh.count];
 	int* right = new int[bvh.count];
 
 	float base_cost = SplitCost(tri_indices, bvh.first, bvh.count);	// Cost of current BVH before splitting, according to SAH heuristic
-	float3 c_min_bound = make_float3(FLT_MAX, FLT_MAX, FLT_MAX);	// Triangle centroids AABB min bound
-	float3 c_max_bound = make_float3(-FLT_MAX, -FLT_MAX, -FLT_MAX);	// Triangle centroids AABB max bound
-
 	float best_split_cost = FLT_MAX;
 	float best_split_pos;
 	int best_split_plane;
 
 	// Calculate the centroid AABB
+	float3 c_min_bound = make_float3(FLT_MAX);
+	float3 c_max_bound = make_float3(-FLT_MAX);
+
 	for (int i = bvh.first; i < bvh.first + bvh.count; i++) {
 		float3 center = instance_vector[tri_indices[i]]->mesh->aabb_center;
 		center = instance_vector[tri_indices[i]]->transform.TransformPoint(center);
@@ -453,9 +437,9 @@ bool TopLevelBVH::Partition(BVHNode& bvh, int* indices, int* counts) {
 	for (int i = 0; i < 3; i++) { // X, Y, Z
 		if (c_min_bound.get(i) == c_max_bound.get(i)) { continue; } // If all primitives have the same position on this plane, don't split
 
-		float interval = (c_max_bound.get(i) - c_min_bound.get(i)) / bin_count;
+		float interval = (c_max_bound.get(i) - c_min_bound.get(i)) / bins;
 
-		for (int j = 0; j < bin_count; j++) {
+		for (int j = 0; j < bins; j++) {
 			float pos = c_min_bound.get(i) + j * interval;
 
 			counts[0] = 0; // Left count
@@ -588,12 +572,12 @@ void TopLevelBVH::UpdateBounds() {
 		}
 
 		// Leaf, calculate AABB from instance-level BVHs
-		float3 min_b = make_float3(FLT_MAX, FLT_MAX, FLT_MAX);
-		float3 max_b = make_float3(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+		float3 min_b = make_float3(FLT_MAX);
+		float3 max_b = make_float3(-FLT_MAX);
 
 		for (int j = pool[i].first; j < pool[i].first + pool[i].count; j++) {
-			float3 mesh_minb = instance_vector[tri_indices[j]]->mesh->min_bound;
-			float3 mesh_maxb = instance_vector[tri_indices[j]]->mesh->max_bound;
+			float3 mesh_minb = instance_vector[tri_indices[j]]->mesh->aabb_min_bound;
+			float3 mesh_maxb = instance_vector[tri_indices[j]]->mesh->aabb_max_bound;
 
 			// Transform the mesh AABB bounds according to the instance transform
 			mesh_minb = instance_vector[tri_indices[j]]->transform.TransformPoint(mesh_minb);
@@ -621,7 +605,7 @@ bool TopLevelBVH::Traverse(Ray& ray, int& material, float3& N, float& t, int poo
 
 			// We're entering an instance-level BVH, so we transform the ray by the inverse of its local transform
 			Ray transformed_ray = ray;
-			mat4 inv_transform = instance_vector[tri_indices[i]]->transform.Inverted();
+			mat4 inv_transform = instance_vector[tri_indices[i]]->inv_transform;
 			transformed_ray.O = inv_transform.TransformPoint(transformed_ray.O);
 			transformed_ray.D = normalize(inv_transform.TransformVector(transformed_ray.D));
 

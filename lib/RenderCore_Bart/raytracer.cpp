@@ -1,12 +1,5 @@
 #include "core_settings.h"
 
-uint ScaleColor(uint c, int scale)
-{
-	unsigned int rb = (((c & 0xff00ff) * scale) >> 8) & 0xff00ff;
-	unsigned int g = (((c & 0xff00) * scale) >> 8) & 0xff00;
-	return rb + g;
-}
-
 void Accumulator::Rebuild(int width, int height) {
 	frame.clear();
 	frame.resize(width * height, make_float4(0));

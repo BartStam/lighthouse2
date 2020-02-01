@@ -5,21 +5,6 @@ namespace lh2core
 {
 class BVH; // Forward declaration for use in Mesh
 
-// Transforms a point or vector (pv) with a given transformation matrix (transform) around a point in world space (center)
-// Rotation around a center other than than the origin should not be set for normalized vectors (such as normals and directions)
-inline float4 Transform(float4 pv, mat4 transform, float3 center = make_float3(0), bool print = false) {
-	if (print) { cout << "Transform:" << endl; }
-	float4 result = pv;						// World frame point/vector
-	if (print) { cout << "  World frame:  " << result.x << ", " << result.y << ", " << result.z << endl; }
-	result = result - make_float4(center);	// Move to object frame (if specified)
-	if (print) { cout << "  Object frame: " << result.x << ", " << result.y << ", " << result.z << endl; }
-	result = transform * result;			// Transform
-	if (print) { cout << "  Transformed:  " << result.x << ", " << result.y << ", " << result.z << endl; }
-	result = result + make_float4(center);	// Move back to world frame
-	if (print) { cout << "  World frame:  " << result.x << ", " << result.y << ", " << result.z << endl; }
-	return result;
-}
-
 struct Ray {
 	Ray(const float3& o, const float3 d, float ior = 1.0f)
 		: O(o), D(normalize(d)), IOR(ior) {
@@ -29,8 +14,6 @@ struct Ray {
 	float3 D;
 	float IOR;
 
-	const float4 O4() {	return make_float4(O, 1.0f); }
-	const float4 D4() { return make_float4(D, 0.0f); }
 	const float3 Point(float t) { return O + t * D; }
 
 	bool IntersectTriangle(const CoreTri& triangle, float& t) {
@@ -70,27 +53,37 @@ struct Ray {
 struct Mesh {
 	Mesh(int vertex_count, int triangle_count) : vcount(vertex_count) {
 		triangles = new CoreTri[triangle_count];
+		tri_centers = new float3[triangle_count];
+		tri_min_bounds = new float3[triangle_count];
+		tri_max_bounds = new float3[triangle_count];
 	}
 
 	~Mesh() {
 		delete[] triangles;
+		delete[] tri_centers;
+		delete[] tri_min_bounds;
+		delete[] tri_max_bounds;
 		delete bvh;
 	}
 
 	int vcount = 0;
 	CoreTri* triangles = nullptr;
+	float3* tri_centers = nullptr;
+	float3* tri_min_bounds = nullptr;
+	float3* tri_max_bounds = nullptr;
 
-	float3 min_bound;
-	float3 max_bound;
-	float3 aabb_center; // Used for BVH construction
+	float3 aabb_min_bound;
+	float3 aabb_max_bound;
+	float3 aabb_center;	// Used for BVH construction
 	BVH* bvh = nullptr;
 };
 
 struct Instance {
-	Instance(Mesh* m, mat4 t) : mesh(m), transform(t) {};
+	Instance(Mesh* m, mat4 t) : mesh(m), transform(t), inv_transform(t.Inverted()) {};
 
 	Mesh* mesh = nullptr;
 	mat4 transform;
+	mat4 inv_transform; // Cached for efficiency
 };
 
 struct Triangle {
