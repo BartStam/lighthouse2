@@ -43,9 +43,9 @@ public:
 	TopLevelBVH top_level_bvh;
 	Accumulator accumulator;
 	
-	float3 Color(float3 O, float3 D, uint depth, bool outside = true);	// Trace a ray and return its color
-	float3 ColorDebugBVH(float3 O, float3 D, float delta = 0.005);		// Trace primary rays and color based on how many BVHs they intersected
-	float3 Illumination(float3 color, float3 O);						// Given a color at a location, scale it based on visible lighting
+	float3 Color(float3 O, float3 D, uint depth, bool outside = true);		// Trace a ray and return its color
+	float3 ColorDebugBVH(float3 O, float3 D, float delta = 0.005);			// Trace primary rays and color based on how many BVHs they intersected
+	float3 Illumination(float3 color, float3 O, float3 N, int samples = 1);	// Given a color at a location, scale it based on visible lighting
 
 	static Scene scene;
 };

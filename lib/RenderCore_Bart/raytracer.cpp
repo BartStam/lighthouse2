@@ -94,7 +94,7 @@ float3 RayTracer::Color(float3 O, float3 D, uint depth, bool outside) {
 	}
 
 	if (specularity > 0.01f) { color += specularity * Color(ray.Point(t) + N * 2 * EPSILON, ray.D - 2 * (ray.D * N) * N, depth - 1, outside); }
-	if (diffusion > 0.01f) { color += diffusion * Illumination(scene.matList[material]->diffuse, ray.Point(t) + N * 2 * EPSILON); }
+	if (diffusion > 0.01f) { color += diffusion * Illumination(scene.matList[material]->diffuse, ray.Point(t) + N * 2 * EPSILON, N, 4); }
 
 	return color;
 }
@@ -119,7 +119,7 @@ float3 RayTracer::ColorDebugBVH(float3 O, float3 D, float delta) {
 	return clamp(color, 0, 1);
 }
 
-float3 RayTracer::Illumination(float3 color, float3 O) {
+float3 RayTracer::Illumination(float3 color, float3 O, float3 N, int samples) {
 	float3 light_color = make_float3(0, 0, 0);
 
 	// Point lights
@@ -140,9 +140,8 @@ float3 RayTracer::Illumination(float3 color, float3 O) {
 	}
 
 	// Monte Carlo area lighting
-	int N = 1;
-	float c = (float)scene.areaLights.size() / N;
-	for (int n = 0; n < N; n++) {
+	float c = (float)scene.areaLights.size() / samples;
+	for (int n = 0; n < samples; n++) {
 		uint i = RandomUInt() % scene.areaLights.size();
 
 		float3 D = scene.areaLights[i]->RandomPoint() - O;
@@ -156,13 +155,12 @@ float3 RayTracer::Illumination(float3 color, float3 O) {
 		top_level_bvh.Traverse(shadow_ray, material, triN, t);
 
 		D = shadow_ray.D; // D is normalized in Ray constructor, no reason to do the work twice
-		float dot_DN = dot(D, triN);
-		if (r <= t && dot_DN < 0) { // If we hit the front of the light
+		float angle = dot(D, N);
+		if (r <= t && angle > 0) { // If we hit the front of the light
 			float A = scene.areaLights[i]->area;
 			float sr = A / (4 * PI * r * r);
 			float3 L = scene.areaLights[i]->radiance * sr;
-			float theta = dot_DN / (length(D) * length(triN));
-			float3 E = L * cos(theta);
+			float3 E = L * angle;
 
 			//return make_float3(clamp(theta, 0.0f, 1.0f));
 
